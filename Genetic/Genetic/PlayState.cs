@@ -34,7 +34,7 @@ namespace Genetic
             //camera2.Rotation = 180;
             camera2.BgColor = Color.DarkGray;
 
-            //GenG.camera.BgColor = Color.Red;
+            GenG.camera.BgColor = Color.SlateBlue;
 
             warthogs = new GenGroup();
             Add(warthogs);
@@ -46,7 +46,7 @@ namespace Genetic
                     warthog = new GenSprite(i * 12, j * 70, "player", 16, 18);
                     warthog.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
                     warthog.Play("run");
-                    warthog.scrollFactor = 0.5f;
+                    warthog.scrollFactor = 0.1f;
                     warthogs.Add(warthog);
                 }
             }
@@ -66,12 +66,13 @@ namespace Genetic
             beep.Volume = 0.1f;
             Add(beep);
 
-            text = new GenText("Hello, World!", 200, 100, 10, 10);
+            text = new GenText("Hello, World!", 200, 100, 12, 12);
             text.FontSize = 12;
-            text.textAlign = GenText.TextAlign.CENTER;
+            text.textAlign = GenText.TextAlign.RIGHT;
             text.hasShadow = true;
-            text.shadowColor = Color.DarkOrange;
-            text.scrollFactor = 1.5f;
+            text.shadowColor = Color.Black;
+            text.scrollFactor = 2f;
+            //text.rotationSpeed = 45;
             Add(text);
 
             GenG.timeScale = 1f;
@@ -80,6 +81,8 @@ namespace Genetic
         public override void Update()
         {
             base.Update();
+
+            //text.FontSize += 0.1f;
 
             if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.Start))
                 GenG.ResetState();
@@ -110,6 +113,27 @@ namespace Genetic
             else
                 warthog2.velocity.Y = 0;
 
+            if (warthog2.X < 0)
+            {
+                warthog2.X = 0;
+                warthog2.velocity.X = 0;
+            }
+            if (warthog2.X + warthog2.Width > camera2.Viewport.Width)
+            {
+                warthog2.X = camera2.Viewport.Width - warthog2.Width;
+                warthog2.velocity.X = 0;
+            }
+            if (warthog2.Y < 0)
+            {
+                warthog2.Y = 0;
+                warthog2.velocity.Y = 0;
+            }
+            if (warthog2.Y + warthog2.Height > camera2.Viewport.Height)
+            {
+                warthog2.Y = camera2.Viewport.Height - warthog2.Height;
+                warthog2.velocity.Y = 0;
+            }
+
             for (int i = 0; i < objects.Count; i++)
             {
                 (objects[i] as GenSprite).color = Color.White;
@@ -121,7 +145,7 @@ namespace Genetic
 
             for (int i = 0; i < objects.Count; i++)
             {
-                (objects[i] as GenSprite).color = Color.CornflowerBlue;
+                (objects[i] as GenSprite).color = Color.Red;
             }
 
             GenG.camera.ScrollX = warthog2.X - 80;

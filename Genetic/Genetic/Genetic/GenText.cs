@@ -106,13 +106,13 @@ namespace Genetic
 
             // Calculate the text origin relative to the game object origin to adjust for alignment settings.
             if (textAlign == TextAlign.RIGHT)
-                _textOrigin.X = origin.X - Width - _textMeasure.X;
+                _textOrigin.X = (origin.X - Width) * (1 / _fontScale) + _textMeasure.X;
             else if (textAlign == TextAlign.CENTER)
                 _textOrigin.X = origin.X - ((Width / 2) - (_textMeasure.X / 2));
             else
-                _textOrigin.X = origin.X;
+                _textOrigin.X = origin.X * (1 / _fontScale);
 
-            _textOrigin.Y = origin.Y;
+            _textOrigin.Y = origin.Y * (1 / _fontScale);
         }
 
         /// <summary>

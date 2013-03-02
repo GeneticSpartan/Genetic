@@ -78,6 +78,8 @@
     <Compile Include="Genetic\GenQuadTree.cs" />
     <Compile Include="Genetic\GenSound.cs" />
     <Compile Include="Genetic\GenText.cs" />
+    <Compile Include="Genetic\GenTile.cs" />
+    <Compile Include="Genetic\GenTilemap.cs" />
     <Compile Include="PlayState2.cs" />
     <Compile Include="Genetic\GenBasic.cs" />
     <Compile Include="Genetic\GenCamera.cs" />
