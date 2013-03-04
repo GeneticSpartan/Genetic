@@ -11,6 +11,15 @@
       <Time>2013-02-22T04:01:12.1145862-08:00</Time>
     </Item>
     <Item>
+      <Source>player.png</Source>
+      <Name>player</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\player.xnb</Output>
+      <Time>2013-03-02T01:54:37.3532286-08:00</Time>
+    </Item>
+    <Item>
       <Source>beep.mp3</Source>
       <Name>beep</Name>
       <Importer>Mp3Importer</Importer>
@@ -27,15 +36,6 @@
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\Nokia.xnb</Output>
       <Time>2013-02-25T16:56:46.9900567-08:00</Time>
-    </Item>
-    <Item>
-      <Source>player.png</Source>
-      <Name>player</Name>
-      <Importer>TextureImporter</Importer>
-      <Processor>TextureProcessor</Processor>
-      <Options>None</Options>
-      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\player.xnb</Output>
-      <Time>2013-03-02T01:54:37.3532286-08:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>

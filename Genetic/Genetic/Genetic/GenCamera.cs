@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -7,6 +8,42 @@ namespace Genetic
 {
     public class GenCamera
     {
+        /// <summary>
+        /// The style that a camera will use to follow a target.
+        /// </summary>
+        public enum FollowStyle
+        {
+            /// <summary>
+            /// The camera follows the target exactly.
+            /// </summary>
+            LockOn,
+
+            /// <summary>
+            /// The camera follows the target exactly along the x-axis.
+            /// </summary>
+            LockOnHorizontal,
+
+            /// <summary>
+            /// The camera follows the target exactly along the y-axis.
+            /// </summary>
+            LockOnVertical,
+
+            /// <summary>
+            /// The camera follows a point in front of the target, depending on the target's facing direction.
+            /// </summary>
+            Leading,
+
+            /// <summary>
+            /// The camera follows a point in front of the target along the x-axis, depending on the target's facing direction.
+            /// </summary>
+            LeadingHorizontal,
+
+            /// <summary>
+            /// The camera follows a point in front of the target along the y-axis, depending on the target's facing direction.
+            /// </summary>
+            LeadingVertical,
+        }
+
         public enum ShakeDirection { Horizontal, Vertical, Both };
 
         /// <summary>
@@ -53,6 +90,42 @@ namespace Genetic
         /// The scale to draw objects in the camera.
         /// </summary>
         protected float _zoom;
+
+        /// <summary>
+        /// The style that the camera will use to follow a target.
+        /// </summary>
+        public FollowStyle followStyle = FollowStyle.LockOn;
+
+        /// <summary>
+        /// A list of game objects that the camera will follow.
+        /// </summary>
+        protected List<GenObject> _followTargets = new List<GenObject>();
+
+        /// <summary>
+        /// The x and y positions of the point that the camera will follow, determined by the follow targets.
+        /// </summary>
+        protected Vector2 _followPosition = Vector2.Zero;
+
+        /// <summary>
+        /// The x and y distances from the follow target used in the leading follow style.
+        /// </summary>
+        public Vector2 followLeading = new Vector2(50, 30);
+
+        /// <summary>
+        /// Controls the smoothness of the camera as it follows a target, a value from 0 to 1.
+        /// A value of 1 will cause the camera to follow a target exactly, and any other value closer to 0 means smoother/slower camera movement.
+        /// </summary>
+        protected float _followStrength = 1.0f;
+
+        /// <summary>
+        /// The minimum amount of camera zoom possible when following multiple targets.
+        /// </summary>
+        public float minZoom = 1.0f;
+
+        /// <summary>
+        /// The maximum amount of camera zoom possible when following multiple targets.
+        /// </summary>
+        public float maxZoom = 4.0f;
 
         /// <summary>
         /// The x and y position offsets used to apply camera shake.
@@ -246,6 +319,17 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets or sets the smoothness of the camera as it follows a target, a value from 0 to 1.
+        /// A value of 1 will cause the camera to follow a target exactly, and any other value closer to 0 means smoother/slower camera movement.
+        /// </summary>
+        public float FollowStrength
+        {
+            get { return _followStrength; }
+
+            set { _followStrength = MathHelper.Clamp(value, 0, 1); }
+        }
+
+        /// <summary>
         /// Gets whether the camera is shaking or not.
         /// </summary>
         public bool Shaking
@@ -275,6 +359,86 @@ namespace Genetic
 
         public void Update()
         {
+            if (_followTargets.Count > 0)
+            {
+                if (_followTargets.Count > 1)
+                {
+                    // Set the initial minimum and maximum x and y values based on the first follow target.
+                    float followXMin = _followTargets[0].PositionRect.Left;
+                    float followXMax = _followTargets[0].PositionRect.Right;
+                    float followYMin = _followTargets[0].PositionRect.Top;
+                    float followYMax = _followTargets[0].PositionRect.Bottom;
+
+                    // Loop through the remaining follow targets and adjust the minimum and maximum x and y values accordingly.
+                    for (int i = 1; i < _followTargets.Count; i++)
+                    {
+                        if (_followTargets[i].PositionRect.Left < followXMin)
+                            followXMin = _followTargets[i].PositionRect.Left;
+
+                        if (_followTargets[i].PositionRect.Right > followXMax)
+                            followXMax = _followTargets[i].PositionRect.Right;
+
+                        if (_followTargets[i].PositionRect.Top < followYMin)
+                            followYMin = _followTargets[i].PositionRect.Top;
+
+                        if (_followTargets[i].PositionRect.Bottom > followYMax)
+                            followYMax = _followTargets[i].PositionRect.Bottom;
+                    }
+
+                    // Set the follow target to the center point between the minimum and maximum x and y values of all combined follow targets.
+                    _followPosition.X += ((followXMin + followXMax) / 2 - _followPosition.X) * _followStrength;
+                    _followPosition.Y += ((followYMin + followYMax) / 2 - _followPosition.Y) * _followStrength;
+
+                    float distanceX = Math.Abs(followXMax - followXMin) * 2;
+                    float distanceY = Math.Abs(followYMax - followYMin) * 2;
+
+                    // Zoom the camera in or out, complying with the minimum and maximum zoom values, and attempt to keep all follow targets within the camera view.
+                    GenG.camera.Zoom += (MathHelper.Clamp(MathHelper.Min(GenG.camera.Viewport.Width / distanceX, GenG.camera.Viewport.Height / distanceY), minZoom, maxZoom) - GenG.camera.Zoom) * _followStrength;
+                }
+                else
+                {
+                    if ((followStyle == FollowStyle.LockOn) || (followStyle == FollowStyle.LockOnHorizontal))
+                        _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
+
+                    if ((followStyle == FollowStyle.LockOn) || (followStyle == FollowStyle.LockOnVertical))
+                        _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
+
+                    if ((followStyle == FollowStyle.Leading) || (followStyle == FollowStyle.LeadingHorizontal))
+                    {
+                        if (_followTargets[0].Facing == Facing.Left)
+                            _followPosition.X += (_followTargets[0].X - followLeading.X - _followPosition.X) * _followStrength;
+                        else if (_followTargets[0].Facing == Facing.Right)
+                            _followPosition.X += (_followTargets[0].X + followLeading.X - _followPosition.X) * _followStrength;
+                        else
+                            _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
+                    }
+
+                    if ((followStyle == FollowStyle.Leading) || (followStyle == FollowStyle.LeadingVertical))
+                    {
+                        if (_followTargets[0].Facing == Facing.Up)
+                            _followPosition.Y += (_followTargets[0].Y - followLeading.Y - _followPosition.Y) * _followStrength;
+                        else if (_followTargets[0].Facing == Facing.Down)
+                            _followPosition.Y += (_followTargets[0].Y + followLeading.Y - _followPosition.Y) * _followStrength;
+                        else
+                            _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
+                    }
+                }
+
+                ScrollX = -_followPosition.X + _cameraView.Width / 2;
+                ScrollY = -_followPosition.Y + _cameraView.Height / 2;
+
+                // Prevent the camera view from moving outside of the camera bounds.
+                if (_scroll.X > 0)
+                    ScrollX = 0;
+                else if (_scroll.X < -_cameraRect.Width + _cameraView.Width)
+                    ScrollX = -_cameraRect.Width + _cameraView.Width;
+
+                if (_scroll.Y > 0)
+                    ScrollY = 0;
+                else if (_scroll.Y < -_cameraRect.Height + _cameraView.Height)
+                    ScrollY = -_cameraRect.Height + _cameraView.Height;
+            }
+
             if (_shaking)
             {
                 if (_shakeTimer < _shakeDuration)
@@ -313,13 +477,18 @@ namespace Genetic
                         Matrix.CreateTranslation((Viewport.Width / 2) + _shakeOffset.X, (Viewport.Height / 2) + _shakeOffset.Y, 0f);
         }
 
+        /// <summary>
+        /// Draws the camera background color.
+        /// </summary>
         public void DrawBg()
         {
             if (_bgColor != null)
                 GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, BgColor);
         }
 
-        
+        /// <summary>
+        /// Draws the camera flash and fade effects.
+        /// </summary>
         public void DrawFx()
         {
             if (_flashing)
@@ -359,6 +528,25 @@ namespace Genetic
                         _fadeCallback.Invoke();
                 }
             }
+        }
+
+        /// <summary>
+        /// Adds a game object as a target that the camera will follow.
+        /// Adding multiple targets will cause the camera to follow a point within the center of all targets.
+        /// </summary>
+        /// <param name="gameObject">The game object to set as a target.</param>
+        public void AddTarget(GenObject gameObject = null)
+        {
+            _followTargets.Add(gameObject);
+        }
+
+        /// <summary>
+        /// Removes a game object from the follow targets list.
+        /// </summary>
+        /// <param name="gameObject">The game object to remove from the follow targets list.</param>
+        public void RemoveTarget(GenObject gameObject)
+        {
+            _followTargets.Remove(gameObject);
         }
 
         /// <summary>
@@ -459,6 +647,7 @@ namespace Genetic
             _scroll = Vector2.Zero;
             _rotation = 0f;
             _zoom = _initialZoom;
+            _followTargets.Clear();
 
             // Reset the camera effects.
             _shaking = false;

@@ -2,6 +2,8 @@
 
 namespace Genetic
 {
+    public enum Facing { Left, Right, Up, Down };
+
     public class GenObject : GenBasic
     {
         /// <summary>
@@ -38,6 +40,12 @@ namespace Genetic
         /// The maximum x and y velocities of the object.
         /// </summary>
         public Vector2 maxVelocity;
+
+        /// <summary>
+        /// The direction that the object is facing.
+        /// The object is facing right by default.
+        /// </summary>
+        protected Facing _facing = Facing.Right;
 
         /// <summary>
         /// Gets or sets the x position the object.
@@ -101,6 +109,16 @@ namespace Genetic
             get { return _boundingRect.Height; }
 
             set { _boundingRect.Height = value; }
+        }
+
+        /// <summary>
+        /// Gets or sets the direction that the object is facing.
+        /// </summary>
+        public Facing Facing
+        {
+            get { return _facing; }
+
+            set { _facing = value; }
         }
 
         public GenObject(float x = 0, float y = 0, int width = 0, int height = 0)

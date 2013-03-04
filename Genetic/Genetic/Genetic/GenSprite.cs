@@ -5,8 +5,6 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic
 {
-    public enum Facing { LEFT, RIGHT, UP, DOWN };
-
     public class GenSprite : GenObject
     {
         /// <summary>
@@ -60,12 +58,6 @@ namespace Genetic
         protected string _currentAnimation = null;
 
         /// <summary>
-        /// The direction that the drawn sprite is facing.
-        /// The sprite is facing right by default.
-        /// </summary>
-        protected Facing _facing = Facing.RIGHT;
-
-        /// <summary>
         /// The sprite effect used to draw the sprite flipped horizontally or vertically.
         /// </summary>
         protected SpriteEffects _spriteEffect = SpriteEffects.None;
@@ -113,16 +105,16 @@ namespace Genetic
 
                 switch (_facing)
                 {
-                    case Facing.LEFT:
+                    case Facing.Left:
                         _spriteEffect = SpriteEffects.FlipHorizontally;
                         break;
-                    case Facing.RIGHT:
+                    case Facing.Right:
                         _spriteEffect = SpriteEffects.None;
                         break;
-                    case Facing.UP:
+                    case Facing.Up:
                         _spriteEffect = SpriteEffects.FlipVertically;
                         break;
-                    case Facing.DOWN:
+                    case Facing.Down:
                         _spriteEffect = SpriteEffects.None;
                         break;
                 }
@@ -166,8 +158,8 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _drawPosition.X = _position.X + origin.X - GenG.currentCamera.ScrollX - (GenG.currentCamera.ScrollX * scrollFactor);
-            _drawPosition.Y = _position.Y + origin.Y - GenG.currentCamera.ScrollY - (GenG.currentCamera.ScrollY * scrollFactor);
+            _drawPosition.X = _position.X + origin.X - GenG.currentCamera.ScrollX + (GenG.currentCamera.ScrollX * scrollFactor);
+            _drawPosition.Y = _position.Y + origin.Y - GenG.currentCamera.ScrollY + (GenG.currentCamera.ScrollY * scrollFactor);
 
             if (visible && (_texture != null))
             {
@@ -197,6 +189,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Sets the sprite's image to an existing texture.
+        /// Sets the source bounding rectangle according to the texture.
+        /// </summary>
+        /// <param name="textureFile">The sprite texture.</param>
+        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered.</param>
+        /// <returns>The Texture2D that was given.</returns>
+        public Texture2D LoadTexture(Texture2D texture, bool centerOrigin = true)
+        {
+            _texture = texture;
+
+            SetSourceRect(0, 0, _texture.Width, _texture.Height, centerOrigin);
+
+            return _texture;
+        }
+
+        /// <summary>
         /// Creates a solid color 1 x 1 texture to use as the sprite's image.
         /// Sets the source rectangle according to the given width and height values.
         /// A value of 0 for either the width or height will cause the source rectangle to use the existing sprite dimensions.
@@ -208,10 +216,9 @@ namespace Genetic
         /// <returns>The newly created Texture2D.</returns>
         public Texture2D MakeTexture(Color? color = null, int width = 0, int height = 0, bool centerOrigin = true)
         {
-            this.color = color.HasValue ? color.Value : Color.White;
+            color = color.HasValue ? color.Value : Color.White;
 
-            _texture = new Texture2D(GenG.GraphicsDevice, 1, 1);
-            _texture.SetData<Color>(new Color[] { Color.White });
+            _texture = GenU.MakeTexture(color.Value, width, height);
 
             // Set the source rectangle to the existing dimensions if the given width and height values are 0.
             // This allows the source rectangle to keep the width and height values given when the sprite was created.

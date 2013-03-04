@@ -24,10 +24,10 @@ namespace Genetic
         /// </summary>
         public override void Update()
         {
+            base.Update();
+
             foreach (GenCamera camera in GenG.cameras)
                 camera.Update();
-
-            base.Update();
         }
 
         public override void Draw()

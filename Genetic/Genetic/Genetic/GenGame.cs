@@ -138,7 +138,7 @@ namespace Genetic
 
             spriteBatch.Begin();
             if (watch.ElapsedMilliseconds != 0)
-            spriteBatch.DrawString(font, (1000 / watch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
+                spriteBatch.DrawString(font, (1000 / watch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
             watch.Reset();
             watch.Start();
             spriteBatch.End();

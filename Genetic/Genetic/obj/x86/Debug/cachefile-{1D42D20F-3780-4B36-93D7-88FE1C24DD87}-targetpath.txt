@@ -1,4 +1,4 @@
 Content\warthog.xnb
+Content\player.xnb
 Content\beep.xnb
 Content\Nokia.xnb
-Content\player.xnb
