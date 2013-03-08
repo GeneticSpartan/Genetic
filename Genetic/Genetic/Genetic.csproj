@@ -80,7 +80,7 @@
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
-    <Compile Include="PlayState2.cs" />
+    <Compile Include="MenuState.cs" />
     <Compile Include="Genetic\GenBasic.cs" />
     <Compile Include="Genetic\GenCamera.cs" />
     <Compile Include="Genetic\GenG.cs" />

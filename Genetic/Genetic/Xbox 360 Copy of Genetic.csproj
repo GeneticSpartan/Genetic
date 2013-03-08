@@ -73,7 +73,6 @@
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
-    <Compile Include="PlayState2.cs" />
     <Compile Include="Genetic\GenBasic.cs" />
     <Compile Include="Genetic\GenCamera.cs" />
     <Compile Include="Genetic\GenG.cs" />
@@ -83,6 +82,7 @@
     <Compile Include="Genetic\GenState.cs" />
     <Compile Include="Genetic\GenTimer.cs" />
     <Compile Include="Genetic\GenU.cs" />
+    <Compile Include="MenuState.cs" />
     <Compile Include="PlayState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />

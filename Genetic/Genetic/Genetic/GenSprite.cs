@@ -95,7 +95,7 @@ namespace Genetic
         /// <summary>
         /// Gets or sets the direction that the drawn sprite is facing.
         /// </summary>
-        public Facing Facing
+        public new Facing Facing
         {
             get { return _facing; }
 

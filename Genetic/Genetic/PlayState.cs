@@ -73,7 +73,7 @@ namespace Genetic
             Add(warthog2);
 
             warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
-            //warthog3.velocity.X = 50;
+            warthog3.velocity.X = 20;
             Add(warthog3);
 
             beep = new GenSound("beep", 1, true);
@@ -94,7 +94,13 @@ namespace Genetic
             GenG.timeScale = 1f;
 
             GenG.camera.followStyle = GenCamera.FollowStyle.LockOn;
-            GenG.camera.FollowStrength = 0.1f;
+            GenG.camera.FollowStrength = 0.05f;
+
+            //camera2.FollowStrength = 0.05f;
+            //camera2.AddTarget(warthog2);
+            //camera2.AddTarget(warthog3);
+
+            GenG.worldBounds = new Rectangle(-100, -200, GenG.Game.Width + 200, GenG.Game.Height + 400);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
         }
@@ -103,22 +109,23 @@ namespace Genetic
         {
             base.Update();
 
+            GenG.Collide(warthog2, warthog3);
+
             //text.FontSize += 0.1f;
             text.X++;
             text.Y++;
 
-            if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.Start))
+            if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.A))
             {
                 GenG.camera.AddTarget(warthog2);
-                //GenG.camera.AddTarget(warthog3);
+                GenG.camera.AddTarget(warthog3);
                 //GenG.camera.AddTarget(text);
-                //camera2.SetFollow(warthog2);
                 //GenG.ResetState();
             }
-            if (GenG.Keyboards.JustReleased(Keys.Space))
+            if (GenG.Keyboards.JustReleased(Keys.Space) || GenG.GamePads.JustReleased(Buttons.A))
             {
                 GenG.camera.RemoveTarget(warthog2);
-                //GenG.camera.RemoveTarget(warthog3);
+                GenG.camera.RemoveTarget(warthog3);
                 //GenG.camera.RemoveTarget(text);
                 //camera2.SetFollow(warthog2);
                 //GenG.ResetState();
@@ -190,6 +197,8 @@ namespace Genetic
 
             //camera2.Shake(5, 1, true);
             //camera2.Rotation -= 0.1f;
+
+            
         }
 
         public void FadeOut()

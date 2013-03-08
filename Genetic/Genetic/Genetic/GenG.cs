@@ -82,6 +82,12 @@ namespace Genetic
         public static float timeScale;
 
         /// <summary>
+        /// Represents the bounding rectangle of the world space.
+        /// Used to keep camera views within these bounds when following a target.
+        /// </summary>
+        public static Rectangle worldBounds;
+
+        /// <summary>
         /// A list of all current cameras.
         /// </summary>
         public static List<GenCamera> cameras;
@@ -144,6 +150,7 @@ namespace Genetic
             _defaultViewport = GraphicsDevice.Viewport;
             bgColor = Color.CornflowerBlue;
             timeScale = 1.0f;
+            worldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
             cameras = new List<GenCamera>();
             _keyboards = new GenKeyboard();
             _gamePads = new GenGamePad();
@@ -272,6 +279,25 @@ namespace Genetic
             float length = (point2 - point1).Length();
 
             SpriteBatch.Draw(pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, 1), SpriteEffects.None, 0);
+        }
+
+        public static void Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2)
+        {
+            if (objectOrGroup1 is GenObject)
+            {
+                if (objectOrGroup2 is GenObject)
+                {
+                    Vector2 intersectionDepth = GenU.GetIntersectDepth((objectOrGroup1 as GenObject).PositionRect, (objectOrGroup2 as GenObject).PositionRect);
+
+                    if (intersectionDepth != Vector2.Zero)
+                    {
+                        if (Math.Abs(intersectionDepth.Y) < Math.Abs(intersectionDepth.X))
+                            (objectOrGroup1 as GenObject).Y = (objectOrGroup1 as GenObject).Y + intersectionDepth.Y;
+                        else
+                            (objectOrGroup1 as GenObject).X = (objectOrGroup1 as GenObject).X + intersectionDepth.X;
+                    }
+                }
+            }
         }
     }
 }
