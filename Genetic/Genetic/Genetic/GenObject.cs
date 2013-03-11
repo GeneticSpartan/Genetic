@@ -12,11 +12,6 @@ namespace Genetic
         protected Vector2 _position;
 
         /// <summary>
-        /// The bounding rectangle of the object.
-        /// </summary>
-        protected Rectangle _boundingRect;
-
-        /// <summary>
         /// The bounding rectangle of the object relative to the position.
         /// </summary>
         protected Rectangle _positionRect;
@@ -54,7 +49,11 @@ namespace Genetic
         {
             get { return _position.X; }
 
-            set { _position.X = value; }
+            set
+            {
+                _position.X = value;
+                _positionRect.X = (int)value;
+            }
         }
 
         /// <summary>
@@ -64,15 +63,11 @@ namespace Genetic
         {
             get { return _position.Y; }
 
-            set { _position.Y = value; }
-        }
-
-        /// <summary>
-        /// Gets the bounding rectangle of the object.
-        /// </summary>
-        public Rectangle BoundingRect
-        {
-            get { return _boundingRect; }
+            set
+            {
+                _position.Y = value;
+                _positionRect.Y = (int)value;
+            }
         }
 
         /// <summary>
@@ -96,9 +91,9 @@ namespace Genetic
         /// </summary>
         public int Width
         {
-            get { return _boundingRect.Width; }
+            get { return _positionRect.Width; }
 
-            set { _boundingRect.Width = value; }
+            set { _positionRect.Width = value; }
         }
 
         /// <summary>
@@ -106,9 +101,9 @@ namespace Genetic
         /// </summary>
         public int Height
         {
-            get { return _boundingRect.Height; }
+            get { return _positionRect.Height; }
 
-            set { _boundingRect.Height = value; }
+            set { _positionRect.Height = value; }
         }
 
         /// <summary>
@@ -124,14 +119,13 @@ namespace Genetic
         public GenObject(float x = 0, float y = 0, int width = 0, int height = 0)
         {
             _position = new Vector2(x, y);
-            _boundingRect = new Rectangle(0, 0, width, height);
             _positionRect = new Rectangle((int)_position.X, (int)_position.Y, width, height);
             //_screenPositionRect = Rectangle.Empty;
 
-            //_screenPositionRect.X = (int)((_position.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
-            //_screenPositionRect.Y = (int)((_position.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
-            //_screenPositionRect.Width = (int)(_boundingRect.Width * GenG.camera.Zoom);
-            //_screenPositionRect.Height = (int)(_boundingRect.Height * GenG.camera.Zoom);
+            //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
+            //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
+            //_screenPositionRect.Width = (int)(_positionRect.Width * GenG.camera.Zoom);
+            //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
 
             velocity = Vector2.Zero;
             maxVelocity = Vector2.Zero;
@@ -156,18 +150,13 @@ namespace Genetic
                 velocity.Y = maxVelocity.Y;
 
             // Move the object based on its velocity.
-            _position.X += velocity.X * GenG.timeScale * GenG.deltaTime;
-            _position.Y += velocity.Y * GenG.timeScale * GenG.deltaTime;
+            X += velocity.X * GenG.timeScale * GenG.deltaTime;
+            Y += velocity.Y * GenG.timeScale * GenG.deltaTime;
 
-            _positionRect.X = (int)_position.X;
-            _positionRect.Y = (int)_position.Y;
-            _positionRect.Width = _boundingRect.Width;
-            _positionRect.Height = _boundingRect.Height;
-
-            //_screenPositionRect.X = (int)((_position.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
-            //_screenPositionRect.Y = (int)((_position.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
-            //_screenPositionRect.Width = (int)(_boundingRect.Width * GenG.camera.Zoom);
-            //_screenPositionRect.Height = (int)(_boundingRect.Height * GenG.camera.Zoom);
+            //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
+            //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
+            //_screenPositionRect.Width = (int)(_positionRect.Width * GenG.camera.Zoom);
+            //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
         }
 
         public override void Draw()

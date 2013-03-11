@@ -39,7 +39,7 @@ namespace Genetic
 
             map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 30, 30);
 
-            map.LoadMap("1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 30, 30);
+            map.LoadMap("1,1,1,1,1\n1,0,1,0,0\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 30, 30);
             Add(map);
             
             GenG.bgColor = Color.CornflowerBlue;
@@ -65,7 +65,7 @@ namespace Genetic
                 }
             }
 
-            GenG.quadTree.Insert(warthogs);
+            //GenG.quadTree.Insert(warthogs);
 
             warthog2 = new GenSprite(100, 100, "player", 16, 18);
             warthog2.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
@@ -73,7 +73,7 @@ namespace Genetic
             Add(warthog2);
 
             warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
-            warthog3.velocity.X = 20;
+            //warthog3.velocity.X = 20;
             Add(warthog3);
 
             beep = new GenSound("beep", 1, true);
@@ -110,6 +110,7 @@ namespace Genetic
             base.Update();
 
             GenG.Collide(warthog2, warthog3);
+            map.Collide(warthog2);
 
             //text.FontSize += 0.1f;
             text.X++;
@@ -176,7 +177,7 @@ namespace Genetic
             {
                 warthog2.Y = camera2.Viewport.Height - warthog2.Height;
                 warthog2.velocity.Y = 0;
-            }*/
+            }
 
             for (int i = 0; i < objects.Count; i++)
             {
@@ -190,7 +191,7 @@ namespace Genetic
             for (int i = 0; i < objects.Count; i++)
             {
                 (objects[i] as GenSprite).color = Color.Red;
-            }
+            }*/
 
             //GenG.camera.Flash(0.5f, 2, Color.Red);
             //GenG.camera.Shake(10, 2, true);

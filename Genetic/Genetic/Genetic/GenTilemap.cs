@@ -94,5 +94,25 @@ namespace Genetic
                 }
             }
         }
+
+        public void Collide(GenBasic objectOrGroup)
+        {
+            if (objectOrGroup is GenBasic)
+            {
+                int leftTile = (int)Math.Floor((float)(objectOrGroup as GenObject).PositionRect.Left / tileWidth);
+                int rightTile = (int)Math.Ceiling(((float)(objectOrGroup as GenObject).PositionRect.Right / tileWidth)) - 1;
+                int topTile = (int)Math.Floor((float)(objectOrGroup as GenObject).PositionRect.Top / tileHeight);
+                int bottomTile = (int)Math.Ceiling(((float)(objectOrGroup as GenObject).PositionRect.Bottom / tileHeight)) - 1;
+
+                for (int y = topTile; y <= bottomTile; ++y)
+                {
+                    for (int x = leftTile; x <= rightTile; ++x)
+                    {
+                        if (x >= 0 && x < tiles.GetLength(0) && y >= 0 && y < tiles.GetLength(1))
+                            GenG.Collide(objectOrGroup, tiles[x, y]);
+                    }
+                }
+            }
+        }
     }
 }

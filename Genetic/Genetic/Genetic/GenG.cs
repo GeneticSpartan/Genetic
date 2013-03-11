@@ -292,9 +292,13 @@ namespace Genetic
                     if (intersectionDepth != Vector2.Zero)
                     {
                         if (Math.Abs(intersectionDepth.Y) < Math.Abs(intersectionDepth.X))
+                        {
                             (objectOrGroup1 as GenObject).Y = (objectOrGroup1 as GenObject).Y + intersectionDepth.Y;
+                        }
                         else
+                        {
                             (objectOrGroup1 as GenObject).X = (objectOrGroup1 as GenObject).X + intersectionDepth.X;
+                        }
                     }
                 }
             }
