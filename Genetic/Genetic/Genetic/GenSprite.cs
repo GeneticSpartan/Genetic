@@ -43,7 +43,7 @@ namespace Genetic
         public float rotationSpeed;
 
         /// <summary>
-        /// The origin, relative to the position, that the sprite will rotate around.
+        /// The origin, relative to the position, that the sprite texture will rotate around.
         /// </summary>
         public Vector2 origin;
 

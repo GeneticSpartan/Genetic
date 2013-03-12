@@ -201,9 +201,9 @@ namespace Genetic
         /// </summary>
         public static void Draw()
         {
-            foreach (GenCamera cam in cameras)
+            for (int i = 0; i < cameras.Count; i++)
             {
-                currentCamera = cam;
+                currentCamera = cameras[i];
 
                 GraphicsDevice.Viewport = currentCamera.Viewport;
 
@@ -281,23 +281,30 @@ namespace Genetic
             SpriteBatch.Draw(pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, 1), SpriteEffects.None, 0);
         }
 
+        /// <summary>
+        /// Applys collision detection and response between two objects or groups of objects that may overlap.
+        /// </summary>
+        /// <param name="objectOrGroup1">The first object or group to check for collisions.</param>
+        /// <param name="objectOrGroup2">The second object or group to check for collisions.</param>
         public static void Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2)
         {
             if (objectOrGroup1 is GenObject)
             {
                 if (objectOrGroup2 is GenObject)
                 {
-                    Vector2 intersectionDepth = GenU.GetIntersectDepth((objectOrGroup1 as GenObject).PositionRect, (objectOrGroup2 as GenObject).PositionRect);
+                    Vector2 intersectionDepth = GenU.GetIntersectDepth(((GenObject)objectOrGroup1).PositionRect, ((GenObject)objectOrGroup2).PositionRect);
 
                     if (intersectionDepth != Vector2.Zero)
                     {
                         if (Math.Abs(intersectionDepth.Y) < Math.Abs(intersectionDepth.X))
                         {
-                            (objectOrGroup1 as GenObject).Y = (objectOrGroup1 as GenObject).Y + intersectionDepth.Y;
+                            ((GenObject)objectOrGroup1).Y = ((GenObject)objectOrGroup1).Y + intersectionDepth.Y;
+                            ((GenObject)objectOrGroup1).velocity.Y = 0;
                         }
                         else
                         {
-                            (objectOrGroup1 as GenObject).X = (objectOrGroup1 as GenObject).X + intersectionDepth.X;
+                            ((GenObject)objectOrGroup1).X = ((GenObject)objectOrGroup1).X + intersectionDepth.X;
+                            ((GenObject)objectOrGroup1).velocity.X = 0;
                         }
                     }
                 }

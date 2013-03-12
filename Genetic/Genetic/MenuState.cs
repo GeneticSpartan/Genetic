@@ -37,7 +37,7 @@ namespace Genetic
             startGame.Y = GenG.camera.CameraView.Height / 2 - 20 + (float)Math.Sin(2 * elapsed) * 20;
             startGame.FontSize = 24 + (float)Math.Sin(8 * elapsed) * 2;
 
-            if (GenG.Keyboards.IsPressed(Keys.Space) || GenG.GamePads.IsPressed(Buttons.Start))
+            if (GenG.Keyboards.IsPressed(Keys.Space) || GenG.GamePads.IsPressed(Buttons.Start, 1))
                 GenG.camera.Fade(1f, Color.Black, StartGame);
         }
 

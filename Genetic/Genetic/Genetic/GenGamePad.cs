@@ -6,19 +6,29 @@ namespace Genetic
     public class GenGamePad
     {
         /// <summary>
-        /// The current state of the game pad.
+        /// The current states of the game pads.
         /// </summary>
-        protected GamePadState gamePadState;
+        protected GamePadState[] gamePadStates;
 
         /// <summary>
-        /// The state of the game pad during the previous update.
+        /// The states of the game pads during the previous update.
         /// </summary>
-        protected GamePadState oldGamePadState;
+        protected GamePadState[] oldGamePadStates;
 
         public GenGamePad()
         {
-            gamePadState = GamePad.GetState(PlayerIndex.One);
-            oldGamePadState = gamePadState;
+            gamePadStates = new GamePadState[4];
+            oldGamePadStates = new GamePadState[4];
+
+            //gamePadStates[0] = GamePad.GetState(PlayerIndex.One);
+            //gamePadStates[1] = GamePad.GetState(PlayerIndex.Two);
+            //gamePadStates[2] = GamePad.GetState(PlayerIndex.Three);
+            //gamePadStates[3] = GamePad.GetState(PlayerIndex.Four);
+
+            //oldGamePadStates[0] = gamePadStates[0];
+            //oldGamePadStates[1] = gamePadStates[1];
+            //oldGamePadStates[2] = gamePadStates[2];
+            //oldGamePadStates[3] = gamePadStates[3];
         }
 
         /// <summary>
@@ -26,38 +36,48 @@ namespace Genetic
         /// </summary>
         public void Update()
         {
-            oldGamePadState = gamePadState;
-            gamePadState = GamePad.GetState(PlayerIndex.One);
+            oldGamePadStates[0] = gamePadStates[0];
+            oldGamePadStates[1] = gamePadStates[1];
+            oldGamePadStates[2] = gamePadStates[2];
+            oldGamePadStates[3] = gamePadStates[3];
+
+            gamePadStates[0] = GamePad.GetState(PlayerIndex.One);
+            gamePadStates[1] = GamePad.GetState(PlayerIndex.Two);
+            gamePadStates[2] = GamePad.GetState(PlayerIndex.Three);
+            gamePadStates[3] = GamePad.GetState(PlayerIndex.Four);
         }
 
         /// <summary>
         /// Checks if the specified button is currently pressed.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
+        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
         /// <returns>True, if the button is currently pressed. False, if not.</returns>
-        public bool IsPressed(Buttons button)
+        public bool IsPressed(Buttons button, int player = 1)
         {
-            return gamePadState.IsButtonDown(button);
+            return gamePadStates[--player].IsButtonDown(button);
         }
 
         /// <summary>
         /// Checks if the specified button is currently released.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
+        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
         /// <returns>True, if the button is currently released. False, if not.</returns>
-        public bool IsReleased(Buttons button)
+        public bool IsReleased(Buttons button, int player = 1)
         {
-            return gamePadState.IsButtonUp(button);
+            return gamePadStates[--player].IsButtonUp(button);
         }
 
         /// <summary>
         /// Checks if the specified button was just pressed.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
+        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
         /// <returns>True, if the button was just pressed. False, if not.</returns>
-        public bool JustPressed(Buttons button)
+        public bool JustPressed(Buttons button, int player = 1)
         {
-            if (oldGamePadState.IsButtonUp(button) && gamePadState.IsButtonDown(button))
+            if (oldGamePadStates[--player].IsButtonUp(button) && gamePadStates[player].IsButtonDown(button))
                 return true;
             else
                 return false;
@@ -67,10 +87,11 @@ namespace Genetic
         /// Checks if the specified button was just released.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
+        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
         /// <returns>True, if the button was just released. False, if not.</returns>
-        public bool JustReleased(Buttons button)
+        public bool JustReleased(Buttons button, int player = 1)
         {
-            if (oldGamePadState.IsButtonDown(button) && gamePadState.IsButtonUp(button))
+            if (oldGamePadStates[--player].IsButtonDown(button) && gamePadStates[player].IsButtonUp(button))
                 return true;
             else
                 return false;

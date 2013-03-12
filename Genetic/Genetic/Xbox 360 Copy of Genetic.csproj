@@ -66,6 +66,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Genetic\GenAnimation.cs" />
+    <Compile Include="Genetic\GenControl.cs" />
     <Compile Include="Genetic\GenGamePad.cs" />
     <Compile Include="Genetic\GenKeyboard.cs" />
     <Compile Include="Genetic\GenQuadTree.cs" />

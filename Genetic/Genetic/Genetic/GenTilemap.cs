@@ -30,11 +30,24 @@ namespace Genetic
             tileTypes = new Dictionary<string, GenTile>();
         }
 
+        /// <summary>
+        /// Loads a tile associated with a specific string id used when loading a tilemap.
+        /// The tile is stored in a list of tyle types used to create tiles for a tilemap.
+        /// </summary>
+        /// <param name="id">The unique string id associated with this tile.</param>
+        /// <param name="tile">The tile object to store in the list of tile types.</param>
+        /// <returns>The tile object that was loaded.</returns>
         public GenTile LoadTile(string id, GenTile tile)
         {
             return tileTypes[id] = tile;
         }
 
+        /// <summary>
+        /// Loads a CSV tilemap containing comma separated string values, each associated with a predefined tile used by the LoadTile method.
+        /// </summary>
+        /// <param name="mapData">The CSV (Comma Separated Values) tilmap to load.</param>
+        /// <param name="tileWidth">The width of each tile.</param>
+        /// <param name="tileHeight">The height of each tile.</param>
         public void LoadMap(string mapData, int tileWidth, int tileHeight)
         {
             this.tileWidth = tileWidth;
@@ -95,14 +108,24 @@ namespace Genetic
             }
         }
 
+        /// <summary>
+        /// Applys collision detection and response between an objects or group of objects and the tiles of the tilemap.
+        /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
+        /// </summary>
+        /// <param name="objectOrGroup1">The object or group to check for collisions.</param>
         public void Collide(GenBasic objectOrGroup)
         {
-            if (objectOrGroup is GenBasic)
+            int leftTile;
+            int rightTile;
+            int topTile;
+            int bottomTile;
+
+            if (objectOrGroup is GenObject)
             {
-                int leftTile = (int)Math.Floor((float)(objectOrGroup as GenObject).PositionRect.Left / tileWidth);
-                int rightTile = (int)Math.Ceiling(((float)(objectOrGroup as GenObject).PositionRect.Right / tileWidth)) - 1;
-                int topTile = (int)Math.Floor((float)(objectOrGroup as GenObject).PositionRect.Top / tileHeight);
-                int bottomTile = (int)Math.Ceiling(((float)(objectOrGroup as GenObject).PositionRect.Bottom / tileHeight)) - 1;
+                leftTile = (int)Math.Floor((float)((GenObject)objectOrGroup).PositionRect.Left / tileWidth);
+                rightTile = (int)Math.Ceiling(((float)((GenObject)objectOrGroup).PositionRect.Right / tileWidth)) - 1;
+                topTile = (int)Math.Floor((float)((GenObject)objectOrGroup).PositionRect.Top / tileHeight);
+                bottomTile = (int)Math.Ceiling(((float)((GenObject)objectOrGroup).PositionRect.Bottom / tileHeight)) - 1;
 
                 for (int y = topTile; y <= bottomTile; ++y)
                 {
@@ -110,6 +133,25 @@ namespace Genetic
                     {
                         if (x >= 0 && x < tiles.GetLength(0) && y >= 0 && y < tiles.GetLength(1))
                             GenG.Collide(objectOrGroup, tiles[x, y]);
+                    }
+                }
+            }
+            else if (objectOrGroup is GenGroup)
+            {
+                for (int i = 0; i < ((GenGroup)objectOrGroup).members.Count; i++)
+                {
+                    leftTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Left / tileWidth);
+                    rightTile = (int)Math.Ceiling(((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Right / tileWidth)) - 1;
+                    topTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Top / tileHeight);
+                    bottomTile = (int)Math.Ceiling(((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Bottom / tileHeight)) - 1;
+
+                    for (int y = topTile; y <= bottomTile; ++y)
+                    {
+                        for (int x = leftTile; x <= rightTile; ++x)
+                        {
+                            if (x >= 0 && x < tiles.GetLength(0) && y >= 0 && y < tiles.GetLength(1))
+                                GenG.Collide(((GenGroup)objectOrGroup).members[i], tiles[x, y]);
+                        }
                     }
                 }
             }

@@ -29,7 +29,12 @@ namespace Genetic
         /// <summary>
         /// The x and y acceleration of the object.
         /// </summary>
-        public Vector2 acceleration;
+        public Vector2 acceleration = Vector2.Zero;
+
+        /// <summary>
+        /// The x and y deceleration of the object.
+        /// </summary>
+        public Vector2 deceleration = Vector2.Zero;
 
         /// <summary>
         /// The maximum x and y velocities of the object.
@@ -138,16 +143,30 @@ namespace Genetic
         {
             if (acceleration.X != 0)
                 velocity.X += acceleration.X * GenG.timeScale * GenG.deltaTime;
+            else if (deceleration.X != 0)
+            {
+                if (velocity.X > 0)
+                    velocity.X = MathHelper.Clamp(velocity.X - deceleration.X * GenG.timeScale * GenG.deltaTime, 0, maxVelocity.X);
+                if (velocity.X < 0)
+                    velocity.X = MathHelper.Clamp(velocity.X + deceleration.X * GenG.timeScale * GenG.deltaTime, -maxVelocity.X, 0);
+            }
 
             if (acceleration.Y != 0)
                 velocity.Y += acceleration.Y * GenG.timeScale * GenG.deltaTime;
+            else if (deceleration.Y != 0)
+            {
+                if (velocity.Y > 0)
+                    velocity.Y = MathHelper.Clamp(velocity.Y - deceleration.Y * GenG.timeScale * GenG.deltaTime, 0, maxVelocity.Y);
+                if (velocity.Y < 0)
+                    velocity.Y = MathHelper.Clamp(velocity.Y + deceleration.Y * GenG.timeScale * GenG.deltaTime, -maxVelocity.Y, 0);
+            }
 
             // Limit the object's velocity to the maximum velocity.
-            if ((maxVelocity.X != 0) && (velocity.X > maxVelocity.X))
-                velocity.X = maxVelocity.X;
+            if (maxVelocity.X != 0)
+                velocity.X = MathHelper.Clamp(velocity.X, -maxVelocity.X, maxVelocity.X);
 
-            if ((maxVelocity.Y != 0) && (velocity.Y > maxVelocity.Y))
-                velocity.Y = maxVelocity.Y;
+            if (maxVelocity.Y != 0)
+                velocity.Y = MathHelper.Clamp(velocity.Y, -maxVelocity.Y, maxVelocity.Y);
 
             // Move the object based on its velocity.
             X += velocity.X * GenG.timeScale * GenG.deltaTime;

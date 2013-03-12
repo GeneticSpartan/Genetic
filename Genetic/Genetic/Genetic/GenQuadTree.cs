@@ -135,16 +135,16 @@ namespace Genetic
         {
             if (objectOrGroup is GenGroup)
             {
-                foreach (GenBasic member in (objectOrGroup as GenGroup).members)
+                foreach (GenBasic member in ((GenGroup)objectOrGroup).members)
                     Insert(member);
             }
             else
             {
-                if (_level != 0 || (_level == 0 && ((objectOrGroup as GenObject).PositionRect.Left < _right && (objectOrGroup as GenObject).PositionRect.Right > _left && (objectOrGroup as GenObject).PositionRect.Top < _bottom && (objectOrGroup as GenObject).PositionRect.Bottom > _top)))
+                if (_level != 0 || (_level == 0 && (((GenObject)objectOrGroup).PositionRect.Left < _right && ((GenObject)objectOrGroup).PositionRect.Right > _left && ((GenObject)objectOrGroup).PositionRect.Top < _bottom && ((GenObject)objectOrGroup).PositionRect.Bottom > _top)))
                 {
                     if (_nodes[0] != null)
                     {
-                        int index = GetIndex((objectOrGroup as GenObject).PositionRect);
+                        int index = GetIndex(((GenObject)objectOrGroup).PositionRect);
 
                         if (index != -1)
                         {
@@ -170,7 +170,7 @@ namespace Genetic
 
                         while (i < _objects.Count)
                         {
-                            int index = GetIndex((_objects[i] as GenObject).PositionRect);
+                            int index = GetIndex(((GenObject)_objects[i]).PositionRect);
 
                             if (index != -1)
                             {

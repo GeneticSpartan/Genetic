@@ -19,7 +19,7 @@ namespace Genetic
         public GenSprite warthog2;
         public GenSprite warthog3;
 
-        public GenObject cameraFollow = new GenObject(0, 0, 10, 10);
+        public GenControl playerControl;
 
         public GenCamera camera2;
 
@@ -32,14 +32,13 @@ namespace Genetic
         public override void Create()
         {
             base.Create();
-
-            Add(cameraFollow);
-
+            
             map = new GenTilemap();
 
-            map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 30, 30);
+            map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 100, 100);
+            map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 100, 100);
 
-            map.LoadMap("1,1,1,1,1\n1,0,1,0,0\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 30, 30);
+            map.LoadMap("2,2,2,2,2\n1,0,1,0,0\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 100, 100);
             Add(map);
             
             GenG.bgColor = Color.CornflowerBlue;
@@ -65,7 +64,7 @@ namespace Genetic
                 }
             }
 
-            //GenG.quadTree.Insert(warthogs);
+            GenG.quadTree.Insert(warthogs);
 
             warthog2 = new GenSprite(100, 100, "player", 16, 18);
             warthog2.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
@@ -76,17 +75,23 @@ namespace Genetic
             //warthog3.velocity.X = 20;
             Add(warthog3);
 
+            playerControl = new GenControl(warthog2, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
+            playerControl.SetMovementSpeed(700, 0, 400, 400, 400, 400);
+            playerControl.gravity.Y = 400;
+            Add(playerControl);
+
             beep = new GenSound("beep", 1, true);
             //beep.Play();
             beep.SetFollow(warthog2);
             beep.Volume = 0.1f;
             Add(beep);
 
-            text = new GenText("Hello, World!", 200, 100, 12, 12);
+            text = new GenText("Hello, World!", 200, 100, 100, 12);
             text.FontSize = 12;
             text.textAlign = GenText.TextAlign.RIGHT;
             text.hasShadow = true;
             text.shadowColor = Color.Black;
+            text.velocity.Y = 10;
             //text.scrollFactor = 2f;
             //text.rotationSpeed = 45;
             Add(text);
@@ -95,12 +100,13 @@ namespace Genetic
 
             GenG.camera.followStyle = GenCamera.FollowStyle.LockOn;
             GenG.camera.FollowStrength = 0.05f;
+            GenG.camera.AddTarget(warthog2);
+            GenG.camera.AddTarget(warthog3);
 
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(warthog2);
-            //camera2.AddTarget(warthog3);
 
-            GenG.worldBounds = new Rectangle(-100, -200, GenG.Game.Width + 200, GenG.Game.Height + 400);
+            //GenG.worldBounds = new Rectangle(0, 0, GenG.Game.Width, GenG.Game.Height);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
         }
@@ -110,53 +116,33 @@ namespace Genetic
             base.Update();
 
             GenG.Collide(warthog2, warthog3);
+            GenG.Collide(warthog2, text);
             map.Collide(warthog2);
 
             //text.FontSize += 0.1f;
-            text.X++;
-            text.Y++;
 
-            if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.A))
+            if (GenG.GamePads.JustPressed(Buttons.X, 1))
+                GenG.isDebug = !GenG.isDebug;
+
+            if (GenG.GamePads.JustPressed(Buttons.Y, 1))
+                GenG.ResetState();
+
+            /*
+            if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.A, 1))
             {
                 GenG.camera.AddTarget(warthog2);
-                GenG.camera.AddTarget(warthog3);
+                //GenG.camera.AddTarget(warthog3);
                 //GenG.camera.AddTarget(text);
                 //GenG.ResetState();
             }
-            if (GenG.Keyboards.JustReleased(Keys.Space) || GenG.GamePads.JustReleased(Buttons.A))
+            if (GenG.Keyboards.JustReleased(Keys.Space) || GenG.GamePads.JustReleased(Buttons.A, 1))
             {
                 GenG.camera.RemoveTarget(warthog2);
-                GenG.camera.RemoveTarget(warthog3);
+                //GenG.camera.RemoveTarget(warthog3);
                 //GenG.camera.RemoveTarget(text);
                 //camera2.SetFollow(warthog2);
                 //GenG.ResetState();
-            }
-
-            if (GenG.Keyboards.IsPressed(Keys.Left) || GenG.GamePads.IsPressed(Buttons.LeftThumbstickLeft))
-            {
-                warthog2.velocity.X = -200;
-                warthog2.Facing = Facing.Left;
-            }
-            else if (GenG.Keyboards.IsPressed(Keys.Right) || GenG.GamePads.IsPressed(Buttons.LeftThumbstickRight))
-            {
-                warthog2.velocity.X = 200;
-                warthog2.Facing = Facing.Right;
-            }
-            else
-                warthog2.velocity.X = 0;
-
-            if (GenG.Keyboards.IsPressed(Keys.Up) || GenG.GamePads.IsPressed(Buttons.LeftThumbstickUp))
-            {
-                warthog2.velocity.Y = -200;
-                warthog2.Facing = Facing.Up;
-            }
-            else if (GenG.Keyboards.IsPressed(Keys.Down) || GenG.GamePads.IsPressed(Buttons.LeftThumbstickDown))
-            {
-                warthog2.velocity.Y = 200;
-                warthog2.Facing = Facing.Down;
-            }
-            else
-                warthog2.velocity.Y = 0;
+            }*/
 
             /*if (warthog2.X < 0)
             {
@@ -177,7 +163,7 @@ namespace Genetic
             {
                 warthog2.Y = camera2.Viewport.Height - warthog2.Height;
                 warthog2.velocity.Y = 0;
-            }
+            }*/
 
             for (int i = 0; i < objects.Count; i++)
             {
@@ -191,7 +177,7 @@ namespace Genetic
             for (int i = 0; i < objects.Count; i++)
             {
                 (objects[i] as GenSprite).color = Color.Red;
-            }*/
+            }
 
             //GenG.camera.Flash(0.5f, 2, Color.Red);
             //GenG.camera.Shake(10, 2, true);
