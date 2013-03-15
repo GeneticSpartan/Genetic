@@ -292,23 +292,208 @@ namespace Genetic
             {
                 if (objectOrGroup2 is GenObject)
                 {
-                    Vector2 intersectionDepth = GenU.GetIntersectDepth(((GenObject)objectOrGroup1).PositionRect, ((GenObject)objectOrGroup2).PositionRect);
-
-                    if (intersectionDepth != Vector2.Zero)
+                    CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2);
+                }
+                else if (objectOrGroup2 is GenGroup)
+                {
+                    for (int i = 0; i < ((GenGroup)objectOrGroup2).members.Count; i++)
+                        CollideObjects((GenObject)objectOrGroup1, (GenObject)((GenGroup)objectOrGroup2).members[i]);
+                }
+            }
+            else if (objectOrGroup1 is GenGroup)
+            {
+                for (int i = 0; i < ((GenGroup)objectOrGroup1).members.Count; i++)
+                {
+                    if (objectOrGroup2 is GenObject)
                     {
-                        if (Math.Abs(intersectionDepth.Y) < Math.Abs(intersectionDepth.X))
+                        CollideObjects((GenObject)((GenGroup)objectOrGroup1).members[i], (GenObject)objectOrGroup2);
+                    }
+                    else if (objectOrGroup2 is GenGroup)
+                    {
+                        for (int j = 0; j < ((GenGroup)objectOrGroup2).members.Count; j++)
+                            CollideObjects((GenObject)((GenGroup)objectOrGroup1).members[i], (GenObject)((GenGroup)objectOrGroup2).members[j]);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Applys collision detection and response between two objects that may overlap.
+        /// </summary>
+        /// <param name="object1">The first object to check for a collision.</param>
+        /// <param name="object2">The second object to check for a collision.</param>
+        public static void CollideObjects(GenObject object1, GenObject object2)
+        {
+            if (!object1.Equals(object2))
+            {
+                if (object1.immovable && object2.immovable)
+                    return;
+
+                Rectangle object1Rect = object1.PositionRect;
+                object1Rect.X += (int)(object1.velocity.X * GenG.deltaTime);
+                object1Rect.Y += (int)(object1.velocity.Y * GenG.deltaTime);
+
+                Rectangle object2Rect = object2.PositionRect;
+                object2Rect.X += (int)(object2.velocity.X * GenG.deltaTime);
+                object2Rect.Y += (int)(object2.velocity.Y * GenG.deltaTime);
+
+                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1Rect, object2Rect);
+
+                if (intersectionDepth != Vector2.Zero)
+                {
+                    Vector2 normal;
+                    Vector2 relativeVelocity = object2.velocity - object1.velocity;
+                    double relativeNormalVelocity;
+                    double distance;
+                    double remove;
+
+                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
+                    {
+                        normal = intersectionDepth.X > 0 ? new Vector2(-1, 0) : new Vector2(1, 0);
+                        relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
+                        distance = intersectionDepth.X < 0 ? object2.PositionRect.Left - object1.PositionRect.Right : object1.PositionRect.Left - object2.PositionRect.Right;
+                        remove = relativeNormalVelocity + distance / GenG.deltaTime;
+
+                        if (remove < 0)
                         {
-                            ((GenObject)objectOrGroup1).Y = ((GenObject)objectOrGroup1).Y + intersectionDepth.Y;
-                            ((GenObject)objectOrGroup1).velocity.Y = 0;
+                            double impulse = remove / (object1.mass + object2.mass);
+
+                            if (!object1.immovable)
+                                object1.velocity.X += (float)(impulse * normal.X * object1.mass);
+
+                            if (!object2.immovable)
+                                object2.velocity.X -= (float)(impulse * normal.X * object2.mass);
                         }
-                        else
+                    }
+                    else
+                    {
+                        normal = intersectionDepth.Y > 0 ? new Vector2(0, -1) : new Vector2(0, 1);
+                        relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
+                        distance = intersectionDepth.Y < 0 ? object2.PositionRect.Top - object1.PositionRect.Bottom : object1.PositionRect.Top - object2.PositionRect.Bottom;
+                        remove = relativeNormalVelocity + distance / GenG.deltaTime;
+
+                        if (remove < 0)
                         {
-                            ((GenObject)objectOrGroup1).X = ((GenObject)objectOrGroup1).X + intersectionDepth.X;
-                            ((GenObject)objectOrGroup1).velocity.X = 0;
+                            double impulse = remove / (object1.mass + object2.mass);
+
+                            if (!object1.immovable)
+                                object1.velocity.Y += (float)(impulse * normal.Y * object1.mass);
+
+                            if (!object2.immovable)
+                                object2.velocity.Y -= (float)(impulse * normal.Y * object2.mass);
                         }
                     }
                 }
             }
+
+            /* PHYSICS SYSTEM 2
+            if (!object1.Equals(object2))
+            {
+                if (object1.immovable && object2.immovable)
+                    return;
+
+                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1.PositionRect, object2.PositionRect);
+
+                if (intersectionDepth != Vector2.Zero)
+                {
+                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
+                    {
+                        if (!object1.immovable && !object2.immovable)
+                        {
+                            object1.X += intersectionDepth.X * 0.5f;
+                            object2.X -= intersectionDepth.X * 0.5f;
+
+                            float object1VelocityX = (float)Math.Sqrt((object2.velocity.X * object2.velocity.X * object2.mass) / object1.mass) * ((object2.velocity.X > 0) ? 1 : -1);
+                            float object2VelocityX = (float)Math.Sqrt((object1.velocity.X * object1.velocity.X * object1.mass) / object2.mass) * ((object1.velocity.X > 0) ? 1 : -1);
+                            float averageVelocityX = (object1VelocityX + object2VelocityX) * 0.5f;
+                            object1VelocityX -= averageVelocityX;
+                            object2VelocityX -= averageVelocityX;
+
+                            object1.velocity.X = averageVelocityX + object1VelocityX; // Multiply object1VelocityX by elasticity of the object later.
+                            object2.velocity.X = averageVelocityX + object2VelocityX; // Multiply object1VelocityX by elasticity of the object later.
+                        }
+                        else if (!object1.immovable)
+                        {
+                            object1.X += intersectionDepth.X;
+                            object1.velocity.X = object2.velocity.X; // Multiply by elasticity of the object later.
+                        }
+                        else
+                        {
+                            object2.X -= intersectionDepth.X;
+                            object2.velocity.X = object1.velocity.X; // Multiply by elasticity of the object later.
+                        }
+                    }
+                    else
+                    {
+                        if (!object1.immovable && !object2.immovable)
+                        {
+                            object1.Y += intersectionDepth.Y * 0.5f;
+                            object2.Y -= intersectionDepth.Y * 0.5f;
+
+                            float object1VelocityY = (float)Math.Sqrt((object2.velocity.Y * object2.velocity.Y * object2.mass) / object1.mass) * ((object2.velocity.Y > 0) ? 1 : -1);
+                            float object2VelocityY = (float)Math.Sqrt((object1.velocity.Y * object1.velocity.Y * object1.mass) / object2.mass) * ((object1.velocity.Y > 0) ? 1 : -1);
+                            float averageVelocityY = (object1VelocityY + object2VelocityY) * 0.5f;
+                            object1VelocityY -= averageVelocityY;
+                            object2VelocityY -= averageVelocityY;
+
+                            object1.velocity.Y = averageVelocityY + object1VelocityY; // Multiply object1VelocityX by elasticity of the object later.
+                            object2.velocity.Y = averageVelocityY + object2VelocityY; // Multiply object1VelocityX by elasticity of the object later.
+                        }
+                        else if (!object1.immovable)
+                        {
+                            object1.Y += intersectionDepth.Y;
+                            object1.velocity.Y = object2.velocity.Y; // Multiply by elasticity of the object later.
+                        }
+                        else
+                        {
+                            object2.Y -= intersectionDepth.Y;
+                            object2.velocity.Y = object1.velocity.Y; // Multiply by elasticity of the object later.
+                        }
+                    }
+                }
+            }
+
+            /* PHYSICS SYSTEM 1
+            if (!object1.Equals(object2))
+            {
+                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1.PositionRect, object2.PositionRect);
+
+                if (intersectionDepth != Vector2.Zero)
+                {
+                    float massDifference1 = object1.mass - object2.mass;
+                    float massDifference2 = object2.mass - object1.mass;
+                    float massSum = object1.mass + object2.mass;
+
+                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
+                    {
+                        float velocityX1 = object1.velocity.X;
+                        float velocityX2 = object2.velocity.X;
+
+                        if (!object1.immovable)
+                        {
+                            object1.X = object1.X + intersectionDepth.X;
+                            object1.velocity.X = (velocityX1 * massDifference1 + (2 * object2.mass * velocityX2)) / massSum;
+                        }
+
+                        if (!object2.immovable)
+                            object2.velocity.X = (velocityX2 * massDifference2 + (2 * object1.mass * velocityX1)) / massSum;
+                    }
+                    else
+                    {
+                        float velocityY1 = object1.velocity.Y;
+                        float velocityY2 = object2.velocity.Y;
+
+                        if (!object1.immovable)
+                        {
+                            object1.Y = object1.Y + intersectionDepth.Y;
+                            object1.velocity.Y = (velocityY1 * massDifference1 + (2 * object2.mass * velocityY2)) / massSum;
+                        }
+
+                        if (!object2.immovable)
+                            object2.velocity.Y = (velocityY2 * massDifference2 + (2 * object1.mass * velocityY1)) / massSum;
+                    }
+                }
+            }*/
         }
     }
 }

@@ -4,7 +4,7 @@
     {
         public GenTile()
         {
-            
+            immovable = true;
         }
     }
 }

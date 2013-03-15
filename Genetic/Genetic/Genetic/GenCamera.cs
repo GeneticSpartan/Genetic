@@ -115,17 +115,17 @@ namespace Genetic
         /// Controls the smoothness of the camera as it follows a target, a value from 0 to 1.
         /// A value of 1 will cause the camera to follow a target exactly, and any other value closer to 0 means smoother/slower camera movement.
         /// </summary>
-        protected float _followStrength = 1.0f;
+        protected float _followStrength = 1f;
 
         /// <summary>
         /// The minimum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float minZoom = 1.0f;
+        public float minZoom = 1f;
 
         /// <summary>
         /// The maximum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float maxZoom = 4.0f;
+        public float maxZoom = 4f;
 
         /// <summary>
         /// The x and y position offsets used to apply camera shake.

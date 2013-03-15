@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+
+using Microsoft.Xna.Framework;
 
 namespace Genetic
 {
@@ -20,6 +22,16 @@ namespace Genetic
         /// The bounding rectangle of the object relative to the position in the camera.
         /// </summary>
         //protected Rectangle _screenPositionRect;
+
+        /// <summary>
+        /// Determines if the object is affected by collisions.
+        /// </summary>
+        public bool immovable = false;
+
+        /// <summary>
+        /// The mass of the object used when calculating collision response against another object.
+        /// </summary>
+        public float mass = 1f;
 
         /// <summary>
         /// The x and y velocity of the object.
@@ -146,9 +158,19 @@ namespace Genetic
             else if (deceleration.X != 0)
             {
                 if (velocity.X > 0)
-                    velocity.X = MathHelper.Clamp(velocity.X - deceleration.X * GenG.timeScale * GenG.deltaTime, 0, maxVelocity.X);
-                if (velocity.X < 0)
-                    velocity.X = MathHelper.Clamp(velocity.X + deceleration.X * GenG.timeScale * GenG.deltaTime, -maxVelocity.X, 0);
+                {
+                    velocity.X -= deceleration.X * GenG.timeScale * GenG.deltaTime;
+
+                    if (velocity.X < 0)
+                        velocity.X = 0;
+                }
+                else if (velocity.X < 0)
+                {
+                    velocity.X += deceleration.X * GenG.timeScale * GenG.deltaTime;
+
+                    if (velocity.X > 0)
+                        velocity.X = 0;
+                }
             }
 
             if (acceleration.Y != 0)
@@ -156,9 +178,19 @@ namespace Genetic
             else if (deceleration.Y != 0)
             {
                 if (velocity.Y > 0)
-                    velocity.Y = MathHelper.Clamp(velocity.Y - deceleration.Y * GenG.timeScale * GenG.deltaTime, 0, maxVelocity.Y);
-                if (velocity.Y < 0)
-                    velocity.Y = MathHelper.Clamp(velocity.Y + deceleration.Y * GenG.timeScale * GenG.deltaTime, -maxVelocity.Y, 0);
+                {
+                    velocity.Y -= deceleration.Y * GenG.timeScale * GenG.deltaTime;
+
+                    if (velocity.Y < 0)
+                        velocity.Y = 0;
+                }
+                else if (velocity.Y < 0)
+                {
+                    velocity.Y += deceleration.Y * GenG.timeScale * GenG.deltaTime;
+
+                    if (velocity.Y > 0)
+                        velocity.Y = 0;
+                }
             }
 
             // Limit the object's velocity to the maximum velocity.
