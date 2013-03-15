@@ -122,10 +122,10 @@ namespace Genetic
 
             if (objectOrGroup is GenObject)
             {
-                leftTile = (int)Math.Floor((float)((GenObject)objectOrGroup).PositionRect.Left / tileWidth);
-                rightTile = (int)Math.Ceiling(((float)((GenObject)objectOrGroup).PositionRect.Right / tileWidth)) - 1;
-                topTile = (int)Math.Floor((float)((GenObject)objectOrGroup).PositionRect.Top / tileHeight);
-                bottomTile = (int)Math.Ceiling(((float)((GenObject)objectOrGroup).PositionRect.Bottom / tileHeight)) - 1;
+                leftTile = (int)Math.Floor((float)((GenObject)objectOrGroup).X / tileWidth);
+                rightTile = (int)Math.Ceiling(((float)(((GenObject)objectOrGroup).X + ((GenObject)objectOrGroup).Width) / tileWidth)) - 1;
+                topTile = (int)Math.Floor((float)((GenObject)objectOrGroup).Y / tileHeight);
+                bottomTile = (int)Math.Ceiling(((float)(((GenObject)objectOrGroup).Y + ((GenObject)objectOrGroup).Height) / tileHeight)) - 1;
 
                 for (int y = topTile; y <= bottomTile; ++y)
                 {
@@ -140,10 +140,10 @@ namespace Genetic
             {
                 for (int i = 0; i < ((GenGroup)objectOrGroup).members.Count; i++)
                 {
-                    leftTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Left / tileWidth);
-                    rightTile = (int)Math.Ceiling(((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Right / tileWidth)) - 1;
-                    topTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Top / tileHeight);
-                    bottomTile = (int)Math.Ceiling(((float)((GenObject)((GenGroup)objectOrGroup).members[i]).PositionRect.Bottom / tileHeight)) - 1;
+                    leftTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).X / tileWidth);
+                    rightTile = (int)Math.Ceiling(((float)(((GenObject)((GenGroup)objectOrGroup).members[i]).X + ((GenObject)((GenGroup)objectOrGroup).members[i]).Width) / tileWidth)) - 1;
+                    topTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).Y / tileHeight);
+                    bottomTile = (int)Math.Ceiling(((float)(((GenObject)((GenGroup)objectOrGroup).members[i]).Y + ((GenObject)((GenGroup)objectOrGroup).members[i]).Height) / tileHeight)) - 1;
 
                     for (int y = topTile; y <= bottomTile; ++y)
                     {

@@ -329,58 +329,69 @@ namespace Genetic
                 if (object1.immovable && object2.immovable)
                     return;
 
-                Rectangle object1Rect = object1.PositionRect;
-                object1Rect.X += (int)(object1.velocity.X * GenG.deltaTime);
-                object1Rect.Y += (int)(object1.velocity.Y * GenG.deltaTime);
+                float x1 = object1.X;
+                float y1 = object1.Y;
+                float width1 = object1.Width;
+                float height1 = object1.Height;
 
-                Rectangle object2Rect = object2.PositionRect;
-                object2Rect.X += (int)(object2.velocity.X * GenG.deltaTime);
-                object2Rect.Y += (int)(object2.velocity.Y * GenG.deltaTime);
+                float x2 = object2.X;
+                float y2 = object2.Y;
+                float width2 = object2.Width;
+                float height2 = object2.Height;
 
-                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1Rect, object2Rect);
-
-                if (intersectionDepth != Vector2.Zero)
+                for (int i = 0; i < 1; i++)
                 {
-                    Vector2 normal;
-                    Vector2 relativeVelocity = object2.velocity - object1.velocity;
-                    double relativeNormalVelocity;
-                    double distance;
-                    double remove;
+                    x1 += object1.velocity.X * GenG.deltaTime;
+                    y1 += object1.velocity.Y * GenG.deltaTime;
 
-                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
+                    x2 += object2.velocity.X * GenG.deltaTime;
+                    y2 += object2.velocity.Y * GenG.deltaTime;
+
+                    Vector2 intersectionDepth = GenU.GetIntersectDepth(x1, y1, width1, height1, x2, y2, width2, height2);
+
+                    if (intersectionDepth != Vector2.Zero)
                     {
-                        normal = intersectionDepth.X > 0 ? new Vector2(-1, 0) : new Vector2(1, 0);
-                        relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
-                        distance = intersectionDepth.X < 0 ? object2.PositionRect.Left - object1.PositionRect.Right : object1.PositionRect.Left - object2.PositionRect.Right;
-                        remove = relativeNormalVelocity + distance / GenG.deltaTime;
+                        Vector2 normal;
+                        Vector2 relativeVelocity = object2.velocity - object1.velocity;
+                        float relativeNormalVelocity;
+                        float distance;
+                        float remove;
 
-                        if (remove < 0)
+                        if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
                         {
-                            double impulse = remove / (object1.mass + object2.mass);
+                            normal = intersectionDepth.X > 0 ? new Vector2(-1, 0) : new Vector2(1, 0);
+                            relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
+                            distance = intersectionDepth.X < 0 ? object2.X - (object1.X + object1.Width) : object1.X - (object2.X + object2.Width);
+                            remove = relativeNormalVelocity + distance / GenG.deltaTime;
 
-                            if (!object1.immovable)
-                                object1.velocity.X += (float)(impulse * normal.X * object1.mass);
+                            if (remove < 0)
+                            {
+                                float impulse = remove / (object1.mass + object2.mass);
 
-                            if (!object2.immovable)
-                                object2.velocity.X -= (float)(impulse * normal.X * object2.mass);
+                                if (!object1.immovable)
+                                    object1.velocity.X += (float)(impulse * normal.X * object2.mass);
+
+                                if (!object2.immovable)
+                                    object2.velocity.X -= (float)(impulse * normal.X * object1.mass);
+                            }
                         }
-                    }
-                    else
-                    {
-                        normal = intersectionDepth.Y > 0 ? new Vector2(0, -1) : new Vector2(0, 1);
-                        relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
-                        distance = intersectionDepth.Y < 0 ? object2.PositionRect.Top - object1.PositionRect.Bottom : object1.PositionRect.Top - object2.PositionRect.Bottom;
-                        remove = relativeNormalVelocity + distance / GenG.deltaTime;
-
-                        if (remove < 0)
+                        else
                         {
-                            double impulse = remove / (object1.mass + object2.mass);
+                            normal = intersectionDepth.Y > 0 ? new Vector2(0, -1) : new Vector2(0, 1);
+                            relativeNormalVelocity = Vector2.Dot(relativeVelocity, normal);
+                            distance = intersectionDepth.Y < 0 ? object2.Y - (object1.Y + object1.Height) : object1.Y - (object2.Y + object2.Height);
+                            remove = relativeNormalVelocity + distance / GenG.deltaTime;
 
-                            if (!object1.immovable)
-                                object1.velocity.Y += (float)(impulse * normal.Y * object1.mass);
+                            if (remove < 0)
+                            {
+                                float impulse = remove / (object1.mass + object2.mass);
 
-                            if (!object2.immovable)
-                                object2.velocity.Y -= (float)(impulse * normal.Y * object2.mass);
+                                if (!object1.immovable)
+                                    object1.velocity.Y += (float)(impulse * normal.Y * object2.mass);
+
+                                if (!object2.immovable)
+                                    object2.velocity.Y -= (float)(impulse * normal.Y * object1.mass);
+                            }
                         }
                     }
                 }

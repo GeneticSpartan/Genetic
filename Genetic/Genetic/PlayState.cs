@@ -40,7 +40,7 @@ namespace Genetic
             map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 100, 100);
             map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 100, 100);
 
-            map.LoadMap("2,2,2,2,2\n1,0,0,0,0\n1,0,0,0,1\n1,0,0,0,1\n1,0,0,0,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 100, 100);
+            map.LoadMap("2,2,2,2,2\n1,0,0,0,1\n1,0,0,0,1\n1,0,0,0,1\n1,0,0,0,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1\n1,1,1,1,1\n1,0,1,0,1\n1,0,0,0,1\n1,0,1,0,1\n1,1,1,1,1", 100, 100);
             Add(map);
             
             GenG.bgColor = Color.CornflowerBlue;
@@ -54,20 +54,21 @@ namespace Genetic
             warthogs = new GenGroup();
             Add(warthogs);
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 2; i++)
             {
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < 20; j++)
                 {
-                    warthog = new GenSprite(i * 10 + 170, j * 10 + 100, null, 16, 16);
-                    warthog.MakeTexture(Color.DarkBlue * 0.5f, 16, 16);
-                    //warthog.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
-                    //warthog.Play("run");
+                    warthog = new GenSprite(i * 16 + 170, j * 18 + 100, "player", 16, 18);
+                    warthog.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
+                    warthog.Play("run");
                     //warthog.scrollFactor = 0.1f;
-                    warthog.mass = 10f;
+                    warthog.mass = 0.5f;
                     warthog.deceleration.X = 400;
+                    //warthog.MakeTexture(GenU.randomColor() * 0.5f, 16, 16);
                     warthog.acceleration.Y = 700;
+                    warthog.velocity.Y = j * 10;
                     warthog.maxVelocity.Y = 400;
-                    warthog.color = Color.Pink;
+                    warthog.color = Color.CornflowerBlue * 0.5f;
                     warthogs.Add(warthog);
                 }
             }
@@ -77,13 +78,14 @@ namespace Genetic
             warthog2 = new GenSprite(100, 100, "player", 16, 18);
             warthog2.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
             warthog2.Play("run");
+            //warthog2.immovable = true;
             Add(warthog2);
 
             warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
             //warthog3.velocity.X = 20;
             warthog3.deceleration.X = 400;
             warthog3.deceleration.Y = 400;
-            warthog3.mass = 5f;
+            warthog3.mass = 2f;
             Add(warthog3);
 
             warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
@@ -123,7 +125,7 @@ namespace Genetic
             GenG.camera.followStyle = GenCamera.FollowStyle.LockOn;
             GenG.camera.FollowStrength = 0.05f;
             GenG.camera.AddTarget(warthog2);
-            GenG.camera.AddTarget(warthog3);
+            //GenG.camera.AddTarget(warthog3);
 
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(warthog2);
