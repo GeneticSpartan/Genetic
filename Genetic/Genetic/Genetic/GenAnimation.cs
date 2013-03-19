@@ -114,7 +114,7 @@ namespace Genetic
                 _frameRect.X = (_frameRect.Width + frameBuffer) * _currentFrame + frameBuffer;
             }
 
-            _timer += GenG.timeScale * GenG.deltaTime;
+            _timer += GenG.PhysicsTimeStep;
 
             // Adjust the current frame after each frame time has passed.
             if (_timer > _frameTime)

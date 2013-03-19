@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 
+using Microsoft.Xna.Framework;
+
+using Genetic.Geometry;
+
 namespace Genetic
 {
     public class GenTilemap : GenBasic
@@ -115,43 +119,41 @@ namespace Genetic
         /// <param name="objectOrGroup1">The object or group to check for collisions.</param>
         public void Collide(GenBasic objectOrGroup)
         {
-            int leftTile;
-            int rightTile;
-            int topTile;
-            int bottomTile;
-
             if (objectOrGroup is GenObject)
             {
-                leftTile = (int)Math.Floor((float)((GenObject)objectOrGroup).X / tileWidth);
-                rightTile = (int)Math.Ceiling(((float)(((GenObject)objectOrGroup).X + ((GenObject)objectOrGroup).Width) / tileWidth)) - 1;
-                topTile = (int)Math.Floor((float)((GenObject)objectOrGroup).Y / tileHeight);
-                bottomTile = (int)Math.Ceiling(((float)(((GenObject)objectOrGroup).Y + ((GenObject)objectOrGroup).Height) / tileHeight)) - 1;
-
-                for (int y = topTile; y <= bottomTile; ++y)
-                {
-                    for (int x = leftTile; x <= rightTile; ++x)
-                    {
-                        if (x >= 0 && x < tiles.GetLength(0) && y >= 0 && y < tiles.GetLength(1))
-                            GenG.Collide(objectOrGroup, tiles[x, y]);
-                    }
-                }
+                CollideObject((GenObject)objectOrGroup);
             }
             else if (objectOrGroup is GenGroup)
             {
                 for (int i = 0; i < ((GenGroup)objectOrGroup).members.Count; i++)
                 {
-                    leftTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).X / tileWidth);
-                    rightTile = (int)Math.Ceiling(((float)(((GenObject)((GenGroup)objectOrGroup).members[i]).X + ((GenObject)((GenGroup)objectOrGroup).members[i]).Width) / tileWidth)) - 1;
-                    topTile = (int)Math.Floor((float)((GenObject)((GenGroup)objectOrGroup).members[i]).Y / tileHeight);
-                    bottomTile = (int)Math.Ceiling(((float)(((GenObject)((GenGroup)objectOrGroup).members[i]).Y + ((GenObject)((GenGroup)objectOrGroup).members[i]).Height) / tileHeight)) - 1;
+                    CollideObject((GenObject)((GenGroup)objectOrGroup).members[i]);
+                }
+            }
+        }
 
-                    for (int y = topTile; y <= bottomTile; ++y)
+        /// <summary>
+        /// Applys collision detection and response between an object and the tiles of the tilemap.
+        /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
+        /// </summary>
+        /// <param name="objectOrGroup1">The object to check for collisions.</param>
+        public void CollideObject(GenObject gameObject)
+        {
+            GenAABB moveBounds = GenU.GetMoveBounds(gameObject);
+
+            int leftTile = (int)Math.Floor(moveBounds.X / tileWidth);
+            int rightTile = (int)Math.Ceiling(((moveBounds.X + moveBounds.Width) / tileWidth)) - 1;
+            int topTile = (int)Math.Floor(moveBounds.Y / tileHeight);
+            int bottomTile = (int)Math.Ceiling(((moveBounds.Y + moveBounds.Height) / tileHeight)) - 1;
+
+            for (int y = topTile; y <= bottomTile; ++y)
+            {
+                for (int x = leftTile; x <= rightTile; ++x)
+                {
+                    if ((x >= 0) && (x < tiles.GetLength(0)) && (y >= 0) && (y < tiles.GetLength(1)))
                     {
-                        for (int x = leftTile; x <= rightTile; ++x)
-                        {
-                            if (x >= 0 && x < tiles.GetLength(0) && y >= 0 && y < tiles.GetLength(1))
-                                GenG.Collide(((GenGroup)objectOrGroup).members[i], tiles[x, y]);
-                        }
+                        if (tiles[x, y] != null)
+                            GenG.CollideObjects(gameObject, tiles[x, y], false);
                     }
                 }
             }

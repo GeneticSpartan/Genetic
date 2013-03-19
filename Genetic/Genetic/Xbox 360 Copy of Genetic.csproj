@@ -69,7 +69,9 @@
     <Compile Include="Genetic\GenControl.cs" />
     <Compile Include="Genetic\GenGamePad.cs" />
     <Compile Include="Genetic\GenKeyboard.cs" />
-    <Compile Include="Genetic\GenQuadTree.cs" />
+    <Compile Include="Genetic\GenQuadTree.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Genetic\GenSound.cs" />
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
@@ -83,6 +85,7 @@
     <Compile Include="Genetic\GenState.cs" />
     <Compile Include="Genetic\GenTimer.cs" />
     <Compile Include="Genetic\GenU.cs" />
+    <Compile Include="Genetic\Geometry\GenAABB.cs" />
     <Compile Include="MenuState.cs" />
     <Compile Include="PlayState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -2,6 +2,8 @@
 
 using Microsoft.Xna.Framework;
 
+using Genetic.Geometry;
+
 namespace Genetic
 {
     public enum Facing { Left, Right, Up, Down };
@@ -14,7 +16,13 @@ namespace Genetic
         protected Vector2 _position;
 
         /// <summary>
+        /// The bounding box of the object relative to the position.
+        /// </summary>
+        protected GenAABB _boundingBox;
+
+        /// <summary>
         /// The bounding rectangle of the object relative to the position.
+        /// Used during draw calls.
         /// </summary>
         protected Rectangle _positionRect;
 
@@ -69,6 +77,7 @@ namespace Genetic
             set
             {
                 _position.X = value;
+                _boundingBox.X = value;
                 _positionRect.X = (int)value;
             }
         }
@@ -83,12 +92,22 @@ namespace Genetic
             set
             {
                 _position.Y = value;
+                _boundingBox.Y = value;
                 _positionRect.Y = (int)value;
             }
         }
 
         /// <summary>
+        /// Gets the bounding box of the object relative to the position.
+        /// </summary>
+        public GenAABB BoundingBox
+        {
+            get { return _boundingBox; }
+        }
+
+        /// <summary>
         /// Gets the bounding rectangle of the object relative to the position.
+        /// Used for draw calls.
         /// </summary>
         public Rectangle PositionRect
         {
@@ -106,21 +125,29 @@ namespace Genetic
         /// <summary>
         /// Gets or sets the width the object.
         /// </summary>
-        public int Width
+        public float Width
         {
-            get { return _positionRect.Width; }
+            get { return _boundingBox.Width; }
 
-            set { _positionRect.Width = value; }
+            set
+            {
+                _boundingBox.Width = value;
+                _positionRect.Width = (int)value;
+            }
         }
 
         /// <summary>
         /// Gets or sets the height the object.
         /// </summary>
-        public int Height
+        public float Height
         {
-            get { return _positionRect.Height; }
+            get { return _boundingBox.Height; }
 
-            set { _positionRect.Height = value; }
+            set
+            {
+                _boundingBox.Height = value;
+                _positionRect.Height = (int)value;
+            }
         }
 
         /// <summary>
@@ -133,10 +160,11 @@ namespace Genetic
             set { _facing = value; }
         }
 
-        public GenObject(float x = 0, float y = 0, int width = 0, int height = 0)
+        public GenObject(float x = 0, float y = 0, float width = 0, float height = 0)
         {
             _position = new Vector2(x, y);
-            _positionRect = new Rectangle((int)_position.X, (int)_position.Y, width, height);
+            _boundingBox = new GenAABB(x, y, width, height);
+            _positionRect = new Rectangle((int)_position.X, (int)_position.Y, (int)width, (int)height);
             //_screenPositionRect = Rectangle.Empty;
 
             //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
@@ -154,19 +182,19 @@ namespace Genetic
         public override void Update()
         {
             if (acceleration.X != 0)
-                velocity.X += acceleration.X * GenG.timeScale * GenG.deltaTime;
+                velocity.X += acceleration.X * GenG.PhysicsTimeStep;
             else if (deceleration.X != 0)
             {
                 if (velocity.X > 0)
                 {
-                    velocity.X -= deceleration.X * GenG.timeScale * GenG.deltaTime;
+                    velocity.X -= deceleration.X * GenG.PhysicsTimeStep;
 
                     if (velocity.X < 0)
                         velocity.X = 0;
                 }
                 else if (velocity.X < 0)
                 {
-                    velocity.X += deceleration.X * GenG.timeScale * GenG.deltaTime;
+                    velocity.X += deceleration.X * GenG.PhysicsTimeStep;
 
                     if (velocity.X > 0)
                         velocity.X = 0;
@@ -174,19 +202,19 @@ namespace Genetic
             }
 
             if (acceleration.Y != 0)
-                velocity.Y += acceleration.Y * GenG.timeScale * GenG.deltaTime;
+                velocity.Y += acceleration.Y * GenG.PhysicsTimeStep;
             else if (deceleration.Y != 0)
             {
                 if (velocity.Y > 0)
                 {
-                    velocity.Y -= deceleration.Y * GenG.timeScale * GenG.deltaTime;
+                    velocity.Y -= deceleration.Y * GenG.PhysicsTimeStep;
 
                     if (velocity.Y < 0)
                         velocity.Y = 0;
                 }
                 else if (velocity.Y < 0)
                 {
-                    velocity.Y += deceleration.Y * GenG.timeScale * GenG.deltaTime;
+                    velocity.Y += deceleration.Y * GenG.PhysicsTimeStep;
 
                     if (velocity.Y > 0)
                         velocity.Y = 0;
@@ -201,8 +229,8 @@ namespace Genetic
                 velocity.Y = MathHelper.Clamp(velocity.Y, -maxVelocity.Y, maxVelocity.Y);
 
             // Move the object based on its velocity.
-            X += velocity.X * GenG.timeScale * GenG.deltaTime;
-            Y += velocity.Y * GenG.timeScale * GenG.deltaTime;
+            X += velocity.X * GenG.PhysicsTimeStep;
+            Y += velocity.Y * GenG.PhysicsTimeStep;
 
             //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
             //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);

@@ -146,7 +146,7 @@ namespace Genetic
         {
             base.Update();
 
-            Rotation += rotationSpeed * GenG.timeScale * GenG.deltaTime;
+            Rotation += rotationSpeed * GenG.PhysicsTimeStep;
 
             // Update the currently playing animation.
             if (_currentAnimation != null)

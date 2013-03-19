@@ -1,8 +1,9 @@
 ﻿using System;
 
 using Microsoft.Xna.Framework;
-
 using Microsoft.Xna.Framework.Graphics;
+
+using Genetic.Geometry;
 
 namespace Genetic
 {
@@ -59,45 +60,20 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the x and y intersection depths of two rectangles.
-        /// </summary>
-        /// <param name="rect1">The first rectangle to check.</param>
-        /// <param name="rect2">The second rectangle to check.</param>
-        /// <returns>A Vector2 containing the x and y intersection depths, or a Vector2.Zero if no intersection occurs.</returns>
-        public static Vector2 GetIntersectDepth(Rectangle rect1, Rectangle rect2)
-        {
-            return GetIntersectDepth(rect1.X, rect1.Y, rect1.Width, rect1.Height, rect2.X, rect2.Y, rect2.Width, rect2.Height);
-        }
-
-        /// <summary>
         /// Gets the x and y intersection depths of two bounding boxes.
         /// </summary>
-        /// <param name="x1">The x position of the top left corner of the first bounding box.</param>
-        /// <param name="y1">The y position of the top left corner of the first bounding box.</param>
-        /// <param name="width1">The width of the first bounding box.</param>
-        /// <param name="height1">The height of the first bounding box.</param>
-        /// <param name="x2">The x position of the top left corner of the second bounding box.</param>
-        /// <param name="y2">The y position of the top left corner of the second bounding box.</param>
-        /// <param name="width2">The width of the second bounding box.</param>
-        /// <param name="height2">The height of the second bounding box.</param>
+        /// <param name="box1">The first bounding box to compare.</param>
+        /// <param name="box2">The second bounding box to compare.</param>
         /// <returns>A Vector2 containing the x and y intersection depths, or a Vector2.Zero if no intersection occurs.</returns>
-        public static Vector2 GetIntersectDepth(float x1, float y1, float width1, float height1, float x2, float y2, float width2, float height2)
+        public static Vector2 GetIntersectDepthAABB(GenAABB box1, GenAABB box2)
         {
-            float halfWidth1 = width1 / 2.0f;
-            float halfWidth2 = width2 / 2.0f;
-            float centerX1 = x1 + halfWidth1;
-            float centerX2 = x2 + halfWidth2;
-            float distanceX = centerX1 - centerX2;
-            float minDistanceX = halfWidth1 + halfWidth2;
+            float distanceX = box1.MidpointX - box2.MidpointX;
+            float minDistanceX = box1.HalfWidth + box2.HalfWidth;
 
             if (Math.Abs(distanceX) < minDistanceX)
             {
-                float halfHeight1 = height1 / 2.0f;
-                float halfHeight2 = height2 / 2.0f;
-                float centerY1 = y1 + halfHeight1;
-                float centerY2 = y2 + halfHeight2;
-                float distanceY = centerY1 - centerY2;
-                float minDistanceY = halfHeight1 + halfHeight2;
+                float distanceY = box1.MidpointY - box2.MidpointY;
+                float minDistanceY = box1.HalfHeight + box2.HalfHeight;
 
                 if (Math.Abs(distanceY) < minDistanceY)
                 {
@@ -108,11 +84,45 @@ namespace Genetic
 
                     return intersectDepth;
                 }
-                else
-                    return Vector2.Zero;
             }
-            else
-                return Vector2.Zero;
+
+            return Vector2.Zero;
+        }
+
+        /// <summary>
+        /// Gets the positive or negative distances between the edges of two bounding boxes on the x-axis and y-axis.
+        /// </summary>
+        /// <param name="box1">The first bounding box to compare.</param>
+        /// <param name="box2">The second bounding box to compare.</param>
+        /// <returns>A Vector2 containing the positive or negative distances between the edges of two bounding boxes on the x-axis and y-axis.</returns>
+        public static Vector2 GetDistanceAABB(GenAABB box1, GenAABB box2)
+        {
+            float distanceX = Math.Abs(box1.MidpointX - box2.MidpointX) - (box1.HalfWidth + box2.HalfWidth);
+            float distanceY = Math.Abs(box1.MidpointY - box2.MidpointY) - (box1.HalfHeight + box2.HalfHeight);
+
+            return new Vector2(distanceX, distanceY);
+        }
+
+        /// <summary>
+        /// Gets a bounding box containing the object at its current and predicted positions relative to its velocity.
+        /// </summary>
+        /// <param name="gameObject">The object to check.</param>
+        /// <returns>A bounding box containing the object at its current and predicted positions relative to its velocity.</returns>
+        public static GenAABB GetMoveBounds(GenObject gameObject)
+        {
+            float right = gameObject.X + gameObject.Width;
+            float bottom = gameObject.Y + gameObject.Height;
+
+            // Get the x and y distances that the object will move relative to its velocity.
+            float distanceX = gameObject.velocity.X * GenG.PhysicsTimeStep;
+            float distanceY = gameObject.velocity.Y * GenG.PhysicsTimeStep;
+
+            float minLeft = Math.Min(gameObject.X, gameObject.X + distanceX);
+            float minTop = Math.Min(gameObject.Y, gameObject.Y + distanceY);
+            float maxRight = Math.Max(right, right + distanceX);
+            float maxBottom = Math.Max(bottom, bottom + distanceX);
+
+            return new GenAABB(minLeft, minTop, maxRight - minLeft, maxBottom - minTop);
         }
     }
 }

@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Genetic.Geometry;
+
 namespace Genetic
 {
-    public class GenQuadTree
+    public class GenQuadtree
     {
         /// <summary>
         /// The maximum amount of objects allowed in a node.
@@ -65,9 +67,9 @@ namespace Genetic
         /// <summary>
         /// An array of four leaf nodes that are created when a split occurs.
         /// </summary>
-        protected GenQuadTree[] _nodes;
+        protected GenQuadtree[] _nodes;
 
-        public GenQuadTree(int x, int y, int width, int height, int level = 0)
+        public GenQuadtree(int x, int y, int width, int height, int level = 0)
         {
             _level = level;
             _objects = new List<GenBasic>();
@@ -79,7 +81,7 @@ namespace Genetic
             _halfHeight = height / 2;
             _verticalMidpoint = x + _halfWidth;
             _horizontalMidpoint = y + _halfHeight;
-            _nodes = new GenQuadTree[4];
+            _nodes = new GenQuadtree[4];
         }
 
         /// <summary>
@@ -100,26 +102,26 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the index of the node that entirely contains the given bounding rectangle.
+        /// Gets the index of the node that entirely contains the given bounding box.
         /// </summary>
-        /// <param name="rect">The bounding rectangle used to search the nodes.</param>
-        /// <returns>The index of the node that entirely contains the given bounding rectangle.</returns>
-        private int GetIndex(Rectangle rect)
+        /// <param name="box">The bounding box used to search the nodes.</param>
+        /// <returns>The index of the node that entirely contains the given bounding box.</returns>
+        private int GetIndex(GenAABB box)
         {
-            if ((rect.Left > _left) && (rect.Right < _right) && (rect.Top > _top) && (rect.Bottom < _bottom))
+            if ((box.Left > _left) && (box.Right < _right) && (box.Top > _top) && (box.Bottom < _bottom))
             {
-                if (rect.Right < _verticalMidpoint)
+                if (box.Right < _verticalMidpoint)
                 {
-                    if (rect.Bottom < _horizontalMidpoint)
+                    if (box.Bottom < _horizontalMidpoint)
                         return 1;
-                    else if (rect.Top > _horizontalMidpoint)
+                    else if (box.Top > _horizontalMidpoint)
                         return 2;
                 }
-                else if (rect.X > _verticalMidpoint)
+                else if (box.Left > _verticalMidpoint)
                 {
-                    if (rect.Bottom < _horizontalMidpoint)
+                    if (box.Bottom < _horizontalMidpoint)
                         return 0;
-                    else if (rect.Top > _horizontalMidpoint)
+                    else if (box.Top > _horizontalMidpoint)
                         return 3;
                 }
             }
@@ -144,7 +146,7 @@ namespace Genetic
                 {
                     if (_nodes[0] != null)
                     {
-                        int index = GetIndex(((GenObject)objectOrGroup).PositionRect);
+                        int index = GetIndex(((GenObject)objectOrGroup).BoundingBox);
 
                         if (index != -1)
                         {
@@ -160,17 +162,17 @@ namespace Genetic
                     {
                         if (_nodes[0] == null)
                         {
-                            _nodes[0] = new GenQuadTree(_left + _halfWidth, _top, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[1] = new GenQuadTree(_left, _top, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[2] = new GenQuadTree(_left, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[3] = new GenQuadTree(_left + _halfWidth, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[0] = new GenQuadtree(_left + _halfWidth, _top, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[1] = new GenQuadtree(_left, _top, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[2] = new GenQuadtree(_left, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[3] = new GenQuadtree(_left + _halfWidth, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
                         }
 
                         int i = 0;
 
                         while (i < _objects.Count)
                         {
-                            int index = GetIndex(((GenObject)_objects[i]).PositionRect);
+                            int index = GetIndex(((GenObject)_objects[i]).BoundingBox);
 
                             if (index != -1)
                             {
@@ -188,62 +190,62 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Iterates through each node that entirely contains the given rectangle, and retrieves a list of objects from each node.
+        /// Iterates through each node that entirely contains the given bounding box, and retrieves a list of objects from each node.
         /// </summary>
         /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
-        /// <param name="rect">The bounding rectangle used to search for nodes.</param>
+        /// <param name="box">The bounding box used to search for nodes.</param>
         /// <returns>A list populated with accessible game objects.</returns>
-        public void Retrieve(List<GenBasic> returnObjects, Rectangle rect)
+        public void Retrieve(List<GenBasic> returnObjects, GenAABB box)
         {
             if (_nodes[0] != null)
             {
-                int index = GetIndex(rect);
+                int index = GetIndex(box);
 
                 if (index != -1)
-                    _nodes[index].Retrieve(returnObjects, rect);
+                    _nodes[index].Retrieve(returnObjects, box);
                 else
-                    RetrieveNodes(returnObjects, rect);
+                    RetrieveNodes(returnObjects, box);
             }
 
             returnObjects.AddRange(_objects);
         }
 
         /// <summary>
-        /// Iterates through remaining leaf nodes that intersect the given rectangle, and retrieves a list of objects from those nodes.
+        /// Iterates through remaining leaf nodes that intersect the given bounding box, and retrieves a list of objects from those nodes.
         /// </summary>
         /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
-        /// <param name="rect">The bounding rectangle used to search for nodes.</param>
+        /// <param name="box">The bounding box used to search for nodes.</param>
         /// <returns>A list populated with accessible game objects.</returns>
-        public void RetrieveNodes(List<GenBasic> returnObjects, Rectangle rect)
+        public void RetrieveNodes(List<GenBasic> returnObjects, GenAABB box)
         {
             if (_nodes[0] != null)
             {
-                if (rect.Left <= _verticalMidpoint)
+                if (box.Left <= _verticalMidpoint)
                 {
-                    if (rect.Top <= _horizontalMidpoint)
+                    if (box.Top <= _horizontalMidpoint)
                     {
-                        _nodes[1].RetrieveNodes(returnObjects, rect);
+                        _nodes[1].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[1]._objects);
                     }
 
-                    if (rect.Bottom >= _horizontalMidpoint)
+                    if (box.Bottom >= _horizontalMidpoint)
                     {
-                        _nodes[2].RetrieveNodes(returnObjects, rect);
+                        _nodes[2].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[2]._objects);
                     }
                 }
 
-                if (rect.Right >= _verticalMidpoint)
+                if (box.Right >= _verticalMidpoint)
                 {
-                    if (rect.Top <= _horizontalMidpoint)
+                    if (box.Top <= _horizontalMidpoint)
                     {
-                        _nodes[0].RetrieveNodes(returnObjects, rect);
+                        _nodes[0].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[0]._objects);
                     }
 
-                    if (rect.Bottom >= _horizontalMidpoint)
+                    if (box.Bottom >= _horizontalMidpoint)
                     {
-                        _nodes[3].RetrieveNodes(returnObjects, rect);
+                        _nodes[3].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[3]._objects);
                     }
                 }
@@ -262,7 +264,7 @@ namespace Genetic
         /// Draws debug lines that visually represent a node.
         /// </summary>
         /// <param name="_nodes">The array of leaf nodes to draw.</param>
-        protected void Draw(GenQuadTree[] _nodes)
+        protected void Draw(GenQuadtree[] _nodes)
         {
             for (int i = 0; i < 4; i++)
             {

@@ -76,11 +76,12 @@
     <Compile Include="Genetic\GenControl.cs" />
     <Compile Include="Genetic\GenGamePad.cs" />
     <Compile Include="Genetic\GenKeyboard.cs" />
-    <Compile Include="Genetic\GenQuadTree.cs" />
+    <Compile Include="Genetic\GenQuadtree.cs" />
     <Compile Include="Genetic\GenSound.cs" />
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
+    <Compile Include="Genetic\Geometry\GenAABB.cs" />
     <Compile Include="MenuState.cs" />
     <Compile Include="Genetic\GenBasic.cs" />
     <Compile Include="Genetic\GenCamera.cs" />

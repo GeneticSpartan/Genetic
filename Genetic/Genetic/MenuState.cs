@@ -31,7 +31,7 @@ namespace Genetic
 
             GenG.camera.Shake();
 
-            elapsed += GenG.deltaTime;
+            elapsed += GenG.PhysicsTimeStep;
 
             startGame.Rotation = (float)Math.Sin(4 * elapsed) * 30;
             startGame.Y = GenG.camera.CameraView.Height / 2 - 20 + (float)Math.Sin(2 * elapsed) * 20;
