@@ -10,7 +10,7 @@ namespace Genetic
         /// <summary>
         /// Dictates whether the sprite should be drawn.
         /// </summary>
-        public bool visible = true;
+        public bool Visible = true;
 
         /// <summary>
         /// The texture used when drawing the sprite.
@@ -30,7 +30,7 @@ namespace Genetic
         /// <summary>
         /// The color used to tint the sprite. White means no tint.
         /// </summary>
-        public Color color;
+        public Color Color;
 
         /// <summary>
         /// The rotation of the sprite in radians.
@@ -40,12 +40,12 @@ namespace Genetic
         /// <summary>
         /// The speed of the sprite's rotation in degrees per second.
         /// </summary>
-        public float rotationSpeed;
+        public float RotationSpeed;
 
         /// <summary>
         /// The origin, relative to the position, that the sprite texture will rotate around.
         /// </summary>
-        public Vector2 origin;
+        public Vector2 Origin;
 
         /// <summary>
         /// A list of animations used by the sprite.
@@ -66,7 +66,7 @@ namespace Genetic
         /// The factor by which the camera scroll values effect the sprite's position.
         /// A default value of 1.0 means that the sprite will move with the camera scroll values exactly.
         /// </summary>
-        public float scrollFactor = 1.0f;
+        public float ScrollFactor = 1.0f;
 
         /// <summary>
         /// Gets the texture used when drawing the sprite.
@@ -95,7 +95,7 @@ namespace Genetic
         /// <summary>
         /// Gets or sets the direction that the drawn sprite is facing.
         /// </summary>
-        public new Facing Facing
+        public new Direction Facing
         {
             get { return _facing; }
 
@@ -105,16 +105,16 @@ namespace Genetic
 
                 switch (_facing)
                 {
-                    case Facing.Left:
+                    case Direction.Left:
                         _spriteEffect = SpriteEffects.FlipHorizontally;
                         break;
-                    case Facing.Right:
+                    case Direction.Right:
                         _spriteEffect = SpriteEffects.None;
                         break;
-                    case Facing.Up:
+                    case Direction.Up:
                         _spriteEffect = SpriteEffects.FlipVertically;
                         break;
-                    case Facing.Down:
+                    case Direction.Down:
                         _spriteEffect = SpriteEffects.None;
                         break;
                 }
@@ -135,10 +135,10 @@ namespace Genetic
                 _texture = null;
 
             _sourceRect = new Rectangle(0, 0, width, height);
-            color = Color.White;
+            Color = Color.White;
             _rotation = 0f;
-            rotationSpeed = 0f;
-            origin = new Vector2(width / 2, height / 2);
+            RotationSpeed = 0f;
+            Origin = new Vector2(width / 2, height / 2);
             _animations = new Dictionary<string, GenAnimation>();
         }
 
@@ -146,7 +146,7 @@ namespace Genetic
         {
             base.Update();
 
-            Rotation += rotationSpeed * GenG.PhysicsTimeStep;
+            Rotation += RotationSpeed * GenG.PhysicsTimeStep;
 
             // Update the currently playing animation.
             if (_currentAnimation != null)
@@ -158,15 +158,15 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _drawPosition.X = _positionRect.X + origin.X - GenG.currentCamera.ScrollX + (GenG.currentCamera.ScrollX * scrollFactor);
-            _drawPosition.Y = _positionRect.Y + origin.Y - GenG.currentCamera.ScrollY + (GenG.currentCamera.ScrollY * scrollFactor);
+            _drawPosition.X = _positionRect.X + Origin.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
+            _drawPosition.Y = _positionRect.Y + Origin.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
 
-            if (visible && (_texture != null))
+            if (Visible && (_texture != null))
             {
                 if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, color, _rotation, origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, Color, _rotation, Origin, 1, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, color, _rotation, origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, Color, _rotation, Origin, 1, _spriteEffect, 0);
             }
 
             base.Draw();
@@ -251,8 +251,8 @@ namespace Genetic
 
         public void CenterOrigin()
         {
-            origin.X = _sourceRect.Width / 2;
-            origin.Y = _sourceRect.Height / 2;
+            Origin.X = _sourceRect.Width / 2;
+            Origin.Y = _sourceRect.Height / 2;
         }
 
         /// <summary>

@@ -11,7 +11,7 @@ namespace Genetic
         /// <summary>
         /// The style that a camera will use to follow a target.
         /// </summary>
-        public enum FollowStyle
+        public enum FollowType
         {
             /// <summary>
             /// The camera follows the target exactly.
@@ -94,7 +94,7 @@ namespace Genetic
         /// <summary>
         /// The style that the camera will use to follow a target.
         /// </summary>
-        public FollowStyle followStyle = FollowStyle.LockOn;
+        public FollowType CameraFollowType = FollowType.LockOn;
 
         /// <summary>
         /// A list of game objects that the camera will follow.
@@ -109,7 +109,7 @@ namespace Genetic
         /// <summary>
         /// The x and y distances from the follow target used in the leading follow style.
         /// </summary>
-        public Vector2 followLeading = new Vector2(50, 30);
+        public Vector2 FollowLeading = new Vector2(50, 30);
 
         /// <summary>
         /// Controls the smoothness of the camera as it follows a target, a value from 0 to 1.
@@ -120,12 +120,12 @@ namespace Genetic
         /// <summary>
         /// The minimum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float minZoom = 1f;
+        public float MinZoom = 1f;
 
         /// <summary>
         /// The maximum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float maxZoom = 4f;
+        public float MaxZoom = 4f;
 
         /// <summary>
         /// The x and y position offsets used to apply camera shake.
@@ -393,32 +393,32 @@ namespace Genetic
                     float distanceY = Math.Abs(followYMax - followYMin) * 2;
 
                     // Zoom the camera in or out, complying with the minimum and maximum zoom values, and attempt to keep all follow targets within the camera view.
-                    Zoom += (MathHelper.Clamp(MathHelper.Min(Viewport.Width / distanceX, Viewport.Height / distanceY), minZoom, maxZoom) - Zoom) * _followStrength;
+                    Zoom += (MathHelper.Clamp(MathHelper.Min(Viewport.Width / distanceX, Viewport.Height / distanceY), MinZoom, MaxZoom) - Zoom) * _followStrength;
                 }
                 else
                 {
-                    if ((followStyle == FollowStyle.LockOn) || (followStyle == FollowStyle.LockOnHorizontal))
+                    if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnHorizontal))
                         _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
 
-                    if ((followStyle == FollowStyle.LockOn) || (followStyle == FollowStyle.LockOnVertical))
+                    if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnVertical))
                         _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
 
-                    if ((followStyle == FollowStyle.Leading) || (followStyle == FollowStyle.LeadingHorizontal))
+                    if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingHorizontal))
                     {
-                        if (_followTargets[0].Facing == Facing.Left)
-                            _followPosition.X += (_followTargets[0].X - followLeading.X - _followPosition.X) * _followStrength;
-                        else if (_followTargets[0].Facing == Facing.Right)
-                            _followPosition.X += (_followTargets[0].X + followLeading.X - _followPosition.X) * _followStrength;
+                        if (_followTargets[0].Facing == GenObject.Direction.Left)
+                            _followPosition.X += (_followTargets[0].X - FollowLeading.X - _followPosition.X) * _followStrength;
+                        else if (_followTargets[0].Facing == GenObject.Direction.Right)
+                            _followPosition.X += (_followTargets[0].X + FollowLeading.X - _followPosition.X) * _followStrength;
                         else
                             _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
                     }
 
-                    if ((followStyle == FollowStyle.Leading) || (followStyle == FollowStyle.LeadingVertical))
+                    if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingVertical))
                     {
-                        if (_followTargets[0].Facing == Facing.Up)
-                            _followPosition.Y += (_followTargets[0].Y - followLeading.Y - _followPosition.Y) * _followStrength;
-                        else if (_followTargets[0].Facing == Facing.Down)
-                            _followPosition.Y += (_followTargets[0].Y + followLeading.Y - _followPosition.Y) * _followStrength;
+                        if (_followTargets[0].Facing == GenObject.Direction.Up)
+                            _followPosition.Y += (_followTargets[0].Y - FollowLeading.Y - _followPosition.Y) * _followStrength;
+                        else if (_followTargets[0].Facing == GenObject.Direction.Down)
+                            _followPosition.Y += (_followTargets[0].Y + FollowLeading.Y - _followPosition.Y) * _followStrength;
                         else
                             _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
                     }
@@ -428,15 +428,15 @@ namespace Genetic
                 ScrollY = -_followPosition.Y + _cameraView.Height / 2;
 
                 // Prevent the camera view from moving outside of the world bounds.
-                if (_scroll.X > -GenG.worldBounds.Left)
-                    ScrollX = -GenG.worldBounds.Left;
-                else if (_scroll.X < -GenG.worldBounds.Right + _cameraView.Width)
-                    ScrollX = -GenG.worldBounds.Right + _cameraView.Width;
+                if (_scroll.X > -GenG.WorldBounds.Left)
+                    ScrollX = -GenG.WorldBounds.Left;
+                else if (_scroll.X < -GenG.WorldBounds.Right + _cameraView.Width)
+                    ScrollX = -GenG.WorldBounds.Right + _cameraView.Width;
 
-                if (_scroll.Y > -GenG.worldBounds.Top)
-                    ScrollY = -GenG.worldBounds.Top;
-                else if (_scroll.Y < -GenG.worldBounds.Bottom + _cameraView.Height)
-                    ScrollY = -GenG.worldBounds.Bottom + _cameraView.Height;
+                if (_scroll.Y > -GenG.WorldBounds.Top)
+                    ScrollY = -GenG.WorldBounds.Top;
+                else if (_scroll.Y < -GenG.WorldBounds.Bottom + _cameraView.Height)
+                    ScrollY = -GenG.WorldBounds.Bottom + _cameraView.Height;
             }
 
             if (_shaking)
@@ -444,9 +444,9 @@ namespace Genetic
                 if (_shakeTimer < _shakeDuration)
                 {
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Horizontal))
-                        _shakeOffset.X = (((float)GenU.random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
+                        _shakeOffset.X = (((float)GenU.Random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Vertical))
-                        _shakeOffset.Y = (((float)GenU.random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
+                        _shakeOffset.Y = (((float)GenU.Random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
 
                     if (_shakeDecreasing)
                     {

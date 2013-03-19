@@ -8,7 +8,7 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\warthog.xnb</Output>
-      <Time>2013-02-22T04:01:12.1145862-08:00</Time>
+      <Time>2013-02-22T04:01:14-08:00</Time>
     </Item>
     <Item>
       <Source>beep.mp3</Source>
@@ -17,7 +17,7 @@
       <Processor>SoundEffectProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\beep.xnb</Output>
-      <Time>2013-02-25T05:00:15.1707937-08:00</Time>
+      <Time>2013-02-25T05:00:16-08:00</Time>
     </Item>
     <Item>
       <Source>Nokia.spritefont</Source>
@@ -26,7 +26,7 @@
       <Processor>FontDescriptionProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\Nokia.xnb</Output>
-      <Time>2013-02-25T16:56:46.9900567-08:00</Time>
+      <Time>2013-02-25T16:56:48-08:00</Time>
     </Item>
     <Item>
       <Source>player.png</Source>
@@ -35,7 +35,7 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\player.xnb</Output>
-      <Time>2013-03-02T01:54:37.3532286-08:00</Time>
+      <Time>2013-03-02T01:54:38-08:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>

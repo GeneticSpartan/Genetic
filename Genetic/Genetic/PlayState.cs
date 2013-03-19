@@ -11,114 +11,132 @@ namespace Genetic
     /// </summary>
     public class PlayState : GenState
     {
-        public GenTilemap map;
+        public GenTilemap Map;
 
-        public GenGroup boxes;
+        public GenGroup Boxes;
 
-        public GenSprite warthog;
-        public GenSprite player;
-        public GenSprite warthog3;
-        public GenSprite warthog4;
-        public GenSprite warthog5;
+        public GenSprite Warthog;
+        public GenSprite Player;
+        public GenSprite Warthog3;
+        public GenSprite Warthog4;
+        public GenSprite Warthog5;
 
-        public GenControl playerControl;
+        public GenControl PlayerControl;
 
         //public GenCamera camera2;
 
-        public GenSound beep;
+        public GenSound Beep;
 
-        public GenText text;
-
-        List<GenBasic> objects = new List<GenBasic>();
+        public GenText Text;
 
         public override void Create()
         {
             base.Create();
 
-            map = new GenTilemap();
+            Map = new GenTilemap();
 
-            map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 99, 99);
-            map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 99, 99);
+            Map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 16, 16);
+            Map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 16, 16);
 
-            map.LoadMap("2,2,2,2,2,0,0,0,0,0,1\n1,0,0,0,0,0,0,0,0,0,1\n1,0,0,0,0,0,0,0,0,0,1\n1,0,0,0,0,0,0,0,0,0,1\n1,0,0,0,0,0,0,0,0,0,1\n1,1,1,1,1,1,1,1,1,1,1", 100, 100);
-            Add(map);
+            Map.LoadMap(
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
+                , 16, 16);
+            Add(Map);
             
-            GenG.bgColor = Color.CornflowerBlue;
+            GenG.BackgroundColor = Color.CornflowerBlue;
 
             //camera2 = GenG.AddCamera(new GenCamera(GenG.Game.Width / 2, 0, GenG.Game.Width / 2, GenG.Game.Height, 1));
             //camera2.BgColor = Color.DarkGray;
 
-            GenG.camera.BgColor = Color.SlateBlue;
+            GenG.Camera.BgColor = Color.SlateBlue;
+            
+            Boxes = new GenGroup();
+            Add(Boxes);
 
-            boxes = new GenGroup();
-            Add(boxes);
-
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 5; i++)
             {
-                for (int j = 0; j < 3; j++)
+                for (int j = 0; j < 5; j++)
                 {
-                    warthog = new GenSprite(i * 25 + 150, j * 18 + 100, "warthog", 16, 16);
-                    warthog.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
-                    warthog.Play("run");
+                    Warthog = new GenSprite(i * 32 + 150, j * 16, "warthog", 16, 16);
+                    Warthog.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
+                    Warthog.Play("run");
                     //warthog.scrollFactor = 2f;
-                    warthog.mass = 0.5f;
-                    warthog.deceleration.X = 400;
+                    Warthog.Mass = 0.2f;
+                    Warthog.Deceleration.X = 400;
                     //warthog.MakeTexture(GenU.randomColor() * 0.5f, 8 + j * 2, 8 + j * 2);
                     //warthog.acceleration.X = -1000;
-                    warthog.acceleration.Y = 700;
-                    warthog.maxVelocity.Y = 400;
-                    warthog.color = Color.Red;
-                    boxes.Add(warthog);
+                    Warthog.Acceleration.Y = 700;
+                    Warthog.MaxVelocity.Y = 400;
+                    Warthog.Color = Color.Red;
+                    Boxes.Add(Warthog);
                 }
             }
 
-            player = new GenSprite(100, 100, "player", 16, 18);
-            player.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
-            player.Play("run");
-            player.mass = 1f;
-            Add(player);
+            Player = new GenSprite(100, 100, "player", 16, 18);
+            Player.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
+            Player.Play("run");
+            Player.Mass = 1f;
+            Add(Player);
 
-            warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
-            warthog3.deceleration.X = 400;
-            warthog3.deceleration.Y = 400;
-            warthog3.mass = 2f;
-            Add(warthog3);
+            Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
+            Warthog3.Deceleration.X = 400;
+            Warthog3.Deceleration.Y = 400;
+            Warthog3.Mass = 2f;
+            Add(Warthog3);
 
-            warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
-            warthog4.velocity.X = 500;
-            warthog4.mass = 0.5f;
-            Add(warthog4);
+            Warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
+            Warthog4.Velocity.X = 500;
+            Warthog4.Mass = 0.5f;
+            Add(Warthog4);
 
-            warthog5 = new GenSprite(500, 100, "warthog", 78, 49);
-            warthog5.mass = 1f;
-            Add(warthog5);
+            Warthog5 = new GenSprite(500, 100, "warthog", 78, 49);
+            Warthog5.Mass = 1f;
+            Add(Warthog5);
 
-            playerControl = new GenControl(player, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
-            playerControl.SetMovementSpeed(700, 0, 400, 400, 400, 0);
-            playerControl.gravity.Y = 700;
-            playerControl.jumpSpeed = 400;
-            Add(playerControl);
+            PlayerControl = new GenControl(Player, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
+            PlayerControl.SetMovementSpeed(400, 0, 200, 400, 400, 0);
+            PlayerControl.Gravity.Y = 700;
+            PlayerControl.JumpSpeed = 400;
+            Add(PlayerControl);
 
-            beep = new GenSound("beep", 1, true);
+            Beep = new GenSound("beep", 1, true);
             //beep.Play();
-            beep.SetFollow(player);
-            beep.Volume = 0.1f;
-            Add(beep);
+            Beep.SetFollow(Player);
+            Beep.Volume = 0.1f;
+            Add(Beep);
 
-            text = new GenText("Hello, World!", 100, 150, 100, 12);
-            text.FontSize = 12;
-            text.textAlign = GenText.TextAlign.RIGHT;
-            text.hasShadow = true;
-            text.shadowColor = Color.Black;
-            text.velocity.X = 100;
-            text.velocity.Y = 50;
-            Add(text);
+            Text = new GenText("Hello, World!", 100, 150, 100, 12);
+            Text.FontSize = 12;
+            Text.TextAlignment = GenText.TextAlign.RIGHT;
+            Text.HasShadow = true;
+            Text.ShadowColor = Color.Black;
+            Text.Velocity.X = 100;
+            Text.Velocity.Y = 50;
+            Add(Text);
 
-            GenG.timeScale = 1f;
+            GenG.TimeScale = 1f;
 
-            GenG.camera.followStyle = GenCamera.FollowStyle.LockOn;
-            GenG.camera.FollowStrength = 0.05f;
-            GenG.camera.AddTarget(player);
+            GenG.Camera.CameraFollowType = GenCamera.FollowType.LockOn;
+            GenG.Camera.FollowStrength = 0.05f;
+            GenG.Camera.AddTarget(Player);
             //GenG.camera.AddTarget(warthog3);
 
             //camera2.FollowStrength = 0.05f;
@@ -136,29 +154,40 @@ namespace Genetic
             //foreach (GenObject duck in warthogs.members)
             //    duck.acceleration.X = warthog2.X - duck.X;
 
-            GenG.Collide(player, warthog3);
-            GenG.Collide(player, text);
-            GenG.Collide(map, player);
-            GenG.Collide(map, boxes);
-            GenG.Collide(player, boxes);
+            GenG.Collide(Player, Warthog3);
+            GenG.Collide(Player, Text);
+            GenG.Collide(Map, Player);
+            GenG.Collide(Map, Boxes);
+            GenG.Collide(Player, Boxes);
             //GenG.Collide(warthog3, warthogs);
-            GenG.Collide(boxes, boxes);
-            GenG.Collide(warthog4, warthog5);
+            GenG.Collide(Boxes, Boxes);
+            GenG.Collide(Warthog4, Warthog5);
 
             //warthog2.rotationSpeed = warthog2.velocity.X;
 
             //text.FontSize += 0.1f;
 
             if (GenG.Keyboards.JustPressed(Keys.Tab) || GenG.GamePads.JustPressed(Buttons.X, 1))
-                GenG.isDebug = !GenG.isDebug;
+                GenG.IsDebug = !GenG.IsDebug;
 
             if (GenG.Keyboards.JustPressed(Keys.R) || GenG.GamePads.JustPressed(Buttons.Y, 1))
                 GenG.ResetState();
 
             if (GenG.Keyboards.IsPressed(Keys.Z) || GenG.GamePads.IsPressed(Buttons.RightTrigger))
-                GenG.timeScale = 0.2f;
+                GenG.TimeScale = 0.2f;
             else
-                GenG.timeScale = 1f;
+                GenG.TimeScale = 1f;
+
+            if (Player.IsTouching(GenObject.Direction.Down))
+                Player.Rotation = 0;
+            else if (Player.IsTouching(GenObject.Direction.Right))
+                Player.Rotation = 270;
+            else if (Player.IsTouching(GenObject.Direction.Left))
+                Player.Rotation = 90;
+            else if (Player.IsTouching(GenObject.Direction.Up))
+                Player.Rotation = 180;
+            else if (!Player.IsTouching(GenObject.Direction.Any))
+                Player.RotationSpeed = Player.Velocity.X * 4;
 
             /*
             if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.A, 1))

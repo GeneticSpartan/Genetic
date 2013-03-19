@@ -33,12 +33,12 @@ namespace Genetic
         /// <summary>
         /// Determines if the sound should fade as it moves out of the camera view.
         /// </summary>
-        public bool distanceFading = false;
+        public bool DistanceFading = false;
 
         /// <summary>
         /// The total distance, in pixels, that the sound must be from an edge of the camera to fade completely.
         /// </summary>
-        public float distanceFadingLength = 400f;
+        public float DistanceFadingLength = 400f;
 
         /// <summary>
         /// The x and y distances of the sound from the edges of the camera.
@@ -151,23 +151,23 @@ namespace Genetic
                 // Adjust the sound pan value according to the game object's position relative to the camera.
                 if (_follow != null && IsPlaying == true)
                 {
-                    _position.X = _follow.X + (_follow.Width / 2) - GenG.camera.CameraView.X;
-                    _position.Y = _follow.Y + (_follow.Height / 2) - GenG.camera.CameraView.Y;
+                    _position.X = _follow.X + (_follow.Width / 2) - GenG.Camera.CameraView.X;
+                    _position.Y = _follow.Y + (_follow.Height / 2) - GenG.Camera.CameraView.Y;
 
-                    Pan = (_position.X / GenG.camera.CameraView.Width) * 2 - 1;
+                    Pan = (_position.X / GenG.Camera.CameraView.Width) * 2 - 1;
 
                     // Calculate the distance fade values on both the x-axis and y-axis.
                     if (_position.X < 0)
                         _cameraDistance.X = _position.X * -1;
-                    else if (_position.X > GenG.camera.CameraView.Width)
-                        _cameraDistance.X = _position.X - GenG.camera.CameraView.Width;
+                    else if (_position.X > GenG.Camera.CameraView.Width)
+                        _cameraDistance.X = _position.X - GenG.Camera.CameraView.Width;
                     else
                         _cameraDistance.X = 0;
 
                     if (_position.Y < 0)
                         _cameraDistance.Y = _position.Y * -1;
-                    else if (_position.Y > GenG.camera.CameraView.Height)
-                        _cameraDistance.Y = _position.Y - GenG.camera.CameraView.Height;
+                    else if (_position.Y > GenG.Camera.CameraView.Height)
+                        _cameraDistance.Y = _position.Y - GenG.Camera.CameraView.Height;
                     else
                         _cameraDistance.Y = 0;
 
@@ -175,7 +175,7 @@ namespace Genetic
                     if ((_cameraDistance.X == 0) && (_cameraDistance.Y == 0))
                         _volumeAdjust = 1;
                     else
-                        _volumeAdjust = MathHelper.Clamp((distanceFadingLength - _cameraDistance.Length()) / distanceFadingLength, 0, 1);
+                        _volumeAdjust = MathHelper.Clamp((DistanceFadingLength - _cameraDistance.Length()) / DistanceFadingLength, 0, 1);
 
                     // Set the volume of the sound effect instance.
                     if ((_volumeAdjust < 1) || (_soundInstance.Volume != _volume))
@@ -242,7 +242,7 @@ namespace Genetic
         public void SetFollow(GenObject follow, bool distanceFading = false)
         {
             _follow = follow;
-            this.distanceFading = distanceFading;
+            this.DistanceFading = distanceFading;
         }
 
         /// <summary>

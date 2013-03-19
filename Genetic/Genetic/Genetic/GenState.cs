@@ -26,7 +26,7 @@ namespace Genetic
         {
             base.Update();
 
-            foreach (GenCamera camera in GenG.cameras)
+            foreach (GenCamera camera in GenG.Cameras)
                 camera.Update();
         }
 

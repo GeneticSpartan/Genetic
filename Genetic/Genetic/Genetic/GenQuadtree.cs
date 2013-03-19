@@ -137,7 +137,7 @@ namespace Genetic
         {
             if (objectOrGroup is GenGroup)
             {
-                foreach (GenBasic member in ((GenGroup)objectOrGroup).members)
+                foreach (GenBasic member in ((GenGroup)objectOrGroup).Members)
                     Insert(member);
             }
             else

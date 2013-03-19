@@ -14,22 +14,22 @@ namespace Genetic
         /// <summary>
         /// The object that is controlled.
         /// </summary>
-        public GenObject controlObject;
+        public GenObject ControlObject;
 
         /// <summary>
         /// How acceleration or velocity should be handled as the object moves.
         /// </summary>
-        public Movement movementType;
+        public Movement MovementType;
 
         /// <summary>
         /// How acceleration or velocity should be handled as the object stops.
         /// </summary>
-        public Stopping stoppingType;
+        public Stopping StoppingType;
 
         /// <summary>
         /// The index number of the player controlling the object, a value of 1 through 4.
         /// </summary>
-        public int player;
+        public int Player;
 
         /// <summary>
         /// The keyboard controls for movement direction and jumping.
@@ -45,23 +45,23 @@ namespace Genetic
         /// The speed of the object moving or accelerating horizontally.
         /// The speed determines the object's acceleration or velocity depending on the movement type.
         /// </summary>
-        public uint movementSpeedX = 0;
+        public uint MovementSpeedX = 0;
 
         /// <summary>
         /// The speed of the object moving or accelerating vertically.
         /// The speed determines the object's acceleration or velocity depending on the movement type.
         /// </summary>
-        public uint movementSpeedY = 0;
+        public uint MovementSpeedY = 0;
 
         /// <summary>
         /// The vertical speed of the object used during a jump.
         /// </summary>
-        public uint jumpSpeed = 0;
+        public uint JumpSpeed = 0;
 
         /// <summary>
         /// How much horizontal and vertical gravitational force affects the object.
         /// </summary>
-        public Vector2 gravity = Vector2.Zero;
+        public Vector2 Gravity = Vector2.Zero;
 
         /// <summary>
         /// Sets up a control scheme for moving a given object.
@@ -72,10 +72,10 @@ namespace Genetic
         /// <param name="player">The index number of the player controlling the object, a value of 1 through 4.</param>
         public GenControl(GenObject controlObject, Movement movementType, Stopping stoppingType, int player = 1)
         {
-            this.controlObject = controlObject;
-            this.movementType = movementType;
-            this.stoppingType = stoppingType;
-            this.player = player;
+            this.ControlObject = controlObject;
+            this.MovementType = movementType;
+            this.StoppingType = stoppingType;
+            this.Player = player;
 
             // Set the default movement direction keyboard controls.
             SetDirectionControls(Keys.Left, Keys.Right, Keys.Up, Keys.Down);
@@ -92,53 +92,65 @@ namespace Genetic
 
         public override void Update()
         {
-            controlObject.acceleration.X = 0;
-            controlObject.acceleration.Y = 0;
+            ControlObject.Acceleration.X = 0;
+            ControlObject.Acceleration.Y = 0;
 
-            if (movementType == Movement.Instant)
+            if (MovementType == Movement.Instant)
             {
-                if (movementSpeedX != 0)
+                if (MovementSpeedX != 0)
                 {
                     if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
-                        controlObject.velocity.X = -movementSpeedX;
+                    {
+                        ControlObject.Velocity.X = -MovementSpeedX;
+                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
+                    }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
-                        controlObject.velocity.X = movementSpeedX;
-                    else if (stoppingType == Stopping.Instant)
-                        controlObject.velocity.X = 0f;
+                    {
+                        ControlObject.Velocity.X = MovementSpeedX;
+                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+                    }
+                    else if (StoppingType == Stopping.Instant)
+                        ControlObject.Velocity.X = 0f;
                 }
 
-                if (movementSpeedY != 0)
+                if (MovementSpeedY != 0)
                 {
                     if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
-                        controlObject.velocity.Y = -movementSpeedY;
+                        ControlObject.Velocity.Y = -MovementSpeedY;
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
-                        controlObject.velocity.Y = movementSpeedY;
-                    else if (stoppingType == Stopping.Instant)
-                        controlObject.velocity.Y = 0f;
+                        ControlObject.Velocity.Y = MovementSpeedY;
+                    else if (StoppingType == Stopping.Instant)
+                        ControlObject.Velocity.Y = 0f;
                 }
             }
             else
             {
                 if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
-                    controlObject.acceleration.X = -movementSpeedX;
+                {
+                    ControlObject.Acceleration.X = -MovementSpeedX;
+                    ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
+                }
                 else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
-                    controlObject.acceleration.X = movementSpeedX;
+                {
+                    ControlObject.Acceleration.X = MovementSpeedX;
+                    ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+                }
                 else
-                    controlObject.acceleration.X = 0;
+                    ControlObject.Acceleration.X = 0;
 
                 if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
-                    controlObject.acceleration.Y = -movementSpeedY;
+                    ControlObject.Acceleration.Y = -MovementSpeedY;
                 else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
-                    controlObject.acceleration.Y = movementSpeedY;
+                    ControlObject.Acceleration.Y = MovementSpeedY;
                 else
-                    controlObject.acceleration.Y = 0;
+                    ControlObject.Acceleration.Y = 0;
             }
 
-            if (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4]))
-                controlObject.velocity.Y = -jumpSpeed;
+            if (ControlObject.IsTouching(GenObject.Direction.Down) && (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4])))
+                    ControlObject.Velocity.Y -= JumpSpeed;
             
-            controlObject.acceleration.X += gravity.X;
-            controlObject.acceleration.Y += gravity.Y;
+            ControlObject.Acceleration.X += Gravity.X;
+            ControlObject.Acceleration.Y += Gravity.Y;
         }
 
         /// <summary>
@@ -200,14 +212,14 @@ namespace Genetic
         /// <param name="yDeceleration">The deceleration of the object vertically.</param>
         public void SetMovementSpeed(uint xSpeed, uint ySpeed, uint xSpeedMax = 0, uint ySpeedMax = 0, uint xDeceleration = 0, uint yDeceleration = 0)
         {
-            movementSpeedX = xSpeed;
-            movementSpeedY = ySpeed;
+            MovementSpeedX = xSpeed;
+            MovementSpeedY = ySpeed;
 
-            controlObject.maxVelocity.X = xSpeedMax;
-            controlObject.maxVelocity.Y = ySpeedMax;
+            ControlObject.MaxVelocity.X = xSpeedMax;
+            ControlObject.MaxVelocity.Y = ySpeedMax;
 
-            controlObject.deceleration.X = xDeceleration;
-            controlObject.deceleration.Y = yDeceleration;
+            ControlObject.Deceleration.X = xDeceleration;
+            ControlObject.Deceleration.Y = yDeceleration;
         }
     }
 }

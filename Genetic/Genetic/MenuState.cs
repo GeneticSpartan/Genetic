@@ -14,31 +14,31 @@ namespace Genetic
         {
             base.Create();
 
-            GenG.camera.BgColor = Color.IndianRed;
+            GenG.Camera.BgColor = Color.IndianRed;
 
-            startGame = new GenText("Press Start", GenG.camera.CameraView.Width / 2, GenG.camera.CameraView.Height / 2, 0, 20);
-            startGame.textAlign = GenText.TextAlign.CENTER;
-            startGame.hasShadow = true;
-            startGame.shadowColor = Color.DarkRed;
+            startGame = new GenText("Press Start", GenG.Camera.CameraView.Width / 2, GenG.Camera.CameraView.Height / 2, 0, 20);
+            startGame.TextAlignment = GenText.TextAlign.CENTER;
+            startGame.HasShadow = true;
+            startGame.ShadowColor = Color.DarkRed;
             Add(startGame);
 
-            GenG.camera.Flash(1.2f, 3f, Color.White);
+            GenG.Camera.Flash(1.2f, 3f, Color.White);
         }
 
         public override void Update()
         {
             base.Update();
 
-            GenG.camera.Shake();
+            GenG.Camera.Shake();
 
             elapsed += GenG.PhysicsTimeStep;
 
             startGame.Rotation = (float)Math.Sin(4 * elapsed) * 30;
-            startGame.Y = GenG.camera.CameraView.Height / 2 - 20 + (float)Math.Sin(2 * elapsed) * 20;
+            startGame.Y = GenG.Camera.CameraView.Height / 2 - 20 + (float)Math.Sin(2 * elapsed) * 20;
             startGame.FontSize = 24 + (float)Math.Sin(8 * elapsed) * 2;
 
             if (GenG.Keyboards.IsPressed(Keys.Space) || GenG.GamePads.IsPressed(Buttons.Start, 1))
-                GenG.camera.Fade(1f, Color.Black, StartGame);
+                GenG.Camera.Fade(1f, Color.Black, StartGame);
         }
 
         public void StartGame()

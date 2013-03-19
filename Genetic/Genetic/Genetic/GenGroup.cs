@@ -7,11 +7,11 @@ namespace Genetic
         /// <summary>
         /// The GenBasic objects that have been added to the group.
         /// </summary>
-        public List<GenBasic> members;
+        public List<GenBasic> Members;
 
         public GenGroup()
         {
-            members = new List<GenBasic>();
+            Members = new List<GenBasic>();
         }
 
         /// <summary>
@@ -20,8 +20,11 @@ namespace Genetic
         /// </summary>
         public override void Update()
         {
-            foreach (GenBasic member in members)
+            foreach (GenBasic member in Members)
                 member.Update();
+
+            foreach (GenBasic member in Members)
+                member.PostUpdate();
         }
 
         /// <summary>
@@ -29,7 +32,7 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            foreach (GenBasic member in members)
+            foreach (GenBasic member in Members)
                 member.Draw();
         }
 
@@ -39,7 +42,7 @@ namespace Genetic
         /// <param name="basic"></param>
         public void Add(GenBasic basic)
         {
-            members.Add(basic);
+            Members.Add(basic);
         }
     }
 }

@@ -27,7 +27,7 @@ namespace Genetic
         /// <summary>
         /// The horizontal alignment of the text relative to the bounding rectangle.
         /// </summary>
-        public TextAlign textAlign = TextAlign.LEFT;
+        public TextAlign TextAlignment = TextAlign.LEFT;
 
         /// <summary>
         /// The origin of the text in relation to the origin of the game object.
@@ -43,18 +43,18 @@ namespace Genetic
         /// <summary>
         /// Determines whether the text shadow should be drawn.
         /// </summary>
-        public bool hasShadow = false;
+        public bool HasShadow = false;
 
         /// <summary>
         /// The color of the text shadow.
         /// </summary>
-        public Color shadowColor = Color.Black;
+        public Color ShadowColor = Color.Black;
 
         /// <summary>
         /// The position to draw the text shadow relative to the text position.
         /// Default is 2 pixels lower on the y-axis.
         /// </summary>
-        public Vector2 shadowPosition = new Vector2(0, 2);
+        public Vector2 ShadowPosition = new Vector2(0, 2);
 
         /// <summary>
         /// Gets or sets the font size of the text.
@@ -105,14 +105,14 @@ namespace Genetic
             base.Update();
 
             // Calculate the text origin relative to the game object origin to adjust for alignment settings.
-            if (textAlign == TextAlign.RIGHT)
-                _textOrigin.X = (origin.X - Width) * (1 / _fontScale) + _textMeasure.X;
-            else if (textAlign == TextAlign.CENTER)
-                _textOrigin.X = origin.X - ((Width / 2) - (_textMeasure.X / 2));
+            if (TextAlignment == TextAlign.RIGHT)
+                _textOrigin.X = (Origin.X - Width) * (1 / _fontScale) + _textMeasure.X;
+            else if (TextAlignment == TextAlign.CENTER)
+                _textOrigin.X = Origin.X - ((Width / 2) - (_textMeasure.X / 2));
             else
-                _textOrigin.X = origin.X * (1 / _fontScale);
+                _textOrigin.X = Origin.X * (1 / _fontScale);
 
-            _textOrigin.Y = origin.Y * (1 / _fontScale);
+            _textOrigin.Y = Origin.Y * (1 / _fontScale);
         }
 
         /// <summary>
@@ -122,13 +122,13 @@ namespace Genetic
         {
             base.Draw();
 
-            if (visible)
+            if (Visible)
             {
                 // Draw the text shadow.
-                if (hasShadow)
-                    GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + shadowPosition, shadowColor, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+                if (HasShadow)
+                    GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + ShadowPosition, ShadowColor, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
 
-                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, color, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, Color, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
             }
         }
     }

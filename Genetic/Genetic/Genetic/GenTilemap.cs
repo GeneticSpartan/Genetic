@@ -12,26 +12,26 @@ namespace Genetic
         /// <summary>
         /// A list of the various tile types in this tilemap, each with a unique string identifier.
         /// </summary>
-        public Dictionary<string, GenTile> tileTypes;
+        public Dictionary<string, GenTile> TileTypes;
 
         /// <summary>
         /// The width of each tile in the tilemap.
         /// </summary>
-        public int tileWidth;
+        public int TileWidth;
 
         /// <summary>
         /// The height of each tile in the tilemap.
         /// </summary>
-        public int tileHeight;
+        public int TileHeight;
 
         /// <summary>
         /// A 2-dimensional array of tiles that construct the tilemap.
         /// </summary>
-        public GenTile[,] tiles;
+        public GenTile[,] Tiles;
 
         public GenTilemap()
         {
-            tileTypes = new Dictionary<string, GenTile>();
+            TileTypes = new Dictionary<string, GenTile>();
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Genetic
         /// <returns>The tile object that was loaded.</returns>
         public GenTile LoadTile(string id, GenTile tile)
         {
-            return tileTypes[id] = tile;
+            return TileTypes[id] = tile;
         }
 
         /// <summary>
@@ -54,15 +54,15 @@ namespace Genetic
         /// <param name="tileHeight">The height of each tile.</param>
         public void LoadMap(string mapData, int tileWidth, int tileHeight)
         {
-            this.tileWidth = tileWidth;
-            this.tileHeight = tileHeight;
+            this.TileWidth = tileWidth;
+            this.TileHeight = tileHeight;
 
             string[] rows = mapData.Split(new string[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
             string[] row;
 
             int width = rows[0].Split(new char[] { ',' }).Length;
 
-            tiles = new GenTile[width, rows.Length];
+            Tiles = new GenTile[width, rows.Length];
 
             for (int y = 0; y < rows.Length; y++)
             {
@@ -75,24 +75,38 @@ namespace Genetic
                 {
                     if (row[x] != "0")
                     {
-                        tiles[x, y] = new GenTile() { X = x * tileWidth, Y = y * tileHeight, Width = tileWidth, Height = tileHeight };
-                        tiles[x, y].LoadTexture(tileTypes[row[x]].Texture);
+                        Tiles[x, y] = new GenTile() { X = x * tileWidth, Y = y * tileHeight, Width = tileWidth, Height = tileHeight };
+                        Tiles[x, y].LoadTexture(TileTypes[row[x]].Texture);
+
+                        // Check for a tile to the left of the current tile, and flag internal edges as non-collidable.
+                        if ((x > 0) && (Tiles[x - 1, y] != null))
+                        {
+                            Tiles[x, y].collidableEdges[0] = false;
+                            Tiles[x - 1, y].collidableEdges[1] = false;
+                        }
+
+                        // Check for a tile on top of the current tile, and flag internal edges as non-collidable.
+                        if ((y > 0) && (Tiles[x, y - 1] != null))
+                        {
+                            Tiles[x, y].collidableEdges[2] = false;
+                            Tiles[x, y - 1].collidableEdges[3] = false;
+                        }
                     }
                     else
-                        tiles[x, y] = null;
+                        Tiles[x, y] = null;
                 }
             }
         }
 
         public override void Update()
         {
-            for (int y = 0; y < tiles.GetLength(1); y++)
+            for (int y = 0; y < Tiles.GetLength(1); y++)
             {
-                for (int x = 0; x < tiles.GetLength(0); x++)
+                for (int x = 0; x < Tiles.GetLength(0); x++)
                 {
-                    if (tiles[x, y] != null)
+                    if (Tiles[x, y] != null)
                     {
-                        tiles[x, y].Update();
+                        Tiles[x, y].Update();
                     }
                 }
             }
@@ -100,14 +114,12 @@ namespace Genetic
 
         public override void Draw()
         {
-            for (int y = 0; y < tiles.GetLength(1); y++)
+            for (int y = 0; y < Tiles.GetLength(1); y++)
             {
-                for (int x = 0; x < tiles.GetLength(0); x++)
+                for (int x = 0; x < Tiles.GetLength(0); x++)
                 {
-                    if (tiles[x, y] != null)
-                    {
-                        tiles[x, y].Draw();
-                    }
+                    if (Tiles[x, y] != null)
+                        Tiles[x, y].Draw();
                 }
             }
         }
@@ -117,19 +129,27 @@ namespace Genetic
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
         /// <param name="objectOrGroup1">The object or group to check for collisions.</param>
-        public void Collide(GenBasic objectOrGroup)
+        /// <returns>True is a collision occurs, false if not.</returns>
+        public bool Collide(GenBasic objectOrGroup)
         {
             if (objectOrGroup is GenObject)
             {
-                CollideObject((GenObject)objectOrGroup);
+                return CollideObject((GenObject)objectOrGroup);
             }
             else if (objectOrGroup is GenGroup)
             {
-                for (int i = 0; i < ((GenGroup)objectOrGroup).members.Count; i++)
+                bool collided = false;
+
+                for (int i = 0; i < ((GenGroup)objectOrGroup).Members.Count; i++)
                 {
-                    CollideObject((GenObject)((GenGroup)objectOrGroup).members[i]);
+                    if (CollideObject((GenObject)((GenGroup)objectOrGroup).Members[i]) && !collided)
+                        collided = true;
                 }
+
+                return collided;
             }
+
+            return false;
         }
 
         /// <summary>
@@ -137,26 +157,34 @@ namespace Genetic
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
         /// <param name="objectOrGroup1">The object to check for collisions.</param>
-        public void CollideObject(GenObject gameObject)
+        /// <returns>True is a collision occurs, false if not.</returns>
+        public bool CollideObject(GenObject gameObject)
         {
             GenAABB moveBounds = GenU.GetMoveBounds(gameObject);
 
-            int leftTile = (int)Math.Floor(moveBounds.X / tileWidth);
-            int rightTile = (int)Math.Ceiling(((moveBounds.X + moveBounds.Width) / tileWidth)) - 1;
-            int topTile = (int)Math.Floor(moveBounds.Y / tileHeight);
-            int bottomTile = (int)Math.Ceiling(((moveBounds.Y + moveBounds.Height) / tileHeight)) - 1;
+            int leftTile = (int)Math.Floor(moveBounds.X / TileWidth);
+            int rightTile = (int)Math.Ceiling(((moveBounds.X + moveBounds.Width) / TileWidth) - 1);
+            int topTile = (int)Math.Floor(moveBounds.Y / TileHeight);
+            int bottomTile = (int)Math.Ceiling(((moveBounds.Y + moveBounds.Height) / TileHeight) - 1);
+
+            bool collided = false;
 
             for (int y = topTile; y <= bottomTile; ++y)
             {
                 for (int x = leftTile; x <= rightTile; ++x)
                 {
-                    if ((x >= 0) && (x < tiles.GetLength(0)) && (y >= 0) && (y < tiles.GetLength(1)))
+                    if ((x >= 0) && (x < Tiles.GetLength(0)) && (y >= 0) && (y < Tiles.GetLength(1)))
                     {
-                        if (tiles[x, y] != null)
-                            GenG.CollideObjects(gameObject, tiles[x, y], false);
+                        if ((Tiles[x, y] != null))
+                        {
+                            if (GenG.CollideObjects(gameObject, Tiles[x, y], false, Tiles[x, y].collidableEdges) && !collided)
+                                collided = true;
+                        }
                     }
                 }
             }
+
+            return collided;
         }
     }
 }

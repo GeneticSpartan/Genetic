@@ -12,11 +12,11 @@ namespace Genetic
         /// <summary>
         /// Used to generate random numbers.
         /// </summary>
-        public static Random random;
+        public static Random Random;
 
         public static void Initialize()
         {
-            random = new Random();
+            Random = new Random();
         }
 
         /// <summary>
@@ -24,9 +24,9 @@ namespace Genetic
         /// </summary>
         public static Color randomColor(int minValue = 0, int maxValue = 255)
         {
-            int r = random.Next(minValue, maxValue);
-            int g = random.Next(minValue, maxValue);
-            int b = random.Next(minValue, maxValue);
+            int r = Random.Next(minValue, maxValue);
+            int g = Random.Next(minValue, maxValue);
+            int b = Random.Next(minValue, maxValue);
 
             return new Color(r, g, b);
         }
@@ -114,8 +114,8 @@ namespace Genetic
             float bottom = gameObject.Y + gameObject.Height;
 
             // Get the x and y distances that the object will move relative to its velocity.
-            float distanceX = gameObject.velocity.X * GenG.PhysicsTimeStep;
-            float distanceY = gameObject.velocity.Y * GenG.PhysicsTimeStep;
+            float distanceX = gameObject.Velocity.X * GenG.PhysicsTimeStep;
+            float distanceY = gameObject.Velocity.Y * GenG.PhysicsTimeStep;
 
             float minLeft = Math.Min(gameObject.X, gameObject.X + distanceX);
             float minTop = Math.Min(gameObject.Y, gameObject.Y + distanceY);

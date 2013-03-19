@@ -13,12 +13,12 @@ namespace Genetic
         /// The sequence of frame numbers of the animation.
         /// A value of null will play all frames of the animation texture.
         /// </summary>
-        public int[] _frames;
+        protected int[] _frames;
 
         /// <summary>
         /// The amount of space, in pixels, between each of the animation frames.
         /// </summary>
-        public int frameBuffer;
+        public int FrameBuffer;
 
         /// <summary>
         /// The amount of seconds that each animation frame will last for.
@@ -36,12 +36,12 @@ namespace Genetic
         protected Rectangle _frameRect;
 
         /// <summary>
-        /// The total number of frames of teh animation.
+        /// The total number of frames of the animation.
         /// </summary>
         protected int _frameCount;
 
         /// <summary>
-        /// A counter used to keep track of wh
+        /// A counter used to keep track of how much time has passed since the last frame update.
         /// </summary>
         protected float _timer;
 
@@ -92,7 +92,7 @@ namespace Genetic
         {
             _sprite = sprite;
             _frameRect = new Rectangle(0, 0, frameWidth, frameHeight);
-            this.frameBuffer = frameBuffer;
+            this.FrameBuffer = frameBuffer;
             Frames = (frames == null) ? new int[0] : frames;
             Fps = fps;
         }
@@ -107,11 +107,11 @@ namespace Genetic
 
             if (_frames.Length != 0)
             {
-                _frameRect.X = (_frameRect.Width + frameBuffer) * _frames[_currentFrame] + frameBuffer;
+                _frameRect.X = (_frameRect.Width + FrameBuffer) * _frames[_currentFrame] + FrameBuffer;
             }
             else
             {
-                _frameRect.X = (_frameRect.Width + frameBuffer) * _currentFrame + frameBuffer;
+                _frameRect.X = (_frameRect.Width + FrameBuffer) * _currentFrame + FrameBuffer;
             }
 
             _timer += GenG.PhysicsTimeStep;
@@ -130,7 +130,7 @@ namespace Genetic
         protected void refreshFrameCount()
         {
             if (_frames.Length == 0)
-                _frameCount = _sprite.Texture.Width / ((_frameRect.Width + frameBuffer) + frameBuffer + frameBuffer);
+                _frameCount = _sprite.Texture.Width / ((_frameRect.Width + FrameBuffer) + FrameBuffer + FrameBuffer);
             else
                 _frameCount = _frames.Length;
         }

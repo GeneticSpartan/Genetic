@@ -6,10 +6,18 @@ using Genetic.Geometry;
 
 namespace Genetic
 {
-    public enum Facing { Left, Right, Up, Down };
-
     public class GenObject : GenBasic
     {
+        public enum Direction
+        {
+            None = 0,
+            Left = 0x0001,
+            Right = 0x0010,
+            Up = 0x0100,
+            Down = 0x1000,
+            Any = Direction.Left | Direction.Right | Direction.Up | Direction.Down
+        }
+
         /// <summary>
         /// The x and y position of the object.
         /// </summary>
@@ -34,38 +42,47 @@ namespace Genetic
         /// <summary>
         /// Determines if the object is affected by collisions.
         /// </summary>
-        public bool immovable = false;
+        public bool Immovable = false;
 
         /// <summary>
         /// The mass of the object used when calculating collision response against another object.
         /// </summary>
-        public float mass = 1f;
+        public float Mass = 1f;
 
         /// <summary>
         /// The x and y velocity of the object.
         /// </summary>
-        public Vector2 velocity;
+        public Vector2 Velocity;
 
         /// <summary>
         /// The x and y acceleration of the object.
         /// </summary>
-        public Vector2 acceleration = Vector2.Zero;
+        public Vector2 Acceleration = Vector2.Zero;
 
         /// <summary>
         /// The x and y deceleration of the object.
         /// </summary>
-        public Vector2 deceleration = Vector2.Zero;
+        public Vector2 Deceleration = Vector2.Zero;
 
         /// <summary>
         /// The maximum x and y velocities of the object.
         /// </summary>
-        public Vector2 maxVelocity;
+        public Vector2 MaxVelocity;
 
         /// <summary>
         /// The direction that the object is facing.
-        /// The object is facing right by default.
         /// </summary>
-        protected Facing _facing = Facing.Right;
+        protected Direction _facing = Direction.None;
+
+        /// <summary>
+        /// A bit field of flags giving the directions that the object is colliding in during the previous update.
+        /// </summary>
+        public Direction WasTouching = Direction.None;
+
+        /// <summary>
+        /// A bit field of flags giving the current directions that the object is colliding in.
+        /// </summary>
+        public Direction Touching = Direction.None;
 
         /// <summary>
         /// Gets or sets the x position the object.
@@ -153,7 +170,7 @@ namespace Genetic
         /// <summary>
         /// Gets or sets the direction that the object is facing.
         /// </summary>
-        public Facing Facing
+        public Direction Facing
         {
             get { return _facing; }
 
@@ -172,8 +189,8 @@ namespace Genetic
             //_screenPositionRect.Width = (int)(_positionRect.Width * GenG.camera.Zoom);
             //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
 
-            velocity = Vector2.Zero;
-            maxVelocity = Vector2.Zero;
+            Velocity = Vector2.Zero;
+            MaxVelocity = Vector2.Zero;
         }
 
         /// <summary>
@@ -181,56 +198,56 @@ namespace Genetic
         /// </summary>
         public override void Update()
         {
-            if (acceleration.X != 0)
-                velocity.X += acceleration.X * GenG.PhysicsTimeStep;
-            else if (deceleration.X != 0)
+            if (Acceleration.X != 0)
+                Velocity.X += Acceleration.X * GenG.PhysicsTimeStep;
+            else if (Deceleration.X != 0)
             {
-                if (velocity.X > 0)
+                if (Velocity.X > 0)
                 {
-                    velocity.X -= deceleration.X * GenG.PhysicsTimeStep;
+                    Velocity.X -= Deceleration.X * GenG.PhysicsTimeStep;
 
-                    if (velocity.X < 0)
-                        velocity.X = 0;
+                    if (Velocity.X < 0)
+                        Velocity.X = 0;
                 }
-                else if (velocity.X < 0)
+                else if (Velocity.X < 0)
                 {
-                    velocity.X += deceleration.X * GenG.PhysicsTimeStep;
+                    Velocity.X += Deceleration.X * GenG.PhysicsTimeStep;
 
-                    if (velocity.X > 0)
-                        velocity.X = 0;
+                    if (Velocity.X > 0)
+                        Velocity.X = 0;
                 }
             }
 
-            if (acceleration.Y != 0)
-                velocity.Y += acceleration.Y * GenG.PhysicsTimeStep;
-            else if (deceleration.Y != 0)
+            if (Acceleration.Y != 0)
+                Velocity.Y += Acceleration.Y * GenG.PhysicsTimeStep;
+            else if (Deceleration.Y != 0)
             {
-                if (velocity.Y > 0)
+                if (Velocity.Y > 0)
                 {
-                    velocity.Y -= deceleration.Y * GenG.PhysicsTimeStep;
+                    Velocity.Y -= Deceleration.Y * GenG.PhysicsTimeStep;
 
-                    if (velocity.Y < 0)
-                        velocity.Y = 0;
+                    if (Velocity.Y < 0)
+                        Velocity.Y = 0;
                 }
-                else if (velocity.Y < 0)
+                else if (Velocity.Y < 0)
                 {
-                    velocity.Y += deceleration.Y * GenG.PhysicsTimeStep;
+                    Velocity.Y += Deceleration.Y * GenG.PhysicsTimeStep;
 
-                    if (velocity.Y > 0)
-                        velocity.Y = 0;
+                    if (Velocity.Y > 0)
+                        Velocity.Y = 0;
                 }
             }
 
             // Limit the object's velocity to the maximum velocity.
-            if (maxVelocity.X != 0)
-                velocity.X = MathHelper.Clamp(velocity.X, -maxVelocity.X, maxVelocity.X);
+            if (MaxVelocity.X != 0)
+                Velocity.X = MathHelper.Clamp(Velocity.X, -MaxVelocity.X, MaxVelocity.X);
 
-            if (maxVelocity.Y != 0)
-                velocity.Y = MathHelper.Clamp(velocity.Y, -maxVelocity.Y, maxVelocity.Y);
+            if (MaxVelocity.Y != 0)
+                Velocity.Y = MathHelper.Clamp(Velocity.Y, -MaxVelocity.Y, MaxVelocity.Y);
 
             // Move the object based on its velocity.
-            X += velocity.X * GenG.PhysicsTimeStep;
-            Y += velocity.Y * GenG.PhysicsTimeStep;
+            X += Velocity.X * GenG.PhysicsTimeStep;
+            Y += Velocity.Y * GenG.PhysicsTimeStep;
 
             //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
             //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
@@ -238,16 +255,56 @@ namespace Genetic
             //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
         }
 
+        /// <summary>
+        /// Override this method to add additional post-update logic.
+        /// </summary>
+        public override void PostUpdate()
+        {
+            // Reset the bit fields for collision flags.
+            WasTouching = Touching;
+            Touching = Direction.None;
+        }
+
         public override void Draw()
         {
-            if (GenG.isDebug)
+            if (GenG.IsDebug)
             {
-                GenG.SpriteBatch.Draw(GenG.pixel, _positionRect, _positionRect, Color.Lime * 0.5f);
+                GenG.SpriteBatch.Draw(GenG.Pixel, _positionRect, _positionRect, Color.Lime * 0.5f);
                 //GenG.DrawLine(_positionRect.Left, _positionRect.Top, _positionRect.Right, _positionRect.Top, Color.Lime);
                 //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, Color.Lime);
                 //GenG.DrawLine(_positionRect.Left, _positionRect.Bottom - 1, _positionRect.Right, _positionRect.Bottom - 1, Color.Lime);
                 //GenG.DrawLine(_positionRect.Left + 1, _positionRect.Top, _positionRect.Left + 1, _positionRect.Bottom, Color.Lime);
             }
+        }
+
+        /// <summary>
+        /// Checks if the object is colliding in the given direction.
+        /// </summary>
+        /// <param name="direction">The direction to check for collision.</param>
+        /// <returns>True if there is a collision in the given direction, false if not.</returns>
+        public bool IsTouching(Direction direction)
+        {
+            return (Touching & direction) > Direction.None;
+        }
+
+        /// <summary>
+        /// Checks if the object was colliding in the given direction during the previous update.
+        /// </summary>
+        /// <param name="direction">The direction to check for collision.</param>
+        /// <returns>True if there was a collision in the given direction, false if not.</returns>
+        public bool WasTouched(Direction direction)
+        {
+            return (WasTouching & direction) > Direction.None;
+        }
+
+        /// <summary>
+        /// Checks if the object just collided in the given direction.
+        /// </summary>
+        /// <param name="direction">The direction to check for collision.</param>
+        /// <returns>True if there is a collision in the given direction, false if not.</returns>
+        public bool JustTouched(Direction direction)
+        {
+            return (((WasTouching & direction) == Direction.None) && ((Touching & direction) > Direction.None));
         }
     }
 }

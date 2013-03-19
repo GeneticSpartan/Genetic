@@ -16,6 +16,14 @@
         }
 
         /// <summary>
+        /// Override this method to add post-update logic.
+        /// </summary>
+        public virtual void PostUpdate()
+        {
+
+        }
+
+        /// <summary>
         /// Override this method to add draw logic.
         /// </summary>
         public virtual void Draw()

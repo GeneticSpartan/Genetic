@@ -15,7 +15,7 @@ namespace Genetic
         /// <summary>
         /// A 1 x 1 pixel texture used for drawing lines.
         /// </summary>
-        public static Texture2D pixel;
+        public static Texture2D Pixel;
 
         /// <summary>
         /// Gets a reference to the game object.
@@ -71,7 +71,7 @@ namespace Genetic
         /// <summary>
         /// The background color of the game window.
         /// </summary>
-        public static Color bgColor;
+        public static Color BackgroundColor;
 
         /// <summary>
         /// The amount of seconds that have elapsed between each update.
@@ -81,7 +81,7 @@ namespace Genetic
         /// <summary>
         /// The amount to scale the physics time factor by. A default value of 1.0 means there is no change.
         /// </summary>
-        public static float timeScale;
+        public static float TimeScale;
 
         /// <summary>
         /// The amount of seconds that have elapsed between each update relative to the time scale.
@@ -93,22 +93,22 @@ namespace Genetic
         /// Represents the bounding rectangle of the world space.
         /// Used to keep camera views within these bounds when following a target.
         /// </summary>
-        public static Rectangle worldBounds;
+        public static Rectangle WorldBounds;
 
         /// <summary>
         /// A list of all current cameras.
         /// </summary>
-        public static List<GenCamera> cameras;
+        public static List<GenCamera> Cameras;
 
         /// <summary>
         /// The initial camera created at the start of the game.
         /// </summary>
-        public static GenCamera camera;
+        public static GenCamera Camera;
 
         /// <summary>
         /// The camera that is currently being drawn to.
         /// </summary>
-        public static GenCamera currentCamera;
+        public static GenCamera CurrentCamera;
 
         /// <summary>
         /// The keyboard input used for checking key presses and releases.
@@ -123,12 +123,12 @@ namespace Genetic
         /// <summary>
         /// A quadtree data structure used to partition the screen space for faster object-to-object checking.
         /// </summary>
-        public static GenQuadtree quadtree;
+        public static GenQuadtree Quadtree;
 
         /// <summary>
         /// Determines whether debug mode is on or off.
         /// </summary>
-        public static bool isDebug = false;
+        public static bool IsDebug = false;
 
         /// <summary>
         /// Gets the amount of seconds that have elapsed between each update relative to the time scale.
@@ -157,21 +157,21 @@ namespace Genetic
 
         public static void Initialize(GenGame game, GraphicsDevice graphicsDevice, ContentManager content, SpriteBatch spriteBatch)
         {
-            pixel = new Texture2D(graphicsDevice, 1, 1);
-            pixel.SetData<Color>(new Color[] { Color.White });
+            Pixel = new Texture2D(graphicsDevice, 1, 1);
+            Pixel.SetData<Color>(new Color[] { Color.White });
 
             Game = game;
             GraphicsDevice = graphicsDevice;
             Content = content;
             SpriteBatch = spriteBatch;
             _defaultViewport = GraphicsDevice.Viewport;
-            bgColor = Color.CornflowerBlue;
-            timeScale = 1.0f;
-            worldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
-            cameras = new List<GenCamera>();
+            BackgroundColor = Color.CornflowerBlue;
+            TimeScale = 1.0f;
+            WorldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
+            Cameras = new List<GenCamera>();
             _keyboards = new GenKeyboard();
             _gamePads = new GenGamePad();
-            quadtree = new GenQuadtree(0, 0, Game.Width, Game.Height);
+            Quadtree = new GenQuadtree(0, 0, Game.Width, Game.Height);
         }
 
         /// <summary>
@@ -179,7 +179,7 @@ namespace Genetic
         /// </summary>
         public static void Update()
         {
-            _physicsTimeStep = timeScale * _timeStep;
+            _physicsTimeStep = TimeScale * _timeStep;
 
             // Update the keyboards.
             _keyboards.Update();
@@ -188,23 +188,23 @@ namespace Genetic
             _gamePads.Update();
 
             if (_keyboards.JustPressed(Keys.OemTilde))
-                isDebug = !isDebug;
+                IsDebug = !IsDebug;
 
             if (_requestedState != null)
             {
                 // Reset the cameras.
-                cameras.Clear();
-                camera.Reset();
-                AddCamera(camera);
+                Cameras.Clear();
+                Camera.Reset();
+                AddCamera(Camera);
 
                 // Reset the members of the previous state.
-                if (_state != null && _state.members.Count > 0)
+                if (_state != null && _state.Members.Count > 0)
                 {
-                    foreach (GenBasic member in _state.members)
+                    foreach (GenBasic member in _state.Members)
                         member.Reset();
                 }
 
-                quadtree.Clear();
+                Quadtree.Clear();
 
                 // Create a new state from the requested state.
                 _state = _requestedState;
@@ -220,31 +220,31 @@ namespace Genetic
         /// </summary>
         public static void Draw()
         {
-            for (int i = 0; i < cameras.Count; i++)
+            for (int i = 0; i < Cameras.Count; i++)
             {
-                currentCamera = cameras[i];
+                CurrentCamera = Cameras[i];
 
-                GraphicsDevice.Viewport = currentCamera.Viewport;
+                GraphicsDevice.Viewport = CurrentCamera.Viewport;
 
                 // Draw the camera background color.
-                if (currentCamera.BgColor != null)
+                if (CurrentCamera.BgColor != null)
                 {
                     SpriteBatch.Begin();
-                    currentCamera.DrawBg();
+                    CurrentCamera.DrawBg();
                     SpriteBatch.End();
                 }
 
-                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, currentCamera.Transform);
+                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
                 _state.Draw();
 
-                if (isDebug)
-                    quadtree.Draw();
+                if (IsDebug)
+                    Quadtree.Draw();
 
                 SpriteBatch.End();
 
                 // Draw the camera effects.
                 SpriteBatch.Begin();
-                currentCamera.DrawFx();
+                CurrentCamera.DrawFx();
                 SpriteBatch.End();
             }
         }
@@ -256,7 +256,7 @@ namespace Genetic
         /// <returns>The newly added camera.</returns>
         public static GenCamera AddCamera(GenCamera newCamera)
         {
-            cameras.Add(newCamera);
+            Cameras.Add(newCamera);
 
             return newCamera;
         }
@@ -297,7 +297,7 @@ namespace Genetic
             float angle = (float)Math.Atan2(point2.Y - point1.Y, point2.X - point1.X);
             float length = (point2 - point1).Length();
 
-            SpriteBatch.Draw(pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, 1), SpriteEffects.None, 0);
+            SpriteBatch.Draw(Pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, 1), SpriteEffects.None, 0);
         }
 
         /// <summary>
@@ -306,67 +306,75 @@ namespace Genetic
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
         /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        public static void Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool penetrate = true)
+        /// <returns>True is a collision occurs, false if not.</returns>
+        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool penetrate = true)
         {
-            quadtree.Clear();
+            Quadtree.Clear();
 
             if (objectOrGroup1 is GenTilemap)
             {
-                ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
-                return;
+                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
             }
             else if (objectOrGroup2 is GenTilemap)
             {
-                ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
-                return;
+                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
             }
 
             // Insert the objects into the quadtree for faster collision checks.
-            quadtree.Insert(objectOrGroup1);
+            Quadtree.Insert(objectOrGroup1);
 
             // If the second object or group is the same as the first, do not insert it into the quadtree twice.
             if (!objectOrGroup1.Equals(objectOrGroup2))
-                quadtree.Insert(objectOrGroup2);
+                Quadtree.Insert(objectOrGroup2);
 
             List<GenBasic> objects = new List<GenBasic>();
+
+            bool collided = false;
 
             if (objectOrGroup1 is GenObject)
             {
                 if (objectOrGroup2 is GenObject)
                 {
-                    CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
+                    return CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
                 }
                 else if (objectOrGroup2 is GenGroup)
                 {
                     // Retrieve the objects from the quadtree that the first object may collide with.
-                    GenG.quadtree.Retrieve(objects, ((GenObject)objectOrGroup1).BoundingBox);
+                    GenG.Quadtree.Retrieve(objects, ((GenObject)objectOrGroup1).BoundingBox);
 
                     for (int i = 0; i < objects.Count; i++)
-                        CollideObjects((GenObject)objectOrGroup1, (GenObject)objects[i], penetrate);
+                    {
+                        if (CollideObjects((GenObject)objectOrGroup1, (GenObject)objects[i], penetrate) && !collided)
+                            collided = true;
+                    }
                 }
             }
             else if (objectOrGroup1 is GenGroup)
             {
-                for (int i = 0; i < ((GenGroup)objectOrGroup1).members.Count; i++)
+                for (int i = 0; i < ((GenGroup)objectOrGroup1).Members.Count; i++)
                 {
                     if (objectOrGroup2 is GenObject)
                     {
-                        CollideObjects((GenObject)((GenGroup)objectOrGroup1).members[i], (GenObject)objectOrGroup2, penetrate);
+                        if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2, penetrate) && !collided)
+                            collided = true;
                     }
                     else if (objectOrGroup2 is GenGroup)
                     {
                         objects.Clear();
 
                         // Retrieve the objects from the quadtree that the current object may collide with.
-                        GenG.quadtree.Retrieve(objects, ((GenObject)((GenGroup)objectOrGroup1).members[i]).BoundingBox);
+                        GenG.Quadtree.Retrieve(objects, ((GenObject)((GenGroup)objectOrGroup1).Members[i]).BoundingBox);
 
                         for (int j = 0; j < objects.Count; j++)
-                            CollideObjects((GenObject)((GenGroup)objectOrGroup1).members[i], (GenObject)objects[j], penetrate);
-                        //for (int j = 0; j < ((GenGroup)objectOrGroup2).members.Count; j++)
-                        //    CollideObjects((GenObject)((GenGroup)objectOrGroup1).members[i], (GenObject)((GenGroup)objectOrGroup1).members[j], penetrate);
+                        {
+                            if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j], penetrate) && !collided)
+                                collided = true;
+                        }
                     }
                 }
             }
+
+            return collided;
         }
 
         /// <summary>
@@ -375,12 +383,13 @@ namespace Genetic
         /// <param name="object1">The first object to check for a collision.</param>
         /// <param name="object2">The second object to check for a collision.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        /// <returns>The contact normal represented as a unit vector, or a zero vector if no collision occurs.</returns>
-        public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true)
+        /// <param name="collidableEdges">An array of flags determining which edges the second object are collidable. [0] = left, [1] = right, [2] = top, and [3] = bottom.</param>
+        /// <returns>True is a collision occurs, false if not.</returns>
+        public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true, bool[] collidableEdges = null)
         {
             if (!object1.Equals(object2))
             {
-                if (object1.immovable && object2.immovable)
+                if (object1.Immovable && object2.Immovable)
                     return false;
 
                 GenAABB moveBounds1 = GenU.GetMoveBounds(object1);
@@ -388,59 +397,95 @@ namespace Genetic
 
                 if (moveBounds1.Intersects(moveBounds2))
                 {
+                    if (collidableEdges == null)
+                        collidableEdges = new bool[] { true, true, true, true };
+
                     Vector2 distances = GenU.GetDistanceAABB(object1.BoundingBox, object2.BoundingBox);
-                    Vector2 normal;
+                    Vector2 collisionNormal;
 
                     if (distances.X > distances.Y)
-                        normal = (object1.BoundingBox.MidpointX > object2.BoundingBox.MidpointX) ? new Vector2(-1, 0) : new Vector2(1, 0);
+                        collisionNormal = (object1.BoundingBox.MidpointX > object2.BoundingBox.MidpointX) ? new Vector2(-1, 0) : new Vector2(1, 0);
                     else
-                        normal = (object1.BoundingBox.MidpointY > object2.BoundingBox.MidpointY) ? new Vector2(0, -1) : new Vector2(0, 1);
+                        collisionNormal = (object1.BoundingBox.MidpointY > object2.BoundingBox.MidpointY) ? new Vector2(0, -1) : new Vector2(0, 1);
 
-                    float distance = Math.Max(distances.X, distances.Y);
-                    float separation = 0f;
-
-                    if (!penetrate)
-                        separation = Math.Max(distance, 0);
-
-                    float relativeNormalVelocity = Vector2.Dot(object2.velocity - object1.velocity, normal);
-                    float remove;
-
-                    if (penetrate)
-                        remove = relativeNormalVelocity + distance / (GenG._timeStep / GenG.timeScale);
-                    else
-                        remove = relativeNormalVelocity + separation / (GenG._timeStep / GenG.timeScale);
-
-                    if (remove < 0)
+                    if ((collisionNormal.X == 1 && collidableEdges[0]) ||
+                        (collisionNormal.X == -1 && collidableEdges[1]) ||
+                        (collisionNormal.Y == 1 && collidableEdges[2]) ||
+                        (collisionNormal.Y == -1 && collidableEdges[3]))
                     {
-                        float impulse = remove / (object1.mass + object2.mass);
+                        float distance = Math.Max(distances.X, distances.Y);
+                        float separation = 0f;
 
-                        if (!object1.immovable)
+                        if (!penetrate)
+                            separation = Math.Max(distance, 0);
+
+                        float relativeNormalVelocity = Vector2.Dot(object2.Velocity - object1.Velocity, collisionNormal);
+                        float remove;
+
+                        if (penetrate)
+                            remove = relativeNormalVelocity + distance / (GenG._timeStep / GenG.TimeScale);
+                        else
+                            remove = relativeNormalVelocity + separation / (GenG._timeStep / GenG.TimeScale);
+
+                        if (remove < 0)
                         {
-                            object1.velocity += impulse * normal * object2.mass;
+                            float impulse = remove / (object1.Mass + object2.Mass);
 
-                            if (!penetrate)
+                            if (!object1.Immovable)
                             {
-                                float penetration = Math.Min(distance, 0);
+                                object1.Velocity += impulse * collisionNormal * object2.Mass;
 
-                                object1.X += penetration * normal.X;
-                                object1.Y += penetration * normal.Y;
+                                if (!penetrate)
+                                {
+                                    float penetration = Math.Min(distance, 0);
+
+                                    object1.X += penetration * collisionNormal.X;
+                                    object1.Y += penetration * collisionNormal.Y;
+                                }
                             }
-                        }
 
-                        if (!object2.immovable)
-                        {
-                            object2.velocity -= impulse * normal * object1.mass;
-
-                            if (!penetrate)
+                            if (!object2.Immovable)
                             {
-                                float penetration = Math.Min(distance, 0);
+                                object2.Velocity -= impulse * collisionNormal * object1.Mass;
 
-                                object2.X -= penetration * normal.X;
-                                object2.Y -= penetration * normal.Y;
+                                if (!penetrate)
+                                {
+                                    float penetration = Math.Min(distance, 0);
+
+                                    object2.X -= penetration * collisionNormal.X;
+                                    object2.Y -= penetration * collisionNormal.Y;
+                                }
                             }
-                        }
 
-                        return true;
+                            if (collisionNormal.X != 0)
+                            {
+                                if (collisionNormal.X == 1)
+                                {
+                                    object1.Touching |= GenObject.Direction.Right;
+                                    object2.Touching |= GenObject.Direction.Left;
+                                }
+                                else
+                                {
+                                    object1.Touching |= GenObject.Direction.Left;
+                                    object2.Touching |= GenObject.Direction.Right;
+                                }
+                            }
+                            else
+                            {
+                                if (collisionNormal.Y == 1)
+                                {
+                                    object1.Touching |= GenObject.Direction.Down;
+                                    object2.Touching |= GenObject.Direction.Up;
+                                }
+                                else
+                                {
+                                    object1.Touching |= GenObject.Direction.Up;
+                                    object2.Touching |= GenObject.Direction.Down;
+                                }
+                            }
+
+                            return true;
+                        }
                     }
                 }
             }
