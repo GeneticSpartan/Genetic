@@ -140,12 +140,12 @@ namespace Genetic
         /// <summary>
         /// The current intensity of the camera shake.
         /// </summary>
-        protected float _shakeIntensity = 0;
+        protected float _shakeIntensity = 0f;
 
         /// <summary>
         /// The current duration of the camera shake.
         /// </summary>
-        protected float _shakeDuration = 0;
+        protected float _shakeDuration = 0f;
 
         /// <summary>
         /// Determines whether the camera shake intensity decreases over time.
@@ -155,7 +155,7 @@ namespace Genetic
         /// <summary>
         /// The amount of time since the camera shake started, in seconds.
         /// </summary>
-        protected float _shakeTimer = 0;
+        protected float _shakeTimer = 0f;
 
         /// <summary>
         /// The callback function that will invoke after the camera shake has finished.
@@ -175,7 +175,7 @@ namespace Genetic
         /// <summary>
         /// The current intensity, or starting opacity, of the camera flash.
         /// </summary>
-        protected float _flashIntensity = 0;
+        protected float _flashIntensity = 0f;
 
         /// <summary>
         /// The current color of the camera flash.
@@ -185,12 +185,12 @@ namespace Genetic
         /// <summary>
         /// The current duration of the camera flash.
         /// </summary>
-        protected float _flashDuration = 0;
+        protected float _flashDuration = 0f;
 
         /// <summary>
         /// The amount of time since the camera flash started, in seconds.
         /// </summary>
-        protected float _flashTimer = 0;
+        protected float _flashTimer = 0f;
 
         /// <summary>
         /// The callback function that will invoke after the camera flash has finished.
@@ -210,12 +210,12 @@ namespace Genetic
         /// <summary>
         /// The current duration of the camera fade.
         /// </summary>
-        protected float _fadeDuration = 0;
+        protected float _fadeDuration = 0f;
 
         /// <summary>
         /// The amount of time since the camera fade started, in seconds.
         /// </summary>
-        protected float _fadeTimer = 0;
+        protected float _fadeTimer = 0f;
 
         /// <summary>
         /// The callback function that will invoke after the camera fade has finished.
@@ -567,7 +567,7 @@ namespace Genetic
                 _shakeDecreasing = decreasing;
                 _shakeCallback = callback;
                 _shakeDirection = direction;
-                _shakeTimer = 0;
+                _shakeTimer = 0f;
 
                 _shaking = true;
             }
@@ -592,7 +592,7 @@ namespace Genetic
                 _flashDuration = duration;
                 _flashColor = color.Value;
                 _flashCallback = callback;
-                _flashTimer = 0;
+                _flashTimer = 0f;
 
                 _flashing = true;
             }
@@ -615,7 +615,7 @@ namespace Genetic
                 _fadeDuration = duration;
                 _fadeColor = color.Value;
                 _fadeCallback = callback;
-                _fadeTimer = 0;
+                _fadeTimer = 0f;
 
                 _fading = true;
             }

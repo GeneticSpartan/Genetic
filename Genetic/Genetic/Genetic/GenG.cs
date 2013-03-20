@@ -90,6 +90,11 @@ namespace Genetic
         private static float _physicsTimeStep;
 
         /// <summary>
+        /// The total amount of seconds that have elapsed relative to the time scale.
+        /// </summary>
+        private static float _elapsedTime;
+
+        /// <summary>
         /// Represents the bounding rectangle of the world space.
         /// Used to keep camera views within these bounds when following a target.
         /// </summary>
@@ -140,6 +145,14 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the total amount of seconds that have elapsed relative to the time scale.
+        /// </summary>
+        public static float ElapsedTime
+        {
+            get { return _elapsedTime; }
+        }
+
+        /// <summary>
         /// Gets the keyboard input used for checking key presses and releases.
         /// </summary>
         public static GenKeyboard Keyboards
@@ -180,6 +193,7 @@ namespace Genetic
         public static void Update()
         {
             _physicsTimeStep = TimeScale * _timeStep;
+            _elapsedTime += _physicsTimeStep;
 
             // Update the keyboards.
             _keyboards.Update();
@@ -423,9 +437,9 @@ namespace Genetic
                         float remove;
 
                         if (penetrate)
-                            remove = relativeNormalVelocity + distance / (GenG._timeStep / GenG.TimeScale);
+                            remove = relativeNormalVelocity + distance / _timeStep;
                         else
-                            remove = relativeNormalVelocity + separation / (GenG._timeStep / GenG.TimeScale);
+                            remove = relativeNormalVelocity + separation / _timeStep;
 
                         if (remove < 0)
                         {

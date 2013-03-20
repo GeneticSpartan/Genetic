@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -30,7 +31,13 @@ namespace Genetic
         /// <summary>
         /// The color used to tint the sprite. White means no tint.
         /// </summary>
-        public Color Color;
+        protected Color _color;
+
+        /// <summary>
+        /// The current color used to tint the sprite. White means no tint.
+        /// Useful for saving the sprite's color tint while using other color effects.
+        /// </summary>
+        protected Color _currentColor;
 
         /// <summary>
         /// The rotation of the sprite in radians.
@@ -46,6 +53,11 @@ namespace Genetic
         /// The origin, relative to the position, that the sprite texture will rotate around.
         /// </summary>
         public Vector2 Origin;
+
+        /// <summary>
+        /// The amount of pixels in the x-axis and y-axis to offset the sprite texture when drawing.
+        /// </summary>
+        public Vector2 DrawOffset = Vector2.Zero;
 
         /// <summary>
         /// A list of animations used by the sprite.
@@ -64,9 +76,44 @@ namespace Genetic
 
         /// <summary>
         /// The factor by which the camera scroll values effect the sprite's position.
-        /// A default value of 1.0 means that the sprite will move with the camera scroll values exactly.
+        /// A default value of 1 means that the sprite will move with the camera scroll values exactly.
         /// </summary>
-        public float ScrollFactor = 1.0f;
+        public float ScrollFactor = 1f;
+
+        /// <summary>
+        /// Determines if the sprite is currently flickering.
+        /// </summary>
+        protected bool _flickering = false;
+
+        /// <summary>
+        /// The speed of the sprite flicker.
+        /// </summary>
+        protected float _flickerIntensity = 0f;
+
+        /// <summary>
+        /// The current duration of the sprite flicker.
+        /// </summary>
+        protected float _flickerDuration = 0f;
+
+        /// <summary>
+        /// The amount of time since the sprite flicker started, in seconds.
+        /// </summary>
+        protected float _flickerTimer = 0f;
+
+        /// <summary>
+        /// The color to tint the sprite during a flicker.
+        /// </summary>
+        protected Color _flickerColor = Color.White;
+
+        /// <summary>
+        /// Determines if the sprite flicker will use a pulsing effect.
+        /// </summary>
+        protected bool _flickerPulsing = false;
+
+        /// <summary>
+        /// The callback function that will invoke after the sprite flicker has finished.
+        /// </summary>
+        protected Action _flickerCallback = null;
 
         /// <summary>
         /// Gets the texture used when drawing the sprite.
@@ -74,6 +121,20 @@ namespace Genetic
         public Texture2D Texture
         {
             get { return _texture; }
+        }
+
+        /// <summary>
+        /// Gets or sets the color used to tint the sprite. White means no tint.
+        /// </summary>
+        public Color Color
+        {
+            get { return _color; }
+
+            set
+            {
+                _color = value;
+                _currentColor = _color;
+            }
         }
 
         /// <summary>
@@ -121,6 +182,14 @@ namespace Genetic
             }
         }
 
+        /// <summary>
+        /// Returns true if the sprite is currently flickering, false if not.
+        /// </summary>
+        public bool Flickering
+        {
+            get { return _flickering; }
+        }
+
         /// <param name="x">The x position of the sprite.</param>
         /// <param name="y">The y position of the sprite.</param>
         /// <param name="textureFile">The sprite texture file to load.</param>
@@ -151,6 +220,27 @@ namespace Genetic
             // Update the currently playing animation.
             if (_currentAnimation != null)
                 _animations[_currentAnimation].Update();
+
+            if (_flickering)
+            {
+                if (_flickerTimer < _flickerDuration)
+                {
+                    if (_flickerPulsing)
+                        _color = _flickerColor * GenU.SineWave(0.5f, _flickerIntensity, 0.5f);
+                    else
+                        _color = _flickerColor * (float)Math.Round(GenU.SineWave(0.5f, _flickerIntensity, 0.5f));
+
+                    _flickerTimer += GenG.PhysicsTimeStep;
+                }
+                else
+                {
+                    _flickering = false;
+                    _color = _currentColor;
+
+                    if (_flickerCallback != null)
+                        _flickerCallback.Invoke();
+                }
+            }
         }
 
         /// <summary>
@@ -158,15 +248,15 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _drawPosition.X = _positionRect.X + Origin.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
-            _drawPosition.Y = _positionRect.Y + Origin.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+            _drawPosition.X = _positionRect.X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
+            _drawPosition.Y = _positionRect.Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
 
             if (Visible && (_texture != null))
             {
                 if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, Color, _rotation, Origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, 1, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, Color, _rotation, Origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, 1, _spriteEffect, 0);
             }
 
             base.Draw();
@@ -277,6 +367,32 @@ namespace Genetic
         {
             if (_animations.ContainsKey(name))
                 _currentAnimation = name;
+        }
+
+        /// <summary>
+        /// Give the sprite a flicker effect.
+        /// </summary>
+        /// <param name="intensity">The speed of the sprite flicker.</param>
+        /// <param name="pulsing">Determines if the sprite flicker will use a pulsing effect.</param>
+        /// <param name="duration">The duration of the sprite flicker, in seconds.</param>
+        /// <param name="color">The color to tint the sprite during the flicker. A value of null will use the sprite's current color.</param>
+        /// <param name="callback">The method that will be invoked after the sprite flicker has finished.</param>
+        public void Flicker(float intensity = 40f, float duration = 1f, Color? color = null, bool pulsing = false, Action callback = null)
+        {
+            color = color.HasValue ? color.Value : _color;
+
+            // Apply the flicker if the sprite is not already flickering.
+            if (!_flickering)
+            {
+                _flickerIntensity = intensity;
+                _flickerDuration = duration;
+                _flickerColor = color.Value;
+                _flickerPulsing = pulsing;
+                _flickerCallback = callback;
+                _flickerTimer = 0f;
+
+                _flickering = true;
+            }
         }
     }
 }

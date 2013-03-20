@@ -7,7 +7,6 @@ namespace Genetic
 {
     public class MenuState : GenState
     {
-        public float elapsed = 0.0f;
         public GenText startGame;
 
         public override void Create()
@@ -29,13 +28,12 @@ namespace Genetic
         {
             base.Update();
 
-            GenG.Camera.Shake();
+            //GenG.Camera.Shake();
 
-            elapsed += GenG.PhysicsTimeStep;
-
-            startGame.Rotation = (float)Math.Sin(4 * elapsed) * 30;
-            startGame.Y = GenG.Camera.CameraView.Height / 2 - 20 + (float)Math.Sin(2 * elapsed) * 20;
-            startGame.FontSize = 24 + (float)Math.Sin(8 * elapsed) * 2;
+            startGame.Rotation = GenU.SineWave(0, 4, 30);
+            startGame.X = GenU.SineWave(GenG.Camera.CameraView.Width / 2, 4, GenG.Camera.CameraView.Width / 2 - 200);
+            startGame.Y = GenU.SineWave(GenG.Camera.CameraView.Height / 2 - 20, 2, GenG.Camera.CameraView.Height / 2 - 100);
+            startGame.FontSize = GenU.SineWave(24, 8, 2);
 
             if (GenG.Keyboards.IsPressed(Keys.Space) || GenG.GamePads.IsPressed(Buttons.Start, 1))
                 GenG.Camera.Fade(1f, Color.Black, StartGame);

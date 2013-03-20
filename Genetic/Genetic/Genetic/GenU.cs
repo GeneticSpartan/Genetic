@@ -124,5 +124,18 @@ namespace Genetic
 
             return new GenAABB(minLeft, minTop, maxRight - minLeft, maxBottom - minTop);
         }
+
+        /// <summary>
+        /// Retrieves the current position of a sine wave relative to the total elapsed time.
+        /// Call this during each update to simulate a sine wave motion.
+        /// </summary>
+        /// <param name="start">The starting position that the wave will be relative to, usually the center point of the wave.</param>
+        /// <param name="rate">The rate at which the wave will fluctuate.</param>
+        /// <param name="intensity">The instensity or size of the wave.</param>
+        /// <returns>The current position of the wave relative to the total elapsed time.</returns>
+        public static float SineWave(float start, float rate, float intensity)
+        {
+            return start + (float)Math.Sin(rate * GenG.ElapsedTime) * intensity;
+        }
     }
 }

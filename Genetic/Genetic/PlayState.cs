@@ -44,9 +44,9 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
-                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
-                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
@@ -54,8 +54,8 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
-                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
-                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,0,1\n" +
+                "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
                 "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
                 , 16, 16);
@@ -79,21 +79,24 @@ namespace Genetic
                     Warthog.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
                     Warthog.Play("run");
                     //warthog.scrollFactor = 2f;
-                    Warthog.Mass = 0.2f;
+                    Warthog.Mass = 1f;
                     Warthog.Deceleration.X = 400;
                     //warthog.MakeTexture(GenU.randomColor() * 0.5f, 8 + j * 2, 8 + j * 2);
                     //warthog.acceleration.X = -1000;
                     Warthog.Acceleration.Y = 700;
                     Warthog.MaxVelocity.Y = 400;
-                    Warthog.Color = Color.Red;
+                    Warthog.Color = GenU.randomColor(100, 255);
                     Boxes.Add(Warthog);
                 }
             }
 
-            Player = new GenSprite(100, 100, "player", 16, 18);
+            Player = new GenSprite(100, 100, "player", 16, 16);
             Player.AddAnimation("run", 16, 18, new int[] { 0, 1, 0, 2 }, 6, 1);
             Player.Play("run");
             Player.Mass = 1f;
+            // Adjust the origin to keep the player's feet from visually penetrating a wall when rotated.
+            Player.Origin.Y += 2;
+            Player.DrawOffset.Y -= 2;
             Add(Player);
 
             Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
@@ -112,7 +115,7 @@ namespace Genetic
             Add(Warthog5);
 
             PlayerControl = new GenControl(Player, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
-            PlayerControl.SetMovementSpeed(400, 0, 200, 400, 400, 0);
+            PlayerControl.SetMovementSpeed(800, 0, 250, 400, 700, 0);
             PlayerControl.Gravity.Y = 700;
             PlayerControl.JumpSpeed = 400;
             Add(PlayerControl);
@@ -145,6 +148,8 @@ namespace Genetic
             //GenG.worldBounds = new Rectangle(0, 0, GenG.Game.Width, GenG.Game.Height);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
+
+            Player.Flicker(40f, 1f, Color.Black * 0.5f, true);
         }
 
         public override void Update()
@@ -173,8 +178,10 @@ namespace Genetic
             if (GenG.Keyboards.JustPressed(Keys.R) || GenG.GamePads.JustPressed(Buttons.Y, 1))
                 GenG.ResetState();
 
-            if (GenG.Keyboards.IsPressed(Keys.Z) || GenG.GamePads.IsPressed(Buttons.RightTrigger))
+            if (GenG.Keyboards.IsPressed(Keys.Z) || GenG.GamePads.IsPressed(Buttons.LeftTrigger))
                 GenG.TimeScale = 0.2f;
+            else if (GenG.Keyboards.IsPressed(Keys.X) || GenG.GamePads.IsPressed(Buttons.RightTrigger))
+                GenG.TimeScale = 2f;
             else
                 GenG.TimeScale = 1f;
 
@@ -247,8 +254,6 @@ namespace Genetic
 
             //camera2.Shake(5, 1, true);
             //camera2.Rotation -= 0.1f;
-
-            
         }
 
         public void FadeOut()
