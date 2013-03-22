@@ -7,14 +7,14 @@
         /// [0] = left, [1] = right, [2] = top, and [3] = bottom.
         /// Useful for avoiding collisions with internal edges.
         /// </summary>
-        public bool[] openEdges;
+        public bool[] OpenEdges;
 
         public GenTile()
         {
             Immovable = true;
 
             // Set all tile edges as open by default.
-            openEdges = new bool[] { true, true, true, true };
+            OpenEdges = new bool[] { true, true, true, true };
         }
     }
 }
