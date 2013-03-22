@@ -373,9 +373,9 @@ namespace Genetic
         /// Give the sprite a flicker effect.
         /// </summary>
         /// <param name="intensity">The speed of the sprite flicker.</param>
-        /// <param name="pulsing">Determines if the sprite flicker will use a pulsing effect.</param>
         /// <param name="duration">The duration of the sprite flicker, in seconds.</param>
         /// <param name="color">The color to tint the sprite during the flicker. A value of null will use the sprite's current color.</param>
+        /// <param name="pulsing">Determines if the sprite flicker will use a pulsing effect.</param>
         /// <param name="callback">The method that will be invoked after the sprite flicker has finished.</param>
         public void Flicker(float intensity = 40f, float duration = 1f, Color? color = null, bool pulsing = false, Action callback = null)
         {

@@ -315,26 +315,18 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Applys collision detection and response between two objects, groups of objects, or tilemap that may overlap.
+        /// Checks for overlap between two objects, groups of objects, or tilemaps.
         /// </summary>
-        /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
-        /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
+        /// <param name="objectOrGroup1">The first object, group, or tilemap to check for overlap.</param>
+        /// <param name="objectOrGroup2">The second object, group, or tilemap to check for overlap.</param>
+        /// <param name="separate">Determines if objects should collide with each other.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool penetrate = true)
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool separate = false, bool penetrate = true)
         {
             Quadtree.Clear();
 
-            if (objectOrGroup1 is GenTilemap)
-            {
-                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
-            }
-            else if (objectOrGroup2 is GenTilemap)
-            {
-                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
-            }
-
-            // Insert the objects into the quadtree for faster collision checks.
+            // Insert the objects into the quadtree for faster overlap checks.
             Quadtree.Insert(objectOrGroup1);
 
             // If the second object or group is the same as the first, do not insert it into the quadtree twice.
@@ -343,23 +335,34 @@ namespace Genetic
 
             List<GenBasic> objects = new List<GenBasic>();
 
-            bool collided = false;
+            bool overlap = false;
 
             if (objectOrGroup1 is GenObject)
             {
                 if (objectOrGroup2 is GenObject)
                 {
-                    return CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
+                    if (separate)
+                        return CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
+                    else
+                        return OverlapObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2);
                 }
                 else if (objectOrGroup2 is GenGroup)
                 {
-                    // Retrieve the objects from the quadtree that the first object may collide with.
+                    // Retrieve the objects from the quadtree that the first object may overlap with.
                     GenG.Quadtree.Retrieve(objects, ((GenObject)objectOrGroup1).BoundingBox);
 
                     for (int i = 0; i < objects.Count; i++)
                     {
-                        if (CollideObjects((GenObject)objectOrGroup1, (GenObject)objects[i], penetrate) && !collided)
-                            collided = true;
+                        if (separate)
+                        {
+                            if (CollideObjects((GenObject)objectOrGroup1, (GenObject)objects[i], penetrate) && !overlap)
+                                overlap = true;
+                        }
+                        else
+                        {
+                            if (OverlapObjects((GenObject)objectOrGroup1, (GenObject)objects[i]) && !overlap)
+                                overlap = true;
+                        }
                     }
                 }
             }
@@ -369,26 +372,77 @@ namespace Genetic
                 {
                     if (objectOrGroup2 is GenObject)
                     {
-                        if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2, penetrate) && !collided)
-                            collided = true;
+                        if (separate)
+                        {
+                            if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2, penetrate) && !overlap)
+                                overlap = true;
+                        }
+                        else
+                        {
+                            if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2) && !overlap)
+                                overlap = true;
+                        }
                     }
                     else if (objectOrGroup2 is GenGroup)
                     {
                         objects.Clear();
 
-                        // Retrieve the objects from the quadtree that the current object may collide with.
+                        // Retrieve the objects from the quadtree that the current object may overlap with.
                         GenG.Quadtree.Retrieve(objects, ((GenObject)((GenGroup)objectOrGroup1).Members[i]).BoundingBox);
 
                         for (int j = 0; j < objects.Count; j++)
                         {
-                            if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j], penetrate) && !collided)
-                                collided = true;
+                            if (separate)
+                            {
+                                if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j], penetrate) && !overlap)
+                                    overlap = true;
+                            }
+                            else
+                            {
+                                if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j]) && !overlap)
+                                    overlap = true;
+                            }
                         }
                     }
                 }
             }
 
-            return collided;
+            return overlap;
+        }
+
+        /// <summary>
+        /// Checks for overlap between two objects.
+        /// </summary>
+        /// <param name="object1">The first object to check for an overlap.</param>
+        /// <param name="object2">The second object to check for an overlap.</param>
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        public static bool OverlapObjects(GenObject object1, GenObject object2)
+        {
+            GenAABB moveBounds1 = GenU.GetMoveBounds(object1);
+            GenAABB moveBounds2 = GenU.GetMoveBounds(object2);
+
+            return moveBounds1.Intersects(moveBounds2);
+        }
+
+        /// <summary>
+        /// Applys collision detection and response between two objects, groups of objects, or tilemap that may overlap.
+        /// </summary>
+        /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
+        /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
+        /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
+        /// <returns>True is a collision occurs, false if not.</returns>
+        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool penetrate = true)
+        {
+            if (objectOrGroup1 is GenTilemap)
+            {
+                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
+            }
+            else if (objectOrGroup2 is GenTilemap)
+            {
+                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
+            }
+
+            return Overlap(objectOrGroup1, objectOrGroup2, true, penetrate);
         }
 
         /// <summary>
@@ -397,7 +451,7 @@ namespace Genetic
         /// <param name="object1">The first object to check for a collision.</param>
         /// <param name="object2">The second object to check for a collision.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        /// <param name="collidableEdges">An array of flags determining which edges the second object are collidable. [0] = left, [1] = right, [2] = top, and [3] = bottom.</param>
+        /// <param name="collidableEdges">An array of flags determining which edges of the second object are collidable. [0] = left, [1] = right, [2] = top, and [3] = bottom.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
         public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true, bool[] collidableEdges = null)
         {
@@ -406,10 +460,7 @@ namespace Genetic
                 if (object1.Immovable && object2.Immovable)
                     return false;
 
-                GenAABB moveBounds1 = GenU.GetMoveBounds(object1);
-                GenAABB moveBounds2 = GenU.GetMoveBounds(object2);
-
-                if (moveBounds1.Intersects(moveBounds2))
+                if (OverlapObjects(object1, object2))
                 {
                     if (collidableEdges == null)
                         collidableEdges = new bool[] { true, true, true, true };
@@ -505,115 +556,6 @@ namespace Genetic
             }
 
             return false;
-
-            /* PHYSICS SYSTEM 2
-            if (!object1.Equals(object2))
-            {
-                if (object1.immovable && object2.immovable)
-                    return;
-
-                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1.PositionRect, object2.PositionRect);
-
-                if (intersectionDepth != Vector2.Zero)
-                {
-                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
-                    {
-                        if (!object1.immovable && !object2.immovable)
-                        {
-                            object1.X += intersectionDepth.X * 0.5f;
-                            object2.X -= intersectionDepth.X * 0.5f;
-
-                            float object1VelocityX = (float)Math.Sqrt((object2.velocity.X * object2.velocity.X * object2.mass) / object1.mass) * ((object2.velocity.X > 0) ? 1 : -1);
-                            float object2VelocityX = (float)Math.Sqrt((object1.velocity.X * object1.velocity.X * object1.mass) / object2.mass) * ((object1.velocity.X > 0) ? 1 : -1);
-                            float averageVelocityX = (object1VelocityX + object2VelocityX) * 0.5f;
-                            object1VelocityX -= averageVelocityX;
-                            object2VelocityX -= averageVelocityX;
-
-                            object1.velocity.X = averageVelocityX + object1VelocityX; // Multiply object1VelocityX by elasticity of the object later.
-                            object2.velocity.X = averageVelocityX + object2VelocityX; // Multiply object1VelocityX by elasticity of the object later.
-                        }
-                        else if (!object1.immovable)
-                        {
-                            object1.X += intersectionDepth.X;
-                            object1.velocity.X = object2.velocity.X; // Multiply by elasticity of the object later.
-                        }
-                        else
-                        {
-                            object2.X -= intersectionDepth.X;
-                            object2.velocity.X = object1.velocity.X; // Multiply by elasticity of the object later.
-                        }
-                    }
-                    else
-                    {
-                        if (!object1.immovable && !object2.immovable)
-                        {
-                            object1.Y += intersectionDepth.Y * 0.5f;
-                            object2.Y -= intersectionDepth.Y * 0.5f;
-
-                            float object1VelocityY = (float)Math.Sqrt((object2.velocity.Y * object2.velocity.Y * object2.mass) / object1.mass) * ((object2.velocity.Y > 0) ? 1 : -1);
-                            float object2VelocityY = (float)Math.Sqrt((object1.velocity.Y * object1.velocity.Y * object1.mass) / object2.mass) * ((object1.velocity.Y > 0) ? 1 : -1);
-                            float averageVelocityY = (object1VelocityY + object2VelocityY) * 0.5f;
-                            object1VelocityY -= averageVelocityY;
-                            object2VelocityY -= averageVelocityY;
-
-                            object1.velocity.Y = averageVelocityY + object1VelocityY; // Multiply object1VelocityX by elasticity of the object later.
-                            object2.velocity.Y = averageVelocityY + object2VelocityY; // Multiply object1VelocityX by elasticity of the object later.
-                        }
-                        else if (!object1.immovable)
-                        {
-                            object1.Y += intersectionDepth.Y;
-                            object1.velocity.Y = object2.velocity.Y; // Multiply by elasticity of the object later.
-                        }
-                        else
-                        {
-                            object2.Y -= intersectionDepth.Y;
-                            object2.velocity.Y = object1.velocity.Y; // Multiply by elasticity of the object later.
-                        }
-                    }
-                }
-            }
-
-            /* PHYSICS SYSTEM 1
-            if (!object1.Equals(object2))
-            {
-                Vector2 intersectionDepth = GenU.GetIntersectDepth(object1.PositionRect, object2.PositionRect);
-
-                if (intersectionDepth != Vector2.Zero)
-                {
-                    float massDifference1 = object1.mass - object2.mass;
-                    float massDifference2 = object2.mass - object1.mass;
-                    float massSum = object1.mass + object2.mass;
-
-                    if (Math.Abs(intersectionDepth.X) < Math.Abs(intersectionDepth.Y))
-                    {
-                        float velocityX1 = object1.velocity.X;
-                        float velocityX2 = object2.velocity.X;
-
-                        if (!object1.immovable)
-                        {
-                            object1.X = object1.X + intersectionDepth.X;
-                            object1.velocity.X = (velocityX1 * massDifference1 + (2 * object2.mass * velocityX2)) / massSum;
-                        }
-
-                        if (!object2.immovable)
-                            object2.velocity.X = (velocityX2 * massDifference2 + (2 * object1.mass * velocityX1)) / massSum;
-                    }
-                    else
-                    {
-                        float velocityY1 = object1.velocity.Y;
-                        float velocityY2 = object2.velocity.Y;
-
-                        if (!object1.immovable)
-                        {
-                            object1.Y = object1.Y + intersectionDepth.Y;
-                            object1.velocity.Y = (velocityY1 * massDifference1 + (2 * object2.mass * velocityY2)) / massSum;
-                        }
-
-                        if (!object2.immovable)
-                            object2.velocity.Y = (velocityY2 * massDifference2 + (2 * object1.mass * velocityY1)) / massSum;
-                    }
-                }
-            }*/
         }
     }
 }

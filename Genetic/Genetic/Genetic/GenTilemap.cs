@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 using Genetic.Geometry;
 
@@ -29,6 +30,10 @@ namespace Genetic
         /// </summary>
         public GenTile[,] Tiles;
 
+        public const string ImageAuto = "Content/auto_tiles";
+
+        public Texture2D tilesheet = null;
+
         public GenTilemap()
         {
             TileTypes = new Dictionary<string, GenTile>();
@@ -52,7 +57,8 @@ namespace Genetic
         /// <param name="mapData">The CSV (Comma Separated Values) tilmap to load.</param>
         /// <param name="tileWidth">The width of each tile.</param>
         /// <param name="tileHeight">The height of each tile.</param>
-        public void LoadMap(string mapData, int tileWidth, int tileHeight)
+        /// <param name="tilesheet">The location of the tilesheet image. A value of null will not use a tilesheet image.</param>
+        public void LoadMap(string mapData, int tileWidth, int tileHeight, string tilesheet = null)
         {
             this.TileWidth = tileWidth;
             this.TileHeight = tileHeight;
@@ -78,18 +84,18 @@ namespace Genetic
                         Tiles[x, y] = new GenTile() { X = x * tileWidth, Y = y * tileHeight, Width = tileWidth, Height = tileHeight };
                         Tiles[x, y].LoadTexture(TileTypes[row[x]].Texture);
 
-                        // Check for a tile to the left of the current tile, and flag internal edges as non-collidable.
+                        // Check for a tile to the left of the current tile, and flag internal edges as closed.
                         if ((x > 0) && (Tiles[x - 1, y] != null))
                         {
-                            Tiles[x, y].collidableEdges[0] = false;
-                            Tiles[x - 1, y].collidableEdges[1] = false;
+                            Tiles[x, y].openEdges[0] = false;
+                            Tiles[x - 1, y].openEdges[1] = false;
                         }
 
-                        // Check for a tile on top of the current tile, and flag internal edges as non-collidable.
+                        // Check for a tile on top of the current tile, and flag internal edges as closed.
                         if ((y > 0) && (Tiles[x, y - 1] != null))
                         {
-                            Tiles[x, y].collidableEdges[2] = false;
-                            Tiles[x, y - 1].collidableEdges[3] = false;
+                            Tiles[x, y].openEdges[2] = false;
+                            Tiles[x, y - 1].openEdges[3] = false;
                         }
                     }
                     else
@@ -177,7 +183,7 @@ namespace Genetic
                     {
                         if ((Tiles[x, y] != null))
                         {
-                            if (GenG.CollideObjects(gameObject, Tiles[x, y], false, Tiles[x, y].collidableEdges) && !collided)
+                            if (GenG.CollideObjects(gameObject, Tiles[x, y], false, Tiles[x, y].openEdges) && !collided)
                                 collided = true;
                         }
                     }

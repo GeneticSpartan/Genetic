@@ -8,7 +8,7 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\warthog.xnb</Output>
-      <Time>2013-02-22T04:01:14-08:00</Time>
+      <Time>2013-03-21T21:01:19.6085535-07:00</Time>
     </Item>
     <Item>
       <Source>beep.mp3</Source>
@@ -35,7 +35,16 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\player.xnb</Output>
-      <Time>2013-03-02T01:54:38-08:00</Time>
+      <Time>2013-03-21T21:01:30.8311954-07:00</Time>
+    </Item>
+    <Item>
+      <Source>auto_tiles.png</Source>
+      <Name>auto_tiles</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\auto_tiles.xnb</Output>
+      <Time>2013-03-21T21:00:48.8337933-07:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
