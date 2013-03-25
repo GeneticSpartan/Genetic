@@ -6,19 +6,19 @@ namespace Genetic
     public class GenKeyboard
     {
         /// <summary>
-        /// The current state of the keyboard.
+        /// The current states of the keyboards.
         /// </summary>
-        protected KeyboardState keyboardState;
+        protected KeyboardState[] keyboardStates;
 
         /// <summary>
-        /// The state of the keyboard during the previous update.
+        /// The states of the keyboards during the previous update.
         /// </summary>
-        protected KeyboardState oldKeyboardState;
+        protected KeyboardState[] oldKeyboardStates;
 
         public GenKeyboard()
         {
-            keyboardState = Keyboard.GetState(PlayerIndex.One);
-            oldKeyboardState = keyboardState;
+            keyboardStates = new KeyboardState[4];
+            oldKeyboardStates = new KeyboardState[4];
         }
 
         /// <summary>
@@ -26,38 +26,48 @@ namespace Genetic
         /// </summary>
         public void Update()
         {
-            oldKeyboardState = keyboardState;
-            keyboardState = Keyboard.GetState(PlayerIndex.One);
+            oldKeyboardStates[0] = keyboardStates[0];
+            oldKeyboardStates[1] = keyboardStates[1];
+            oldKeyboardStates[2] = keyboardStates[2];
+            oldKeyboardStates[3] = keyboardStates[3];
+
+            keyboardStates[0] = Keyboard.GetState(PlayerIndex.One);
+            keyboardStates[1] = Keyboard.GetState(PlayerIndex.Two);
+            keyboardStates[2] = Keyboard.GetState(PlayerIndex.Three);
+            keyboardStates[3] = Keyboard.GetState(PlayerIndex.Four);
         }
 
         /// <summary>
         /// Checks if the specified key is currently pressed.
         /// </summary>
         /// <param name="key">The keyboard key to check.</param>
+        /// <param name="player">The player index number of the keyboard to check, a value of 1 through 4.</param>
         /// <returns>True, if the key is currently pressed. False, if not.</returns>
-        public bool IsPressed(Keys key)
+        public bool IsPressed(Keys key, int player = 1)
         {
-            return keyboardState.IsKeyDown(key);
+            return keyboardStates[--player].IsKeyDown(key);
         }
 
         /// <summary>
         /// Checks if the specified key is currently released.
         /// </summary>
         /// <param name="key">The keyboard key to check.</param>
+        /// <param name="player">The player index number of the keyboard to check, a value of 1 through 4.</param>
         /// <returns>True, if the key is currently released. False, if not.</returns>
-        public bool IsReleased(Keys key)
+        public bool IsReleased(Keys key, int player = 1)
         {
-            return keyboardState.IsKeyUp(key);
+            return keyboardStates[--player].IsKeyUp(key);
         }
 
         /// <summary>
         /// Checks if the specified key was just pressed.
         /// </summary>
         /// <param name="key">The keyboard key to check.</param>
+        /// <param name="player">The player index number of the keyboard to check, a value of 1 through 4.</param>
         /// <returns>True, if the key was just pressed. False, if not.</returns>
-        public bool JustPressed(Keys key)
+        public bool JustPressed(Keys key, int player = 1)
         {
-            if (oldKeyboardState.IsKeyUp(key) && keyboardState.IsKeyDown(key))
+            if (oldKeyboardStates[--player].IsKeyUp(key) && keyboardStates[player].IsKeyDown(key))
                 return true;
             else
                 return false;
@@ -67,10 +77,11 @@ namespace Genetic
         /// Checks if the specified key was just released.
         /// </summary>
         /// <param name="key">The keyboard key to check.</param>
+        /// <param name="player">The player index number of the keyboard to check, a value of 1 through 4.</param>
         /// <returns>True, if the key was just released. False, if not.</returns>
-        public bool JustReleased(Keys key)
+        public bool JustReleased(Keys key, int player = 1)
         {
-            if (oldKeyboardState.IsKeyDown(key) && keyboardState.IsKeyUp(key))
+            if (oldKeyboardStates[--player].IsKeyDown(key) && keyboardStates[player].IsKeyUp(key))
                 return true;
             else
                 return false;

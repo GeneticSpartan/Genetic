@@ -92,7 +92,7 @@ namespace Genetic
         {
             _sprite = sprite;
             _frameRect = new Rectangle(0, 0, frameWidth, frameHeight);
-            this.FrameBuffer = frameBuffer;
+            FrameBuffer = frameBuffer;
             Frames = (frames == null) ? new int[0] : frames;
             Fps = fps;
         }

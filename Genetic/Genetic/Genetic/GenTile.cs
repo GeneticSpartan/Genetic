@@ -3,18 +3,25 @@
     public class GenTile : GenSprite
     {
         /// <summary>
-        /// An array of flags determining which edges of the tile have no neighboring tiles.
-        /// [0] = left, [1] = right, [2] = top, and [3] = bottom.
+        /// A bit field of flags determining which edges of the tile have no neighboring tiles.
         /// Useful for avoiding collisions with internal edges.
         /// </summary>
-        public bool[] OpenEdges;
+        public Direction OpenEdges;
 
         public GenTile()
         {
             Immovable = true;
 
             // Set all tile edges as open by default.
-            OpenEdges = new bool[] { true, true, true, true };
+            OpenEdges |= Direction.Any;
+        }
+
+        /// <summary>
+        /// Draws the tile using a simple draw method.
+        /// </summary>
+        public override void Draw()
+        {
+            GenG.SpriteBatch.Draw(_texture, _position, _sourceRect, _color);
         }
     }
 }

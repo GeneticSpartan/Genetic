@@ -35,9 +35,9 @@ namespace Genetic
         protected Rectangle _positionRect;
 
         /// <summary>
-        /// The bounding rectangle of the object relative to the position in the camera.
+        /// The bounding box containing the object at its current and predicted positions relative to its velocity.
         /// </summary>
-        //protected Rectangle _screenPositionRect;
+        protected GenAABB _moveBounds;
 
         /// <summary>
         /// Determines if the object is affected by collisions.
@@ -132,14 +132,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the bounding rectangle of the object relative to the position in the camera.
-        /// </summary>
-        //public Rectangle ScreenPositionRect
-        //{
-        //    get { return _screenPositionRect; }
-        //}
-
-        /// <summary>
         /// Gets or sets the width the object.
         /// </summary>
         public float Width
@@ -182,12 +174,7 @@ namespace Genetic
             _position = new Vector2(x, y);
             _boundingBox = new GenAABB(x, y, width, height);
             _positionRect = new Rectangle((int)_position.X, (int)_position.Y, (int)width, (int)height);
-            //_screenPositionRect = Rectangle.Empty;
-
-            //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
-            //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
-            //_screenPositionRect.Width = (int)(_positionRect.Width * GenG.camera.Zoom);
-            //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
+            _moveBounds = new GenAABB(x, y, width, height);
 
             Velocity = Vector2.Zero;
             MaxVelocity = Vector2.Zero;
@@ -248,11 +235,6 @@ namespace Genetic
             // Move the object based on its velocity.
             X += Velocity.X * GenG.PhysicsTimeStep;
             Y += Velocity.Y * GenG.PhysicsTimeStep;
-
-            //_screenPositionRect.X = (int)((_positionRect.X + GenG.camera.ScrollX) * GenG.camera.Zoom);
-            //_screenPositionRect.Y = (int)((_positionRect.Y + GenG.camera.ScrollY) * GenG.camera.Zoom);
-            //_screenPositionRect.Width = (int)(_positionRect.Width * GenG.camera.Zoom);
-            //_screenPositionRect.Height = (int)(_positionRect.Height * GenG.camera.Zoom);
         }
 
         /// <summary>
@@ -269,12 +251,45 @@ namespace Genetic
         {
             if (GenG.IsDebug)
             {
-                GenG.SpriteBatch.Draw(GenG.Pixel, _positionRect, _positionRect, Color.Lime * 0.5f);
+                GenG.SpriteBatch.Draw(GenG.Pixel, _positionRect, _positionRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
                 //GenG.DrawLine(_positionRect.Left, _positionRect.Top, _positionRect.Right, _positionRect.Top, Color.Lime);
                 //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, Color.Lime);
                 //GenG.DrawLine(_positionRect.Left, _positionRect.Bottom - 1, _positionRect.Right, _positionRect.Bottom - 1, Color.Lime);
                 //GenG.DrawLine(_positionRect.Left + 1, _positionRect.Top, _positionRect.Left + 1, _positionRect.Bottom, Color.Lime);
             }
+        }
+
+        /// <summary>
+        /// Checks if the object overlaps the given camera's view area.
+        /// </summary>
+        /// <param name="camera">The camera to check.</param>
+        /// <returns>True if the object overlaps the camera's view area, false if not.</returns>
+        public bool IsOnScreen(GenCamera camera)
+        {
+            return ((_boundingBox.Left < camera.CameraView.Right) && (_boundingBox.Right > camera.CameraView.Left) && (_boundingBox.Top < camera.CameraView.Bottom) && (_boundingBox.Bottom > camera.CameraView.Top));
+        }
+
+        /// <summary>
+        /// Gets a bounding box containing the object at its current and predicted positions relative to its velocity.
+        /// </summary>
+        /// <returns>A bounding box containing the object at its current and predicted positions relative to its velocity.</returns>
+        public GenAABB GetMoveBounds()
+        {
+            // Get the x and y distances that the object will move relative to its velocity.
+            float distanceX = Velocity.X * GenG.PhysicsTimeStep;
+            float distanceY = Velocity.Y * GenG.PhysicsTimeStep;
+
+            float minLeft = Math.Min(_boundingBox.Left, _boundingBox.Left + distanceX);
+            float minTop = Math.Min(_boundingBox.Top, _boundingBox.Top + distanceY);
+            float maxRight = Math.Max(_boundingBox.Right, _boundingBox.Right + distanceX);
+            float maxBottom = Math.Max(_boundingBox.Bottom, _boundingBox.Bottom + distanceX);
+
+            _moveBounds.X = minLeft;
+            _moveBounds.Y = minTop;
+            _moveBounds.Width = maxRight - minLeft;
+            _moveBounds.Height = maxBottom - minTop;
+
+            return _moveBounds;
         }
 
         /// <summary>

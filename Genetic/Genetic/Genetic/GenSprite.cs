@@ -124,6 +124,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the position to draw the sprite relative to the origin.
+        /// </summary>
+        public Vector2 DrawPosition
+        {
+            get { return _drawPosition; }
+        }
+
+        /// <summary>
+        /// Gets the bounding rectangle used to draw a portion of the sprite texture.
+        /// </summary>
+        public Rectangle SourceRect
+        {
+            get { return _sourceRect; }
+        }
+
+        /// <summary>
         /// Gets or sets the color used to tint the sprite. White means no tint.
         /// </summary>
         public Color Color
@@ -151,6 +167,14 @@ namespace Genetic
 
                 _rotation = MathHelper.ToRadians(value);
             }
+        }
+
+        /// <summary>
+        /// Gets the sprite effect used to draw the sprite flipped horizontally or vertically.
+        /// </summary>
+        public SpriteEffects SpriteEffect
+        {
+            get { return _spriteEffect; }
         }
 
         /// <summary>

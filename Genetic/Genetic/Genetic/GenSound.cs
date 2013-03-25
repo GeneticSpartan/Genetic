@@ -242,7 +242,7 @@ namespace Genetic
         public void SetFollow(GenObject follow, bool distanceFading = false)
         {
             _follow = follow;
-            this.DistanceFading = distanceFading;
+            DistanceFading = distanceFading;
         }
 
         /// <summary>

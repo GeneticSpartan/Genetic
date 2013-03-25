@@ -131,9 +131,22 @@ namespace Genetic
         public static GenQuadtree Quadtree;
 
         /// <summary>
+        /// A list used to contain objects retrieved from the quadtree.
+        /// </summary>
+        private static List<GenBasic> _quadtreeObjects = new List<GenBasic>();
+
+        /// <summary>
         /// Determines whether debug mode is on or off.
         /// </summary>
         public static bool IsDebug = false;
+
+        /// <summary>
+        /// Gets the amount of seconds that have elapsed between each update.
+        /// </summary>
+        public static float TimeStep
+        {
+            get { return _timeStep; }
+        }
 
         /// <summary>
         /// Gets the amount of seconds that have elapsed between each update relative to the time scale.
@@ -166,6 +179,14 @@ namespace Genetic
         public static GenGamePad GamePads
         {
             get { return _gamePads; }
+        }
+
+        /// <summary>
+        /// Gets the title safe area of the current viewport.
+        /// </summary>
+        public static Rectangle TitleSafeArea
+        {
+            get { return GraphicsDevice.Viewport.TitleSafeArea; }
         }
 
         public static void Initialize(GenGame game, GraphicsDevice graphicsDevice, ContentManager content, SpriteBatch spriteBatch)
@@ -234,9 +255,9 @@ namespace Genetic
         /// </summary>
         public static void Draw()
         {
-            for (int i = 0; i < Cameras.Count; i++)
+            foreach (GenCamera camera in Cameras)
             {
-                CurrentCamera = Cameras[i];
+                CurrentCamera = camera;
 
                 GraphicsDevice.Viewport = CurrentCamera.Viewport;
 
@@ -248,7 +269,7 @@ namespace Genetic
                     SpriteBatch.End();
                 }
 
-                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
+                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
                 _state.Draw();
 
                 if (IsDebug)
@@ -319,10 +340,11 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for overlap.</param>
         /// <param name="objectOrGroup2">The second object, group, or tilemap to check for overlap.</param>
+        /// <param name="callback">The method that will be invoked if an overlap occurs.</param>
         /// <param name="separate">Determines if objects should collide with each other.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool separate = false, bool penetrate = true)
+        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, Action callback = null, bool separate = false, bool penetrate = true)
         {
             Quadtree.Clear();
 
@@ -333,7 +355,7 @@ namespace Genetic
             if (!objectOrGroup1.Equals(objectOrGroup2))
                 Quadtree.Insert(objectOrGroup2);
 
-            List<GenBasic> objects = new List<GenBasic>();
+            _quadtreeObjects.Clear();
 
             bool overlap = false;
 
@@ -342,25 +364,25 @@ namespace Genetic
                 if (objectOrGroup2 is GenObject)
                 {
                     if (separate)
-                        return CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
+                        overlap = CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
                     else
-                        return OverlapObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2);
+                        overlap = OverlapObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2);
                 }
                 else if (objectOrGroup2 is GenGroup)
                 {
                     // Retrieve the objects from the quadtree that the first object may overlap with.
-                    GenG.Quadtree.Retrieve(objects, ((GenObject)objectOrGroup1).BoundingBox);
+                    GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)objectOrGroup1).BoundingBox);
 
-                    for (int i = 0; i < objects.Count; i++)
+                    for (int i = 0; i < _quadtreeObjects.Count; i++)
                     {
                         if (separate)
                         {
-                            if (CollideObjects((GenObject)objectOrGroup1, (GenObject)objects[i], penetrate) && !overlap)
+                            if (CollideObjects((GenObject)objectOrGroup1, (GenObject)_quadtreeObjects[i], penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (OverlapObjects((GenObject)objectOrGroup1, (GenObject)objects[i]) && !overlap)
+                            if (OverlapObjects((GenObject)objectOrGroup1, (GenObject)_quadtreeObjects[i]) && !overlap)
                                 overlap = true;
                         }
                     }
@@ -385,27 +407,30 @@ namespace Genetic
                     }
                     else if (objectOrGroup2 is GenGroup)
                     {
-                        objects.Clear();
+                        _quadtreeObjects.Clear();
 
                         // Retrieve the objects from the quadtree that the current object may overlap with.
-                        GenG.Quadtree.Retrieve(objects, ((GenObject)((GenGroup)objectOrGroup1).Members[i]).BoundingBox);
+                        GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)((GenGroup)objectOrGroup1).Members[i]).BoundingBox);
 
-                        for (int j = 0; j < objects.Count; j++)
+                        for (int j = 0; j < _quadtreeObjects.Count; j++)
                         {
                             if (separate)
                             {
-                                if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j], penetrate) && !overlap)
+                                if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)_quadtreeObjects[j], penetrate) && !overlap)
                                     overlap = true;
                             }
                             else
                             {
-                                if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objects[j]) && !overlap)
+                                if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)_quadtreeObjects[j]) && !overlap)
                                     overlap = true;
                             }
                         }
                     }
                 }
             }
+
+            if (overlap && (callback != null))
+                callback.Invoke();
 
             return overlap;
         }
@@ -429,9 +454,10 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
         /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
+        /// <param name="callback">The method that will be invoked if a collision occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, bool penetrate = true)
+        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, Action callback = null, bool penetrate = true)
         {
             if (objectOrGroup1 is GenTilemap)
             {
@@ -442,7 +468,7 @@ namespace Genetic
                 return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
             }
 
-            return Overlap(objectOrGroup1, objectOrGroup2, true, penetrate);
+            return Overlap(objectOrGroup1, objectOrGroup2, callback, true, penetrate);
         }
 
         /// <summary>
@@ -451,9 +477,9 @@ namespace Genetic
         /// <param name="object1">The first object to check for a collision.</param>
         /// <param name="object2">The second object to check for a collision.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        /// <param name="collidableEdges">An array of flags determining which edges of the second object are collidable. [0] = left, [1] = right, [2] = top, and [3] = bottom.</param>
+        /// <param name="collidableEdges">A bit field of flags determining which edges of the second object are collidable.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true, bool[] collidableEdges = null)
+        public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             if (!object1.Equals(object2))
             {
@@ -462,9 +488,6 @@ namespace Genetic
 
                 if (OverlapObjects(object1, object2))
                 {
-                    if (collidableEdges == null)
-                        collidableEdges = new bool[] { true, true, true, true };
-
                     Vector2 distances = GenU.GetDistanceAABB(object1.BoundingBox, object2.BoundingBox);
                     Vector2 collisionNormal;
 
@@ -473,10 +496,10 @@ namespace Genetic
                     else
                         collisionNormal = (object1.BoundingBox.MidpointY > object2.BoundingBox.MidpointY) ? new Vector2(0, -1) : new Vector2(0, 1);
 
-                    if ((collisionNormal.X == 1 && collidableEdges[0]) ||
-                        (collisionNormal.X == -1 && collidableEdges[1]) ||
-                        (collisionNormal.Y == 1 && collidableEdges[2]) ||
-                        (collisionNormal.Y == -1 && collidableEdges[3]))
+                    if (((collisionNormal.X == 1) && ((collidableEdges & GenObject.Direction.Left) == GenObject.Direction.Left)) ||
+                        ((collisionNormal.X == -1) && ((collidableEdges & GenObject.Direction.Right) == GenObject.Direction.Right)) ||
+                        ((collisionNormal.Y == 1) && ((collidableEdges & GenObject.Direction.Up) == GenObject.Direction.Up)) ||
+                        ((collisionNormal.Y == -1) && ((collidableEdges & GenObject.Direction.Down) == GenObject.Direction.Down)))
                     {
                         float distance = Math.Max(distances.X, distances.Y);
                         float separation = 0f;

@@ -250,7 +250,7 @@ namespace Genetic
             {
                 _scroll.X = value;
 
-                refreshCameraView();
+                RefreshCameraView();
             }
         }
 
@@ -265,7 +265,7 @@ namespace Genetic
             {
                 _scroll.Y = value;
 
-                refreshCameraView();
+                RefreshCameraView();
             }
         }
 
@@ -295,7 +295,7 @@ namespace Genetic
                 else
                     _zoom = zoom;
 
-                refreshCameraView();
+                RefreshCameraView();
             }
         }
 
@@ -621,7 +621,10 @@ namespace Genetic
             }
         }
 
-        protected void refreshCameraView()
+        /// <summary>
+        /// Calculates the camera view values relative to the current scroll and zoom values.
+        /// </summary>
+        protected void RefreshCameraView()
         {
             // Adjust the camera view position.
             _cameraView.X = -_scroll.X;
@@ -647,6 +650,7 @@ namespace Genetic
             _scroll = Vector2.Zero;
             _rotation = 0f;
             _zoom = _initialZoom;
+            _followPosition = Vector2.Zero;
             _followTargets.Clear();
 
             // Reset the camera effects.

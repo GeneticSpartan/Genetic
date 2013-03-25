@@ -110,19 +110,7 @@ namespace Genetic
         /// <returns>A bounding box containing the object at its current and predicted positions relative to its velocity.</returns>
         public static GenAABB GetMoveBounds(GenObject gameObject)
         {
-            float right = gameObject.X + gameObject.Width;
-            float bottom = gameObject.Y + gameObject.Height;
-
-            // Get the x and y distances that the object will move relative to its velocity.
-            float distanceX = gameObject.Velocity.X * GenG.PhysicsTimeStep;
-            float distanceY = gameObject.Velocity.Y * GenG.PhysicsTimeStep;
-
-            float minLeft = Math.Min(gameObject.X, gameObject.X + distanceX);
-            float minTop = Math.Min(gameObject.Y, gameObject.Y + distanceY);
-            float maxRight = Math.Max(right, right + distanceX);
-            float maxBottom = Math.Max(bottom, bottom + distanceX);
-
-            return new GenAABB(minLeft, minTop, maxRight - minLeft, maxBottom - minTop);
+            return gameObject.GetMoveBounds();
         }
 
         /// <summary>

@@ -12,14 +12,16 @@ namespace Genetic
     public class PlayState : GenState
     {
         public GenTilemap Map;
+        public GenCave Cave;
 
         public GenGroup Boxes;
 
-        public GenSprite Warthog;
+        public GenSprite Box;
         public GenSprite Player;
         public GenSprite Warthog3;
         public GenSprite Warthog4;
         public GenSprite Warthog5;
+        public GenSprite Spring;
 
         public GenControl PlayerControl;
 
@@ -59,7 +61,11 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
                 "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
                 , 8, 8, GenTilemap.ImageAuto);
-            Add(Map);
+            //Add(Map);
+
+            Cave = new GenCave();
+            Cave.MakeCave(160, 320);
+            Add(Cave);
             
             GenG.BackgroundColor = Color.CornflowerBlue;
 
@@ -75,18 +81,20 @@ namespace Genetic
             {
                 for (int j = 0; j < 5; j++)
                 {
-                    Warthog = new GenSprite(i * 32 + 150, j * 16, "warthog", 16, 16);
-                    Warthog.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
-                    Warthog.Play("run");
+                    Box = new GenSprite(i * 32 + 150, j * 16, "warthog", 12, 13);
+                    Box.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
+                    Box.Play("run");
+                    Box.DrawOffset.X = -4;
+                    Box.DrawOffset.Y = -3;
                     //warthog.scrollFactor = 2f;
-                    Warthog.Mass = 1f;
-                    Warthog.Deceleration.X = 400;
+                    Box.Mass = 1f;
+                    Box.Deceleration.X = 400;
                     //warthog.MakeTexture(GenU.randomColor() * 0.5f, 8 + j * 2, 8 + j * 2);
                     //warthog.acceleration.X = -1000;
-                    Warthog.Acceleration.Y = 700;
-                    Warthog.MaxVelocity.Y = 400;
-                    Warthog.Color = GenU.randomColor(100, 255);
-                    Boxes.Add(Warthog);
+                    Box.Acceleration.Y = 700;
+                    Box.MaxVelocity.Y = 400;
+                    Box.Color = GenU.randomColor(100, 255);
+                    Boxes.Add(Box);
                 }
             }
 
@@ -135,6 +143,12 @@ namespace Genetic
             Text.Velocity.Y = 50;
             Add(Text);
 
+            Spring = new GenSprite(8, 100, null, 16, 4);
+            Spring.MakeTexture(Color.White, 16, 4);
+            Spring.Immovable = true;
+            Spring.MaxVelocity.Y = 400;
+            Add(Spring);
+
             GenG.TimeScale = 1f;
 
             GenG.Camera.CameraFollowType = GenCamera.FollowType.LockOn;
@@ -145,7 +159,7 @@ namespace Genetic
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(warthog2);
 
-            //GenG.worldBounds = new Rectangle(0, 0, GenG.Game.Width, GenG.Game.Height);
+            GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
 
@@ -156,21 +170,26 @@ namespace Genetic
         {
             base.Update();
 
-            //foreach (GenObject duck in warthogs.members)
-            //    duck.acceleration.X = warthog2.X - duck.X;
-
             GenG.Collide(Player, Warthog3);
             GenG.Collide(Player, Text);
-            GenG.Collide(Map, Player);
-            GenG.Collide(Map, Boxes);
+            GenG.Collide(Player, Spring);
+            //GenG.Collide(Map, Player);
+            GenG.Collide(Cave, Player);
+            //GenG.Collide(Map, Boxes);
+            GenG.Collide(Cave, Boxes);
             GenG.Collide(Player, Boxes);
+            //GenG.Collide(Spring, Boxes);
             //GenG.Collide(warthog3, warthogs);
             GenG.Collide(Boxes, Boxes);
             GenG.Collide(Warthog4, Warthog5);
 
+            GenG.Overlap(Player, Warthog3, FadeOut);
+
             //warthog2.rotationSpeed = warthog2.velocity.X;
 
             //text.FontSize += 0.1f;
+
+            Spring.Velocity.Y = GenU.SineWave(0, 20, 400);
 
             if (GenG.Keyboards.JustPressed(Keys.Tab) || GenG.GamePads.JustPressed(Buttons.X, 1))
                 GenG.IsDebug = !GenG.IsDebug;
@@ -258,7 +277,7 @@ namespace Genetic
 
         public void FadeOut()
         {
-            //camera2.Fade(2, Color.Black, EndGame);
+            GenG.Camera.Fade(2, Color.Black, EndGame);
         }
 
         public void EndGame()

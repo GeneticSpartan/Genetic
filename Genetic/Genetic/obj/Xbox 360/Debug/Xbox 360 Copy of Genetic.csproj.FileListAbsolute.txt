@@ -1,4 +1,3 @@
-D:\Games\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\ResolveAssemblyReference.cache
 D:\Games\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\warthog.xnb
 D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Genetic.exe

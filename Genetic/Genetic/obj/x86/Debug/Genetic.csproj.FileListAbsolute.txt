@@ -1,6 +1,5 @@
 D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.exe
 D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.pdb
-D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\ResolveAssemblyReference.cache
 D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
 D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.exe
 D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.pdb
@@ -19,3 +18,4 @@ C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Microsoft.Xna.Framewo
 C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.exe
 C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.pdb
 D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb
+D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.csprojResolveAssemblyReference.cache

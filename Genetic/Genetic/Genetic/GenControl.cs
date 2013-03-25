@@ -72,10 +72,10 @@ namespace Genetic
         /// <param name="player">The index number of the player controlling the object, a value of 1 through 4.</param>
         public GenControl(GenObject controlObject, Movement movementType, Stopping stoppingType, int player = 1)
         {
-            this.ControlObject = controlObject;
-            this.MovementType = movementType;
-            this.StoppingType = stoppingType;
-            this.Player = player;
+            ControlObject = controlObject;
+            MovementType = movementType;
+            StoppingType = stoppingType;
+            Player = player;
 
             // Set the default movement direction keyboard controls.
             SetDirectionControls(Keys.Left, Keys.Right, Keys.Up, Keys.Down);
