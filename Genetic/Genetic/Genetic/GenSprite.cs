@@ -9,11 +9,6 @@ namespace Genetic
     public class GenSprite : GenObject
     {
         /// <summary>
-        /// Dictates whether the sprite should be drawn.
-        /// </summary>
-        public bool Visible = true;
-
-        /// <summary>
         /// The texture used when drawing the sprite.
         /// </summary>
         protected Texture2D _texture;
@@ -275,7 +270,7 @@ namespace Genetic
             _drawPosition.X = _positionRect.X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
             _drawPosition.Y = _positionRect.Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
 
-            if (Visible && (_texture != null))
+            if (_texture != null)
             {
                 if (_currentAnimation == null)
                     GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, 1, _spriteEffect, 0);

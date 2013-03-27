@@ -257,30 +257,33 @@ namespace Genetic
         {
             foreach (GenCamera camera in Cameras)
             {
-                CurrentCamera = camera;
-
-                GraphicsDevice.Viewport = CurrentCamera.Viewport;
-
-                // Draw the camera background color.
-                if (CurrentCamera.BgColor != null)
+                if (camera.Exists && camera.Visible)
                 {
+                    CurrentCamera = camera;
+
+                    GraphicsDevice.Viewport = CurrentCamera.Viewport;
+
+                    // Draw the camera background color.
+                    if (CurrentCamera.BgColor != null)
+                    {
+                        SpriteBatch.Begin();
+                        CurrentCamera.DrawBg();
+                        SpriteBatch.End();
+                    }
+
+                    SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
+                    _state.Draw();
+
+                    if (IsDebug)
+                        Quadtree.Draw();
+
+                    SpriteBatch.End();
+
+                    // Draw the camera effects.
                     SpriteBatch.Begin();
-                    CurrentCamera.DrawBg();
+                    CurrentCamera.DrawFx();
                     SpriteBatch.End();
                 }
-
-                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
-                _state.Draw();
-
-                if (IsDebug)
-                    Quadtree.Draw();
-
-                SpriteBatch.End();
-
-                // Draw the camera effects.
-                SpriteBatch.Begin();
-                CurrentCamera.DrawFx();
-                SpriteBatch.End();
             }
         }
 
@@ -364,9 +367,9 @@ namespace Genetic
                 if (objectOrGroup2 is GenObject)
                 {
                     if (separate)
-                        overlap = CollideObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2, penetrate);
+                        overlap = ((GenObject)objectOrGroup1).Collide((GenObject)objectOrGroup2, penetrate);
                     else
-                        overlap = OverlapObjects((GenObject)objectOrGroup1, (GenObject)objectOrGroup2);
+                        overlap = ((GenObject)objectOrGroup1).Overlap((GenObject)objectOrGroup2);
                 }
                 else if (objectOrGroup2 is GenGroup)
                 {
@@ -377,12 +380,12 @@ namespace Genetic
                     {
                         if (separate)
                         {
-                            if (CollideObjects((GenObject)objectOrGroup1, (GenObject)_quadtreeObjects[i], penetrate) && !overlap)
+                            if (((GenObject)objectOrGroup1).Collide((GenObject)_quadtreeObjects[i], penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (OverlapObjects((GenObject)objectOrGroup1, (GenObject)_quadtreeObjects[i]) && !overlap)
+                            if (((GenObject)objectOrGroup1).Overlap((GenObject)_quadtreeObjects[i]) && !overlap)
                                 overlap = true;
                         }
                     }
@@ -396,12 +399,12 @@ namespace Genetic
                     {
                         if (separate)
                         {
-                            if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2, penetrate) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)objectOrGroup2, penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)objectOrGroup2) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)objectOrGroup2) && !overlap)
                                 overlap = true;
                         }
                     }
@@ -416,12 +419,12 @@ namespace Genetic
                         {
                             if (separate)
                             {
-                                if (CollideObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)_quadtreeObjects[j], penetrate) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)_quadtreeObjects[j], penetrate) && !overlap)
                                     overlap = true;
                             }
                             else
                             {
-                                if (OverlapObjects((GenObject)((GenGroup)objectOrGroup1).Members[i], (GenObject)_quadtreeObjects[j]) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)_quadtreeObjects[j]) && !overlap)
                                     overlap = true;
                             }
                         }
@@ -436,20 +439,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Checks for overlap between two objects.
-        /// </summary>
-        /// <param name="object1">The first object to check for an overlap.</param>
-        /// <param name="object2">The second object to check for an overlap.</param>
-        /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool OverlapObjects(GenObject object1, GenObject object2)
-        {
-            GenAABB moveBounds1 = GenU.GetMoveBounds(object1);
-            GenAABB moveBounds2 = GenU.GetMoveBounds(object2);
-
-            return moveBounds1.Intersects(moveBounds2);
-        }
-
-        /// <summary>
         /// Applys collision detection and response between two objects, groups of objects, or tilemap that may overlap.
         /// </summary>
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
@@ -460,125 +449,11 @@ namespace Genetic
         public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, Action callback = null, bool penetrate = true)
         {
             if (objectOrGroup1 is GenTilemap)
-            {
                 return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
-            }
             else if (objectOrGroup2 is GenTilemap)
-            {
                 return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
-            }
 
             return Overlap(objectOrGroup1, objectOrGroup2, callback, true, penetrate);
-        }
-
-        /// <summary>
-        /// Applys collision detection and response between two objects that may overlap.
-        /// </summary>
-        /// <param name="object1">The first object to check for a collision.</param>
-        /// <param name="object2">The second object to check for a collision.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the second object are collidable.</param>
-        /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool CollideObjects(GenObject object1, GenObject object2, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
-        {
-            if (!object1.Equals(object2))
-            {
-                if (object1.Immovable && object2.Immovable)
-                    return false;
-
-                if (OverlapObjects(object1, object2))
-                {
-                    Vector2 distances = GenU.GetDistanceAABB(object1.BoundingBox, object2.BoundingBox);
-                    Vector2 collisionNormal;
-
-                    if (distances.X > distances.Y)
-                        collisionNormal = (object1.BoundingBox.MidpointX > object2.BoundingBox.MidpointX) ? new Vector2(-1, 0) : new Vector2(1, 0);
-                    else
-                        collisionNormal = (object1.BoundingBox.MidpointY > object2.BoundingBox.MidpointY) ? new Vector2(0, -1) : new Vector2(0, 1);
-
-                    if (((collisionNormal.X == 1) && ((collidableEdges & GenObject.Direction.Left) == GenObject.Direction.Left)) ||
-                        ((collisionNormal.X == -1) && ((collidableEdges & GenObject.Direction.Right) == GenObject.Direction.Right)) ||
-                        ((collisionNormal.Y == 1) && ((collidableEdges & GenObject.Direction.Up) == GenObject.Direction.Up)) ||
-                        ((collisionNormal.Y == -1) && ((collidableEdges & GenObject.Direction.Down) == GenObject.Direction.Down)))
-                    {
-                        float distance = Math.Max(distances.X, distances.Y);
-                        float separation = 0f;
-
-                        if (!penetrate)
-                            separation = Math.Max(distance, 0);
-
-                        float relativeNormalVelocity = Vector2.Dot(object2.Velocity - object1.Velocity, collisionNormal);
-                        float remove;
-
-                        if (penetrate)
-                            remove = relativeNormalVelocity + distance / _timeStep;
-                        else
-                            remove = relativeNormalVelocity + separation / _timeStep;
-
-                        if (remove < 0)
-                        {
-                            float impulse = remove / (object1.Mass + object2.Mass);
-
-                            if (!object1.Immovable)
-                            {
-                                object1.Velocity += impulse * collisionNormal * object2.Mass;
-
-                                if (!penetrate)
-                                {
-                                    float penetration = Math.Min(distance, 0);
-
-                                    object1.X += penetration * collisionNormal.X;
-                                    object1.Y += penetration * collisionNormal.Y;
-                                }
-                            }
-
-                            if (!object2.Immovable)
-                            {
-                                object2.Velocity -= impulse * collisionNormal * object1.Mass;
-
-                                if (!penetrate)
-                                {
-                                    float penetration = Math.Min(distance, 0);
-
-                                    object2.X -= penetration * collisionNormal.X;
-                                    object2.Y -= penetration * collisionNormal.Y;
-                                }
-                            }
-
-                            if (collisionNormal.X != 0)
-                            {
-                                if (collisionNormal.X == 1)
-                                {
-                                    object1.Touching |= GenObject.Direction.Right;
-                                    object2.Touching |= GenObject.Direction.Left;
-                                }
-                                else
-                                {
-                                    object1.Touching |= GenObject.Direction.Left;
-                                    object2.Touching |= GenObject.Direction.Right;
-                                }
-                            }
-                            else
-                            {
-                                if (collisionNormal.Y == 1)
-                                {
-                                    object1.Touching |= GenObject.Direction.Down;
-                                    object2.Touching |= GenObject.Direction.Up;
-                                }
-                                else
-                                {
-                                    object1.Touching |= GenObject.Direction.Up;
-                                    object2.Touching |= GenObject.Direction.Down;
-                                }
-                            }
-
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
         }
     }
 }

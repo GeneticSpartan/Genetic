@@ -79,7 +79,7 @@ namespace Genetic
 
             for (int i = 0; i < 5; i++)
             {
-                for (int j = 0; j < 5; j++)
+                for (int j = 0; j < 3; j++)
                 {
                     Box = new GenSprite(i * 32 + 150, j * 16, "warthog", 12, 13);
                     Box.AddAnimation("run", 16, 16, new int[] { 1 }, 0);
@@ -87,7 +87,7 @@ namespace Genetic
                     Box.DrawOffset.X = -4;
                     Box.DrawOffset.Y = -3;
                     //warthog.scrollFactor = 2f;
-                    Box.Mass = 1f;
+                    Box.Mass = 0.7f;
                     Box.Deceleration.X = 400;
                     //warthog.MakeTexture(GenU.randomColor() * 0.5f, 8 + j * 2, 8 + j * 2);
                     //warthog.acceleration.X = -1000;
@@ -143,10 +143,10 @@ namespace Genetic
             Text.Velocity.Y = 50;
             Add(Text);
 
-            Spring = new GenSprite(8, 100, null, 16, 4);
+            Spring = new GenSprite(200, 300, null, 16, 4);
             Spring.MakeTexture(Color.White, 16, 4);
             Spring.Immovable = true;
-            Spring.MaxVelocity.Y = 400;
+            //Spring.MaxVelocity.Y = 400;
             Add(Spring);
 
             GenG.TimeScale = 1f;
@@ -154,12 +154,13 @@ namespace Genetic
             GenG.Camera.CameraFollowType = GenCamera.FollowType.LockOn;
             GenG.Camera.FollowStrength = 0.05f;
             GenG.Camera.AddTarget(Player);
-            //GenG.camera.AddTarget(warthog3);
+            //GenG.Camera.AddTarget(Warthog3);
 
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(warthog2);
 
             GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
+            GenG.Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
 
@@ -189,7 +190,7 @@ namespace Genetic
 
             //text.FontSize += 0.1f;
 
-            Spring.Velocity.Y = GenU.SineWave(0, 20, 400);
+            Spring.Velocity.Y = GenU.SineWave(0, 40, 1200);
 
             if (GenG.Keyboards.JustPressed(Keys.Tab) || GenG.GamePads.JustPressed(Buttons.X, 1))
                 GenG.IsDebug = !GenG.IsDebug;

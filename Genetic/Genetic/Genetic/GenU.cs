@@ -104,16 +104,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets a bounding box containing the object at its current and predicted positions relative to its velocity.
-        /// </summary>
-        /// <param name="gameObject">The object to check.</param>
-        /// <returns>A bounding box containing the object at its current and predicted positions relative to its velocity.</returns>
-        public static GenAABB GetMoveBounds(GenObject gameObject)
-        {
-            return gameObject.GetMoveBounds();
-        }
-
-        /// <summary>
         /// Retrieves the current position of a sine wave relative to the total elapsed time.
         /// Call this during each update to simulate a sine wave motion.
         /// </summary>

@@ -1,4 +1,6 @@
-﻿namespace Genetic
+﻿using Microsoft.Xna.Framework;
+
+namespace Genetic
 {
     public class GenTile : GenSprite
     {
@@ -8,7 +10,15 @@
         /// </summary>
         public Direction OpenEdges;
 
-        public GenTile()
+        /// <summary>
+        /// A physical tile object used in a tilemap.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the tile.</param>
+        /// <param name="y">The y position of the top-left corner of the tile.</param>
+        /// <param name="width">The width of the tile.</param>
+        /// <param name="height">The height of the tile.</param>
+        public GenTile(float x = 0, float y = 0, int width = 0, int height = 0)
+            : base(x, y, null, width, height)
         {
             Immovable = true;
 

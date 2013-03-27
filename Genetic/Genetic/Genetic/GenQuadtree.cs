@@ -8,7 +8,7 @@ using Genetic.Geometry;
 
 namespace Genetic
 {
-    public class GenQuadtree
+    public class GenQuadtree : GenAABB
     {
         /// <summary>
         /// The maximum amount of objects allowed in a node.
@@ -18,7 +18,7 @@ namespace Genetic
         /// <summary>
         /// The maximum amount of splits that can occur through a series of nodes.
         /// </summary>
-        protected const int MAX_LEVELS = 4;
+        protected const int MAX_LEVELS = 6;
 
         /// <summary>
         /// The current split level of the node.
@@ -31,56 +31,15 @@ namespace Genetic
         protected List<GenBasic> _objects;
 
         /// <summary>
-        /// The left bounding edge of the node.
-        /// </summary>
-        protected int _left;
-
-        /// <summary>
-        /// The right bounding edge of the node.
-        /// </summary>
-        protected int _right;
-
-        /// <summary>
-        /// The top bounding edge of the node.
-        /// </summary>
-        protected int _top;
-
-        /// <summary>
-        /// The bottom bounding edge of the node.
-        /// </summary>
-        protected int _bottom;
-
-        protected int _halfWidth;
-
-        protected int _halfHeight;
-
-        /// <summary>
-        /// Represents the position of a vertical center line separating the left and right areas of the node.
-        /// </summary>
-        protected int _verticalMidpoint;
-
-        /// <summary>
-        /// Represents the position of a horizontal center line separating the top and bottom areas of the node.
-        /// </summary>
-        protected int _horizontalMidpoint;
-
-        /// <summary>
         /// An array of four leaf nodes that are created when a split occurs.
         /// </summary>
         protected GenQuadtree[] _nodes;
 
-        public GenQuadtree(int x, int y, int width, int height, int level = 0)
+        public GenQuadtree(float x, float y, float width, float height, int level = 0)
+            : base(x, y, width, height)
         {
             _level = level;
             _objects = new List<GenBasic>();
-            _left = x;
-            _right = x + width;
-            _top = y;
-            _bottom = y + height;
-            _halfWidth = width / 2;
-            _halfHeight = height / 2;
-            _verticalMidpoint = x + _halfWidth;
-            _horizontalMidpoint = y + _halfHeight;
             _nodes = new GenQuadtree[4];
         }
 
@@ -110,18 +69,18 @@ namespace Genetic
         {
             if ((box.Left > _left) && (box.Right < _right) && (box.Top > _top) && (box.Bottom < _bottom))
             {
-                if (box.Right < _verticalMidpoint)
+                if (box.Right < _midpointY)
                 {
-                    if (box.Bottom < _horizontalMidpoint)
+                    if (box.Bottom < _midpointX)
                         return 1;
-                    else if (box.Top > _horizontalMidpoint)
+                    else if (box.Top > _midpointX)
                         return 2;
                 }
-                else if (box.Left > _verticalMidpoint)
+                else if (box.Left > _midpointY)
                 {
-                    if (box.Bottom < _horizontalMidpoint)
+                    if (box.Bottom < _midpointX)
                         return 0;
-                    else if (box.Top > _horizontalMidpoint)
+                    else if (box.Top > _midpointX)
                         return 3;
                 }
             }
@@ -162,10 +121,10 @@ namespace Genetic
                     {
                         if (_nodes[0] == null)
                         {
-                            _nodes[0] = new GenQuadtree(_left + _halfWidth, _top, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[0] = new GenQuadtree(_midpointX, _top, _halfWidth, _halfHeight, _level + 1);
                             _nodes[1] = new GenQuadtree(_left, _top, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[2] = new GenQuadtree(_left, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[3] = new GenQuadtree(_left + _halfWidth, _top + _halfHeight, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[2] = new GenQuadtree(_left, _midpointY, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[3] = new GenQuadtree(_midpointX, _midpointY, _halfWidth, _halfHeight, _level + 1);
                         }
 
                         int i = 0;
@@ -220,30 +179,30 @@ namespace Genetic
         {
             if (_nodes[0] != null)
             {
-                if (box.Left <= _verticalMidpoint)
+                if (box.Left <= _midpointY)
                 {
-                    if (box.Top <= _horizontalMidpoint)
+                    if (box.Top <= _midpointX)
                     {
                         _nodes[1].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[1]._objects);
                     }
 
-                    if (box.Bottom >= _horizontalMidpoint)
+                    if (box.Bottom >= _midpointX)
                     {
                         _nodes[2].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[2]._objects);
                     }
                 }
 
-                if (box.Right >= _verticalMidpoint)
+                if (box.Right >= _midpointY)
                 {
-                    if (box.Top <= _horizontalMidpoint)
+                    if (box.Top <= _midpointX)
                     {
                         _nodes[0].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[0]._objects);
                     }
 
-                    if (box.Bottom >= _horizontalMidpoint)
+                    if (box.Bottom >= _midpointX)
                     {
                         _nodes[3].RetrieveNodes(returnObjects, box);
                         returnObjects.AddRange(_nodes[3]._objects);

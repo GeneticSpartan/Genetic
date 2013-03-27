@@ -207,10 +207,7 @@
         /// <returns>True if an intersection occurs, false if not.</returns>
         public bool Intersects(GenAABB box)
         {
-            if ((_left < box.Right) && (_right > box.Left) && (_top < box.Bottom) && (_bottom > box.Top))
-                return true;
-            else
-                return false;
+            return ((_left < box.Right) && (_right > box.Left) && (_top < box.Bottom) && (_bottom > box.Top));
         }
     }
 }

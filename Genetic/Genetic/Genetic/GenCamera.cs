@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic
 {
-    public class GenCamera
+    public class GenCamera : GenBasic
     {
         /// <summary>
         /// The style that a camera will use to follow a target.
@@ -357,7 +357,7 @@ namespace Genetic
             Transform = Matrix.Identity;
         }
 
-        public void Update()
+        public override void Update()
         {
             if (_followTargets.Count > 0)
             {
@@ -644,8 +644,10 @@ namespace Genetic
         /// <summary>
         /// Resets the camera.
         /// </summary>
-        public void Reset()
+        public override void Reset()
         {
+            base.Reset();
+
             _bgColor = null;
             _scroll = Vector2.Zero;
             _rotation = 0f;

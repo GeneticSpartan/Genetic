@@ -27,7 +27,10 @@ namespace Genetic
             base.Update();
 
             foreach (GenCamera camera in GenG.Cameras)
-                camera.Update();
+            {
+                if (camera.Exists && camera.Active)
+                    camera.Update();
+            }
         }
 
         public override void Draw()

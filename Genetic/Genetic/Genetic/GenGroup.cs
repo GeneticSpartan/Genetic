@@ -21,10 +21,16 @@ namespace Genetic
         public override void Update()
         {
             foreach (GenBasic member in Members)
-                member.Update();
+            {
+                if (member.Exists && member.Active)
+                    member.Update();
+            }
 
             foreach (GenBasic member in Members)
-                member.PostUpdate();
+            {
+                if (member.Exists && member.Active)
+                    member.PostUpdate();
+            }
         }
 
         /// <summary>
@@ -33,7 +39,15 @@ namespace Genetic
         public override void Draw()
         {
             foreach (GenBasic member in Members)
-                member.Draw();
+            {
+                if (member.Exists && member.Visible)
+                {
+                    member.Draw();
+
+                    if (GenG.IsDebug)
+                        member.DrawDebug();
+                }
+            }
         }
 
         /// <summary>
