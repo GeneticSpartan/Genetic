@@ -156,6 +156,8 @@ namespace Genetic
             GenG.Camera.AddTarget(Player);
             //GenG.Camera.AddTarget(Warthog3);
 
+            GenG.Camera.Color = Color.LawnGreen;
+
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(warthog2);
 
@@ -170,6 +172,8 @@ namespace Genetic
         public override void Update()
         {
             base.Update();
+
+            //GenG.Camera.Rotation += MathHelper.ToRadians(1);
 
             GenG.Collide(Player, Warthog3);
             GenG.Collide(Player, Text);

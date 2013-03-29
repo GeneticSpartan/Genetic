@@ -67,6 +67,11 @@ namespace Genetic
         protected float _fxAlpha;
 
         /// <summary>
+        /// The color used to tint the camera. White means no tint.
+        /// </summary>
+        public Color Color = Color.White;
+
+        /// <summary>
         /// The background color of the camera.
         /// </summary>
         protected Color? _bgColor;
@@ -79,7 +84,12 @@ namespace Genetic
         /// <summary>
         /// The rotation of the camera in radians.
         /// </summary>
-        protected float _rotation = 0f;
+        public float Rotation = 0f;
+
+        /// <summary>
+        /// The position that the camera will rotate around.
+        /// </summary>
+        public Vector2 Origin;
 
         /// <summary>
         /// The initial scale to draw objects when the camera is created.
@@ -270,16 +280,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Get or sets the rotation of the camera in degrees.
-        /// </summary>
-        public float Rotation
-        {
-            get { return MathHelper.ToDegrees(_rotation); }
-
-            set { _rotation = MathHelper.ToRadians(value); }
-        }
-
-        /// <summary>
         /// Get or sets the scale at which to draw objects in the camera.
         /// </summary>
         public float Zoom
@@ -351,6 +351,7 @@ namespace Genetic
             _cameraRect = new Rectangle(0, 0, width, height);
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
+            Origin = new Vector2(width / 2, height / 2);
             _initialZoom = zoom;
             Zoom = zoom;
             Viewport = new Viewport(x, y, width, height);
@@ -469,12 +470,18 @@ namespace Genetic
                 }
             }
 
+            // Add camera shake.
+            ScrollX += _shakeOffset.X;
+            ScrollY += _shakeOffset.Y;
+
             // Create the camera transform.
-            Transform = Matrix.CreateTranslation(-Viewport.Width / (2 * Zoom), -Viewport.Height / (2 * Zoom), 0f) *
+            Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+
+            /*Transform = Matrix.CreateTranslation(-Viewport.Width / (2 * Zoom), -Viewport.Height / (2 * Zoom), 0f) *
                         Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) *
                         Matrix.CreateRotationZ(_rotation) *
                         Matrix.CreateScale(_zoom) *
-                        Matrix.CreateTranslation((Viewport.Width / 2) + _shakeOffset.X, (Viewport.Height / 2) + _shakeOffset.Y, 0f);
+                        Matrix.CreateTranslation((Viewport.Width / 2) + _shakeOffset.X, (Viewport.Height / 2) + _shakeOffset.Y, 0f);*/
         }
 
         /// <summary>
@@ -650,7 +657,7 @@ namespace Genetic
 
             _bgColor = null;
             _scroll = Vector2.Zero;
-            _rotation = 0f;
+            Rotation = 0f;
             _zoom = _initialZoom;
             _followPosition = Vector2.Zero;
             _followTargets.Clear();

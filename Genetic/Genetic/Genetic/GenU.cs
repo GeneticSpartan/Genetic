@@ -113,7 +113,7 @@ namespace Genetic
         /// <returns>The current position of the wave relative to the total elapsed time.</returns>
         public static float SineWave(float start, float rate, float intensity)
         {
-            return start + (float)Math.Sin(rate * GenG.ElapsedTime) * intensity;
+            return start + (float)Math.Sin(GenG.ElapsedTime * rate) * intensity;
         }
     }
 }

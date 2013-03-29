@@ -13,11 +13,6 @@ namespace Genetic
     public static class GenG
     {
         /// <summary>
-        /// A 1 x 1 pixel texture used for drawing lines.
-        /// </summary>
-        public static Texture2D Pixel;
-
-        /// <summary>
         /// Gets a reference to the game object.
         /// </summary>
         public static GenGame Game
@@ -52,6 +47,21 @@ namespace Genetic
             get;
             private set;
         }
+
+        /// <summary>
+        /// A 1 x 1 pixel texture used for drawing lines.
+        /// </summary>
+        public static Texture2D Pixel;
+
+        /// <summary>
+        /// The render target texture used to apply post-process effects after the scene is drawn.
+        /// </summary>
+        private static RenderTarget2D _renderTarget;
+
+        /// <summary>
+        /// An effect shader used to apply post-processing effects to the render target texture.
+        /// </summary>
+        private static Effect _effect;
 
         /// <summary>
         /// The default viewport of the graphics device.
@@ -198,6 +208,8 @@ namespace Genetic
             GraphicsDevice = graphicsDevice;
             Content = content;
             SpriteBatch = spriteBatch;
+            _renderTarget = new RenderTarget2D(GraphicsDevice, Game.Width, Game.Height);
+            //_effect = Content.Load<Effect>("");
             _defaultViewport = GraphicsDevice.Viewport;
             BackgroundColor = Color.CornflowerBlue;
             TimeScale = 1.0f;
@@ -262,6 +274,7 @@ namespace Genetic
                     CurrentCamera = camera;
 
                     GraphicsDevice.Viewport = CurrentCamera.Viewport;
+                    GraphicsDevice.SetRenderTarget(_renderTarget);
 
                     // Draw the camera background color.
                     if (CurrentCamera.BgColor != null)
@@ -277,6 +290,13 @@ namespace Genetic
                     if (IsDebug)
                         Quadtree.Draw();
 
+                    SpriteBatch.End();
+
+                    GraphicsDevice.SetRenderTarget(null);
+
+                    // Draw the render target texture.
+                    SpriteBatch.Begin();
+                    GenG.SpriteBatch.Draw(_renderTarget, CurrentCamera.Origin, CurrentCamera.Viewport.Bounds, CurrentCamera.Color, CurrentCamera.Rotation, CurrentCamera.Origin, 1, SpriteEffects.None, 0);
                     SpriteBatch.End();
 
                     // Draw the camera effects.
