@@ -132,8 +132,6 @@ namespace Genetic
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(GenG.BackgroundColor);
-
             GenG.Draw();
 
             spriteBatch.Begin();

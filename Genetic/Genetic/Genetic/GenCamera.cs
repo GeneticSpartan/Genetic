@@ -57,6 +57,16 @@ namespace Genetic
         protected CameraView _cameraView = new CameraView();
 
         /// <summary>
+        /// The x and y position of the top-left corner of the camera.
+        /// </summary>
+        protected Vector2 _position;
+
+        /// <summary>
+        /// The render target texture used to apply post-process effects after the camera is drawn.
+        /// </summary>
+        public RenderTarget2D RenderTarget;
+
+        /// <summary>
         /// The texture used to draw camera effects such as background color, flash, and fade.
         /// </summary>
         protected Texture2D _fxTexture;
@@ -90,6 +100,12 @@ namespace Genetic
         /// The position that the camera will rotate around.
         /// </summary>
         public Vector2 Origin;
+
+        /// <summary>
+        /// The position used to draw the camera.
+        /// Includes the camera position and origin values to place the camera correctly.
+        /// </summary>
+        protected Vector2 _drawPosition;
 
         /// <summary>
         /// The initial scale to draw objects when the camera is created.
@@ -233,20 +249,20 @@ namespace Genetic
         protected Action _fadeCallback;
 
         /// <summary>
-        /// The viewport used to draw this camera.
-        /// </summary>
-        public Viewport Viewport
-        {
-            get;
-            protected set;
-        }
-
-        /// <summary>
         /// Gets the bounding camera view according to the camera bounding rectangle, scroll positions, and zoom level.
         /// </summary>
         public CameraView CameraView
         {
             get { return _cameraView; }
+        }
+
+        /// <summary>
+        /// Gets the position used to draw the camera.
+        /// Includes the camera position and origin values to place the camera correctly.
+        /// </summary>
+        public Vector2 DrawPosition
+        {
+            get { return _drawPosition; }
         }
 
         /// <summary>
@@ -349,12 +365,14 @@ namespace Genetic
         public GenCamera(int x, int y, int width, int height, float zoom)
         {
             _cameraRect = new Rectangle(0, 0, width, height);
+            _position = new Vector2(x, y);
+            RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
             Origin = new Vector2(width / 2, height / 2);
+            _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
             Zoom = zoom;
-            Viewport = new Viewport(x, y, width, height);
             Transform = Matrix.Identity;
         }
 
@@ -394,15 +412,15 @@ namespace Genetic
                     float distanceY = Math.Abs(followYMax - followYMin) * 2;
 
                     // Zoom the camera in or out, complying with the minimum and maximum zoom values, and attempt to keep all follow targets within the camera view.
-                    Zoom += (MathHelper.Clamp(MathHelper.Min(Viewport.Width / distanceX, Viewport.Height / distanceY), MinZoom, MaxZoom) - Zoom) * _followStrength;
+                    Zoom += (MathHelper.Clamp(MathHelper.Min(_cameraRect.Width / distanceX, _cameraRect.Height / distanceY), MinZoom, MaxZoom) - Zoom) * _followStrength;
                 }
                 else
                 {
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnHorizontal))
-                        _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
+                        _followPosition.X += (_followTargets[0].X + _followTargets[0].BoundingBox.HalfWidth - _followPosition.X) * _followStrength;
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnVertical))
-                        _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
+                        _followPosition.Y += (_followTargets[0].Y + _followTargets[0].BoundingBox.HalfHeight - _followPosition.Y) * _followStrength;
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingHorizontal))
                     {
@@ -538,6 +556,33 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Sets the essential components that function together as the camera view area.
+        /// The camera view area must not extend outside the bounds of the game window.
+        /// Do not set the camera view often, since a new render target object must be created.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the camera view.</param>
+        /// <param name="y">The y position of the top-left corner of the camera view.</param>
+        /// <param name="width">The width of the camera view.</param>
+        /// <param name="height">The height of the camera view.</param>
+        public void SetCameraView(int x, int y, int width, int height)
+        {
+            _cameraRect.Width = width;
+            _cameraRect.Height = height;
+
+            _position.X = x;
+            _position.Y = y;
+
+            Origin.X = width / 2;
+            Origin.Y = height / 2;
+
+            _drawPosition.X = x + Origin.X;
+            _drawPosition.Y = y + Origin.Y;
+
+            // Create a new render target object to comply with the new size settings.
+            RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
+        }
+
+        /// <summary>
         /// Adds a game object as a target that the camera will follow.
         /// Adding multiple targets will cause the camera to follow a point within the center of all targets.
         /// </summary>
@@ -640,12 +685,6 @@ namespace Genetic
             // Adjust the camera view dimensions.
             _cameraView.Width = _cameraRect.Width / _zoom;
             _cameraView.Height = _cameraRect.Height / _zoom;
-
-            // Adjust the camera view edge positions.
-            _cameraView.Left = _cameraView.X;
-            _cameraView.Right = _cameraView.X + _cameraView.Width;
-            _cameraView.Top = _cameraView.Y;
-            _cameraView.Bottom = _cameraView.Y + _cameraView.Height;
         }
 
         /// <summary>
@@ -680,13 +719,27 @@ namespace Genetic
         private Vector2 _position;
 
         /// <summary>
+        /// The width of the camera view;
+        /// </summary>
+        private float _width;
+
+        /// <summary>
+        /// The height of the camera view;
+        /// </summary>
+        private float _height;
+
+        /// <summary>
         /// Gets or sets the x position of the top-left corner of the camera view.
         /// </summary>
         public float X
         {
             get { return _position.X; }
 
-            set { _position.X = value; }
+            set
+            {
+                _position.X = value;
+                Left = _position.X;
+            }
         }
 
         /// <summary>
@@ -696,18 +749,40 @@ namespace Genetic
         {
             get { return _position.Y; }
 
-            set { _position.Y = value; }
+            set
+            {
+                _position.Y = value;
+                Top = _position.Y;
+            }
         }
 
         /// <summary>
         /// Gets or sets the width of the camera view.
         /// </summary>
-        public float Width { get; set; }
+        public float Width
+        {
+            get { return _width; }
+
+            set
+            {
+                _width = value;
+                Right = _position.X + _width;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the height of the camera view.
         /// </summary>
-        public float Height { get; set; }
+        public float Height
+        {
+            get { return _height; }
+
+            set
+            {
+                _height = value;
+                Bottom = _position.Y + _height;
+            }
+        }
 
         /// <summary>
         /// Gets or sets the position of the left edge of the camera view.

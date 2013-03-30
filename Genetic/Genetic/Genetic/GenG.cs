@@ -54,11 +54,6 @@ namespace Genetic
         public static Texture2D Pixel;
 
         /// <summary>
-        /// The render target texture used to apply post-process effects after the scene is drawn.
-        /// </summary>
-        private static RenderTarget2D _renderTarget;
-
-        /// <summary>
         /// An effect shader used to apply post-processing effects to the render target texture.
         /// </summary>
         private static Effect _effect;
@@ -208,8 +203,7 @@ namespace Genetic
             GraphicsDevice = graphicsDevice;
             Content = content;
             SpriteBatch = spriteBatch;
-            _renderTarget = new RenderTarget2D(GraphicsDevice, Game.Width, Game.Height);
-            //_effect = Content.Load<Effect>("");
+            _effect = Content.Load<Effect>("grayscale");
             _defaultViewport = GraphicsDevice.Viewport;
             BackgroundColor = Color.CornflowerBlue;
             TimeScale = 1.0f;
@@ -273,8 +267,10 @@ namespace Genetic
                 {
                     CurrentCamera = camera;
 
-                    GraphicsDevice.Viewport = CurrentCamera.Viewport;
-                    GraphicsDevice.SetRenderTarget(_renderTarget);
+                    GraphicsDevice.SetRenderTarget(CurrentCamera.RenderTarget);
+
+                    // Clear the back buffer to a transparent color so that each camera render target will have a transparent background.
+                    GraphicsDevice.Clear(Color.Transparent);
 
                     // Draw the camera background color.
                     if (CurrentCamera.BgColor != null)
@@ -292,16 +288,30 @@ namespace Genetic
 
                     SpriteBatch.End();
 
-                    GraphicsDevice.SetRenderTarget(null);
-
-                    // Draw the render target texture.
-                    SpriteBatch.Begin();
-                    GenG.SpriteBatch.Draw(_renderTarget, CurrentCamera.Origin, CurrentCamera.Viewport.Bounds, CurrentCamera.Color, CurrentCamera.Rotation, CurrentCamera.Origin, 1, SpriteEffects.None, 0);
-                    SpriteBatch.End();
-
                     // Draw the camera effects.
                     SpriteBatch.Begin();
-                    CurrentCamera.DrawFx();
+                    camera.DrawFx();
+                    SpriteBatch.End();
+                }
+            }
+
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(BackgroundColor);
+
+            // Draw the camera render targets with any attatched effects.
+            foreach (GenCamera camera in Cameras)
+            {
+                if (camera.Exists && camera.Visible)
+                {
+                    _effect.Parameters["timer"].SetValue(_elapsedTime);
+                    _effect.CurrentTechnique = _effect.Techniques["Grayscale"];
+
+                    // Draw the render target texture.
+                    SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+
+                    _effect.CurrentTechnique.Passes[0].Apply();
+
+                    GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, 1, SpriteEffects.None, 0);
                     SpriteBatch.End();
                 }
             }

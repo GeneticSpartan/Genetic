@@ -46,6 +46,15 @@
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb</Output>
       <Time>2013-03-22T00:36:32.8841506-07:00</Time>
     </Item>
+    <Item>
+      <Source>grayscale.fx</Source>
+      <Name>grayscale</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb</Output>
+      <Time>2013-03-29T17:49:08.255575-07:00</Time>
+    </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
       <ContentProjectGUID>{1D42D20F-3780-4B36-93D7-88FE1C24DD87}</ContentProjectGUID>

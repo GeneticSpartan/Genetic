@@ -21,15 +21,14 @@ namespace Genetic
         public GenSprite Warthog3;
         public GenSprite Warthog4;
         public GenSprite Warthog5;
-        public GenSprite Spring;
 
         public GenControl PlayerControl;
 
-        //public GenCamera camera2;
+        public GenCamera camera2;
 
         public GenSound Beep;
-
         public GenText Text;
+        //public GenSound Music;
 
         public override void Create()
         {
@@ -66,13 +65,13 @@ namespace Genetic
             Cave = new GenCave();
             Cave.MakeCave(160, 320);
             Add(Cave);
-            
+
             GenG.BackgroundColor = Color.CornflowerBlue;
 
-            //camera2 = GenG.AddCamera(new GenCamera(GenG.Game.Width / 2, 0, GenG.Game.Width / 2, GenG.Game.Height, 1));
-            //camera2.BgColor = Color.DarkGray;
+            camera2 = GenG.AddCamera(new GenCamera(GenG.Game.Width / 2, 0, GenG.Game.Width / 2, GenG.Game.Height, 1));
+            camera2.BgColor = new Color(50, 50, 70);
 
-            GenG.Camera.BgColor = Color.SlateBlue;
+            GenG.Camera.BgColor = new Color(70, 50, 50);
             
             Boxes = new GenGroup();
             Add(Boxes);
@@ -143,41 +142,39 @@ namespace Genetic
             Text.Velocity.Y = 50;
             Add(Text);
 
-            Spring = new GenSprite(200, 300, null, 16, 4);
-            Spring.MakeTexture(Color.White, 16, 4);
-            Spring.Immovable = true;
-            //Spring.MaxVelocity.Y = 400;
-            Add(Spring);
+            //Music = new GenSound("music", 1, true);
+            //Music.Play();
 
             GenG.TimeScale = 1f;
 
             GenG.Camera.CameraFollowType = GenCamera.FollowType.LockOn;
             GenG.Camera.FollowStrength = 0.05f;
+            GenG.Camera.MaxZoom = 10f;
             GenG.Camera.AddTarget(Player);
             //GenG.Camera.AddTarget(Warthog3);
-
-            GenG.Camera.Color = Color.LawnGreen;
-
-            //camera2.FollowStrength = 0.05f;
-            //camera2.AddTarget(warthog2);
+            GenG.Camera.SetCameraView(0, 0, GenG.Game.Width / 2, GenG.Game.Height);
 
             GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
             GenG.Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
 
             //camera2.Flash(1, 2, Color.Black, FadeOut);
+            camera2.FollowStrength = 0.05f;
+            camera2.AddTarget(Player);
+            //camera2.AddTarget(Warthog3);
 
             Player.Flicker(40f, 1f, Color.Black * 0.5f, true);
+
+            //GenG.Camera.SetCameraView(100, 100, 100, 100);
         }
 
         public override void Update()
         {
             base.Update();
-
+            
             //GenG.Camera.Rotation += MathHelper.ToRadians(1);
+            //GenG.Camera.Shake(10f);
 
-            GenG.Collide(Player, Warthog3);
             GenG.Collide(Player, Text);
-            GenG.Collide(Player, Spring);
             //GenG.Collide(Map, Player);
             GenG.Collide(Cave, Player);
             //GenG.Collide(Map, Boxes);
@@ -188,13 +185,11 @@ namespace Genetic
             GenG.Collide(Boxes, Boxes);
             GenG.Collide(Warthog4, Warthog5);
 
-            GenG.Overlap(Player, Warthog3, FadeOut);
+            GenG.Collide(Player, Warthog3, FadeOut);
 
             //warthog2.rotationSpeed = warthog2.velocity.X;
 
             //text.FontSize += 0.1f;
-
-            Spring.Velocity.Y = GenU.SineWave(0, 40, 1200);
 
             if (GenG.Keyboards.JustPressed(Keys.Tab) || GenG.GamePads.JustPressed(Buttons.X, 1))
                 GenG.IsDebug = !GenG.IsDebug;
@@ -283,6 +278,7 @@ namespace Genetic
         public void FadeOut()
         {
             GenG.Camera.Fade(2, Color.Black, EndGame);
+            camera2.Fade(2, Color.White);
         }
 
         public void EndGame()
