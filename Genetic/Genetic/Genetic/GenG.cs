@@ -254,6 +254,7 @@ namespace Genetic
             }
 
             _state.Update();
+            _state.PostUpdate();
         }
 
         /// <summary>
@@ -291,6 +292,12 @@ namespace Genetic
                     // Draw the camera effects.
                     SpriteBatch.Begin();
                     camera.DrawFx();
+
+                    //if (watch.ElapsedMilliseconds != 0)
+                    //    spriteBatch.DrawString(Font, (1000 / watch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
+                    //watch.Reset();
+                    //watch.Start();
+
                     SpriteBatch.End();
                 }
             }

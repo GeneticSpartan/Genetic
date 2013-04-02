@@ -25,11 +25,17 @@ namespace Genetic
         public override void Update()
         {
             base.Update();
+        }
 
+        /// <summary>
+        /// Override this method to add additional post-update logic.
+        /// </summary>
+        public override void PostUpdate()
+        {
             foreach (GenCamera camera in GenG.Cameras)
             {
                 if (camera.Exists && camera.Active)
-                    camera.Update();
+                    camera.PostUpdate();
             }
         }
 

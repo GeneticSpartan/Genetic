@@ -19,9 +19,6 @@ namespace Genetic
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
 
-        System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
-        public SpriteFont Font;
-
         /// <summary>
         /// The width of the game window.
         /// </summary>
@@ -62,6 +59,9 @@ namespace Genetic
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
+            //IsFixedTimeStep = false;
+            //graphics.SynchronizeWithVerticalRetrace = false;
+            
             // Set the width and height of the game window.
             _width = width;
             _height = height;
@@ -70,7 +70,7 @@ namespace Genetic
 
             _zoom = zoom;
 
-            GenG.SwitchState(initialState);            
+            GenG.SwitchState(initialState);
         }
 
         /// <summary>
@@ -97,8 +97,6 @@ namespace Genetic
             GenU.Initialize();
 
             GenG.Camera = GenG.AddCamera(new GenCamera(0, 0, _width, _height, _zoom));
-
-            Font = GenG.Content.Load<SpriteFont>("Nokia");
         }
 
         /// <summary>
@@ -133,13 +131,6 @@ namespace Genetic
         protected override void Draw(GameTime gameTime)
         {
             GenG.Draw();
-
-            spriteBatch.Begin();
-            if (watch.ElapsedMilliseconds != 0)
-                spriteBatch.DrawString(Font, (1000 / watch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
-            watch.Reset();
-            watch.Start();
-            spriteBatch.End();
 
             base.Draw(gameTime);
         }

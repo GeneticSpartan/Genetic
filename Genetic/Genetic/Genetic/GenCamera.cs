@@ -376,7 +376,7 @@ namespace Genetic
             Transform = Matrix.Identity;
         }
 
-        public override void Update()
+        public override void PostUpdate()
         {
             if (_followTargets.Count > 0)
             {
@@ -493,7 +493,7 @@ namespace Genetic
             ScrollY += _shakeOffset.Y;
 
             // Create the camera transform.
-            Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+            Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f) * Matrix.CreateScale(_zoom);
 
             /*Transform = Matrix.CreateTranslation(-Viewport.Width / (2 * Zoom), -Viewport.Height / (2 * Zoom), 0f) *
                         Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) *

@@ -11,6 +11,8 @@ namespace Genetic
 
         public enum Stopping { Instant, Deccelerates };
 
+        protected enum State { Idle, Moving, Jumping, Falling };
+
         /// <summary>
         /// The object that is controlled.
         /// </summary>
@@ -64,6 +66,44 @@ namespace Genetic
         public Vector2 Gravity = Vector2.Zero;
 
         /// <summary>
+        /// A flag used to determine when the object is in the air and not touching the ground.
+        /// </summary>
+        protected bool _inAir = true;
+
+        /// <summary>
+        /// The current state of the object, either idle, moving, jumping, or falling.
+        /// </summary>
+        protected State _state = State.Idle;
+
+        /// <summary>
+        /// The name associated with the idle animation, and will be used to play it.
+        /// Useful for displaying an animation when the object is not moving.
+        /// A value of null will not display an animation.
+        /// </summary>
+        public string IdleAnimation = null;
+
+        /// <summary>
+        /// The name associated with the movement animation, and will be used to play it.
+        /// Useful for displaying a walking/running animation.
+        /// A value of null will not display an animation.
+        /// </summary>
+        public string MoveAnimation = null;
+
+        /// <summary>
+        /// The name associated with the jump animation, and will be used to play it.
+        /// Useful for displaying an animation when jumping is activated.
+        /// A value of null will not display an animation.
+        /// </summary>
+        public string JumpAnimation = null;
+
+        /// <summary>
+        /// The name associated with the fall animation, and will be used to play it.
+        /// Useful for displaying an animation when the object falls.
+        /// A value of null will not display an animation.
+        /// </summary>
+        public string FallAnimation = null;
+
+        /// <summary>
         /// Sets up a control scheme for moving a given object.
         /// </summary>
         /// <param name="controlObject">The object that is controlled.</param>
@@ -103,11 +143,15 @@ namespace Genetic
                     {
                         ControlObject.Velocity.X = -MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
+
+                        SetState(State.Moving);
                     }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
                     {
                         ControlObject.Velocity.X = MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+
+                        SetState(State.Moving);
                     }
                     else if (StoppingType == Stopping.Instant)
                         ControlObject.Velocity.X = 0f;
@@ -116,38 +160,81 @@ namespace Genetic
                 if (MovementSpeedY != 0)
                 {
                     if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
+                    {
                         ControlObject.Velocity.Y = -MovementSpeedY;
+
+                        SetState(State.Moving);
+                    }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
+                    {
                         ControlObject.Velocity.Y = MovementSpeedY;
+
+                        SetState(State.Moving);
+                    }
                     else if (StoppingType == Stopping.Instant)
                         ControlObject.Velocity.Y = 0f;
                 }
             }
             else
             {
-                if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
+                if (MovementSpeedX != 0)
                 {
-                    ControlObject.Acceleration.X = -MovementSpeedX;
-                    ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
-                }
-                else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
-                {
-                    ControlObject.Acceleration.X = MovementSpeedX;
-                    ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
-                }
-                else
-                    ControlObject.Acceleration.X = 0;
+                    if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
+                    {
+                        ControlObject.Acceleration.X = -MovementSpeedX;
+                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
 
-                if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
-                    ControlObject.Acceleration.Y = -MovementSpeedY;
-                else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
-                    ControlObject.Acceleration.Y = MovementSpeedY;
-                else
-                    ControlObject.Acceleration.Y = 0;
+                        SetState(State.Moving);
+                    }
+                    else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
+                    {
+                        ControlObject.Acceleration.X = MovementSpeedX;
+                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+
+                        SetState(State.Moving);
+                    }
+                    else
+                    {
+                        ControlObject.Acceleration.X = 0;
+
+                        SetState(State.Idle);
+                    }
+                }
+
+                if (MovementSpeedY != 0)
+                {
+                    if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
+                    {
+                        ControlObject.Acceleration.Y = -MovementSpeedY;
+
+                        SetState(State.Moving);
+                    }
+                    else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
+                    {
+                        ControlObject.Acceleration.Y = MovementSpeedY;
+
+                        SetState(State.Moving);
+                    }
+                    else
+                        ControlObject.Acceleration.Y = 0;
+                }
             }
 
-            if (ControlObject.IsTouching(GenObject.Direction.Down) && (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4])))
-                    ControlObject.Velocity.Y -= JumpSpeed;
+            if (ControlObject.IsTouching(GenObject.Direction.Down))
+                _inAir = false;
+            else
+                _inAir = true;
+
+            if (!_inAir && (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4])))
+            {
+                ControlObject.Velocity.Y -= JumpSpeed;
+
+                _inAir = true;
+                SetState(State.Jumping);
+            }
+
+            if (_inAir && (ControlObject.Velocity.Y > 0))
+                SetState(State.Falling);
             
             ControlObject.Acceleration.X += Gravity.X;
             ControlObject.Acceleration.Y += Gravity.Y;
@@ -220,6 +307,55 @@ namespace Genetic
 
             ControlObject.Deceleration.X = xDeceleration;
             ControlObject.Deceleration.Y = yDeceleration;
+        }
+
+        /// <summary>
+        /// Sets the state of the object to determine which animation to display, either idle, moving, jumping, or falling.
+        /// </summary>
+        /// <param name="state">The state of the object to set.</param>
+        protected void SetState(State state)
+        {
+            // Check if the object is not already in the given state to avoid displaying the same animation.
+            if (_state != state)
+            {
+                switch (state)
+                {
+                    case State.Idle:
+                        if (!_inAir)
+                        {
+                            if (IdleAnimation != null)
+                                ((GenSprite)ControlObject).Play(IdleAnimation);
+
+                            _state = state;
+                        }
+
+                        break;
+                    case State.Moving:
+                        if (!_inAir)
+                        {
+                            if (MoveAnimation != null)
+                                ((GenSprite)ControlObject).Play(MoveAnimation);
+
+                            _state = state;
+                        }
+
+                        break;
+                    case State.Jumping:
+                        if (JumpAnimation != null)
+                            ((GenSprite)ControlObject).Play(JumpAnimation);
+
+                        _state = state;
+
+                        break;
+                    case State.Falling:
+                        if (FallAnimation != null)
+                            ((GenSprite)ControlObject).Play(FallAnimation);
+
+                        _state = state;
+
+                        break;
+                }
+            }
         }
     }
 }

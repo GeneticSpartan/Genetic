@@ -372,20 +372,32 @@ namespace Genetic
         /// <param name="frameHeight">The height of each animation frame.</param>
         /// <param name="frames">The sequence of frame numbers of the animation. A value of null will play all frames of the animation texture.</param>
         /// <param name="fps">The speed, in frames per second, of the animation.</param>
+        /// <param name="isLooped">Determines whether the animation is looping or not.</param>
         /// <param name="frameBuffer">The amount of space, in pixels, between each of the animation frames.</param>
-        public void AddAnimation(string name, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, int frameBuffer = 0)
+        /// <returns>The name associated with the animation.</returns>
+        public string AddAnimation(string name, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, bool isLooped = true, int frameBuffer = 0)
         {
-            _animations.Add(name, new GenAnimation(this, frameWidth, frameHeight, frames, fps, frameBuffer));
+            _animations.Add(name, new GenAnimation(this, frameWidth, frameHeight, frames, fps, isLooped, frameBuffer));
+
+            return name;
         }
 
         /// <summary>
         /// Plays a sprite animation.
         /// </summary>
         /// <param name="name">The name associated with the animation.</param>
-        public void Play(string name)
+        /// <param name="forceReset">Determines whether the animation should start playing from the first frame, or continue from the last played frame.</param>
+        public void Play(string name, bool forceReset = true)
         {
             if (_animations.ContainsKey(name))
+            {
                 _currentAnimation = name;
+
+                if (forceReset)
+                    _animations[name].Reset();
+
+                _animations[name].IsPlaying = true;
+            }
         }
 
         /// <summary>

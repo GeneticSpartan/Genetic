@@ -53,16 +53,7 @@
       <Processor>EffectProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\grayscale.xnb</Output>
-      <Time>2013-03-29T01:41:14.9299708-07:00</Time>
-    </Item>
-    <Item>
-      <Source>music.mp3</Source>
-      <Name>music</Name>
-      <Importer>Mp3Importer</Importer>
-      <Processor>SoundEffectProcessor</Processor>
-      <Options>None</Options>
-      <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\music.xnb</Output>
-      <Time>2013-03-29T01:36:42.9174126-07:00</Time>
+      <Time>2013-03-29T17:49:08.255575-07:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>

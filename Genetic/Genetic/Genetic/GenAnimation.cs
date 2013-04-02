@@ -43,7 +43,17 @@ namespace Genetic
         /// <summary>
         /// A counter used to keep track of how much time has passed since the last frame update.
         /// </summary>
-        protected float _timer;
+        protected float _timer = 0;
+
+        /// <summary>
+        /// Determines whether the animation is currently playing or not.
+        /// </summary>
+        public bool IsPlaying = true;
+
+        /// <summary>
+        /// Determines whether the animation is looping or not.
+        /// </summary>
+        public bool IsLooped;
 
         /// <summary>
         /// Gets or sets the speed, in frames per second, of the animation.
@@ -67,7 +77,7 @@ namespace Genetic
             {
                 _frames = value;
 
-                refreshFrameCount();
+                RefreshFrameCount();
             }
         }
 
@@ -87,14 +97,16 @@ namespace Genetic
         /// <param name="frameHeight">The height of each animation frame.</param>
         /// <param name="frames">The sequence of frame numbers of the animation. A value of null will play all frames of the animation texture.</param>
         /// <param name="fps">The speed, in frames per second, of the animation.</param>
+        /// <param name="isLooped">Determines whether the animation is looping or not.</param>
         /// <param name="frameBuffer">The amount of space, in pixels, between each of the animation frames.</param>
-        public GenAnimation(GenSprite sprite, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, int frameBuffer = 0)
+        public GenAnimation(GenSprite sprite, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, bool isLooped = true, int frameBuffer = 0)
         {
             _sprite = sprite;
             _frameRect = new Rectangle(0, 0, frameWidth, frameHeight);
             FrameBuffer = frameBuffer;
             Frames = (frames == null) ? new int[0] : frames;
             Fps = fps;
+            IsLooped = isLooped;
         }
 
         /// <summary>
@@ -102,37 +114,53 @@ namespace Genetic
         /// </summary>
         public void Update()
         {
-            if (_currentFrame >= _frameCount)
-                _currentFrame %= _frameCount;
-
-            if (_frames.Length != 0)
+            if (IsPlaying)
             {
-                _frameRect.X = (_frameRect.Width + FrameBuffer) * _frames[_currentFrame] + FrameBuffer;
-            }
-            else
-            {
-                _frameRect.X = (_frameRect.Width + FrameBuffer) * _currentFrame + FrameBuffer;
-            }
+                if (_currentFrame >= _frameCount)
+                {
+                    if (IsLooped)
+                        _currentFrame %= _frameCount;
+                    else
+                    {
+                        _currentFrame = _frameCount - 1;
+                        IsPlaying = false;
+                    }
+                }
 
-            _timer += GenG.PhysicsTimeStep;
+                if (_frames.Length != 0)
+                    _frameRect.X = (_frameRect.Width + FrameBuffer) * _frames[_currentFrame] + FrameBuffer;
+                else
+                    _frameRect.X = (_frameRect.Width + FrameBuffer) * _currentFrame + FrameBuffer;
 
-            // Adjust the current frame after each frame time has passed.
-            if (_timer > _frameTime)
-            {
-                _currentFrame += (int)(_timer / _frameTime);
-                _timer %= _frameTime;
+                _timer += GenG.PhysicsTimeStep;
+
+                // Adjust the current frame after each frame time has passed.
+                if (_timer > _frameTime)
+                {
+                    _currentFrame += (int)(_timer / _frameTime);
+                    _timer %= _frameTime;
+                }
             }
         }
 
         /// <summary>
         /// Adjusts the frame count using the sprite texture or frames array.
         /// </summary>
-        protected void refreshFrameCount()
+        protected void RefreshFrameCount()
         {
             if (_frames.Length == 0)
                 _frameCount = _sprite.Texture.Width / ((_frameRect.Width + FrameBuffer) + FrameBuffer + FrameBuffer);
             else
                 _frameCount = _frames.Length;
+        }
+
+        /// <summary>
+        /// Resets the animation to start playing from the fist frame.
+        /// </summary>
+        public void Reset()
+        {
+            _currentFrame = 0;
+            _timer = 0;
         }
     }
 }

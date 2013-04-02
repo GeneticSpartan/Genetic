@@ -76,7 +76,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets or sets whether the sound effect instance is looping.
+        /// Gets or sets whether the sound effect instance is looping or not.
         /// </summary>
         public bool IsLooped
         {

@@ -9,4 +9,4 @@ D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\Nokia.xnb
 D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\player.xnb
 D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\auto_tiles.xnb
 D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\grayscale.xnb
-D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\music.xnb
+D:\Games\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\Xbox 360 Copy of Genetic.csprojResolveAssemblyReference.cache

@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual C# Express 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Xbox 360 Copy of Genetic", "Genetic\Genetic\Xbox 360 Copy of Genetic.csproj", "{7BAF1733-D6EE-4465-B84C-19186F2B682F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Xbox 360 = Debug|Xbox 360
+		Release|Xbox 360 = Release|Xbox 360
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Debug|Xbox 360.ActiveCfg = Debug|Xbox 360
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Debug|Xbox 360.Build.0 = Debug|Xbox 360
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Debug|Xbox 360.Deploy.0 = Debug|Xbox 360
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Release|Xbox 360.ActiveCfg = Release|Xbox 360
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Release|Xbox 360.Build.0 = Release|Xbox 360
+		{7BAF1733-D6EE-4465-B84C-19186F2B682F}.Release|Xbox 360.Deploy.0 = Release|Xbox 360
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
