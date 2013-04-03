@@ -70,7 +70,7 @@ namespace Genetic
 
             GenG.BackgroundColor = Color.CornflowerBlue;
 
-            camera2 = GenG.AddCamera(new GenCamera(GenG.Game.Width / 2, 0, GenG.Game.Width / 2, GenG.Game.Height, 2f));
+            camera2 = GenG.AddCamera(new GenCamera(0, GenG.Game.Height / 2, GenG.Game.Width, GenG.Game.Height / 2, 2f));
             camera2.BgColor = new Color(50, 50, 70);
 
             GenG.Camera.BgColor = new Color(70, 50, 50);
@@ -161,7 +161,7 @@ namespace Genetic
             GenG.Camera.MaxZoom = 10f;
             GenG.Camera.AddTarget(Player);
             //GenG.Camera.AddTarget(Warthog3);
-            GenG.Camera.SetCameraView(0, 0, GenG.Game.Width / 2, GenG.Game.Height);
+            GenG.Camera.SetCameraView(0, 0, GenG.Game.Width, GenG.Game.Height / 2);
 
             GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
             GenG.Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
@@ -184,13 +184,13 @@ namespace Genetic
 
             GenG.Collide(Player, Text);
             //GenG.Collide(Map, Player);
-            GenG.Collide(Cave, Player);
+            GenG.Collide(Cave, Player, HitCave);
             //GenG.Collide(Map, Boxes);
             GenG.Collide(Cave, Boxes);
-            //GenG.Collide(Player, Boxes);
+            GenG.Collide(Player, Boxes, HitBox);
             //GenG.Collide(Spring, Boxes);
             //GenG.Collide(warthog3, warthogs);
-            //GenG.Collide(Boxes, Boxes);
+            GenG.Collide(Boxes, Boxes);
             GenG.Collide(Warthog4, Warthog5);
 
             GenG.Collide(Player, Warthog3, FadeOut);
@@ -207,6 +207,9 @@ namespace Genetic
                 GenG.TimeScale = 2f;
             else
                 GenG.TimeScale = 1f;
+
+            if (GenG.Keyboards.JustPressed(Keys.Escape) || GenG.GamePads.JustPressed(Buttons.Back))
+                GenG.Game.Exit();
 
             /*if (Player.IsTouching(GenObject.Direction.Down))
                 Player.Rotation = 0;
@@ -273,10 +276,12 @@ namespace Genetic
             //}
         }
 
-        public void FadeOut()
+        public void FadeOut(GenCollideEvent e)
         {
             GenG.Camera.Fade(2, Color.Black, EndGame);
             camera2.Fade(2, Color.White);
+
+            ((GenSprite)e.Object2).Flicker(40f, 2f, Color.OrangeRed, true);
         }
 
         public void EndGame()
@@ -295,5 +300,17 @@ namespace Genetic
 
             Timer.Start();
         }*/
+
+        public void HitBox(GenCollideEvent e)
+        {
+            e.Object1.Velocity.Y = -200;
+            //e.Object2.Exists = false;
+        }
+
+        public void HitCave(GenCollideEvent e)
+        {
+            ((GenSprite)e.Object2).Color = Color.Red;
+            //e.Object2.Exists = false;
+        }
     }
 }

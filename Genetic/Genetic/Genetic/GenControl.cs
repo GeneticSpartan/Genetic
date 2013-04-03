@@ -71,6 +71,16 @@ namespace Genetic
         protected bool _inAir = true;
 
         /// <summary>
+        /// A flag to determine if the object is being controlled to move along the x-axis.
+        /// </summary>
+        protected bool _movingX = false;
+
+        /// <summary>
+        /// A flag to determine if the object is being controlled to move along the y-axis.
+        /// </summary>
+        protected bool _movingY = false;
+
+        /// <summary>
         /// The current state of the object, either idle, moving, jumping, or falling.
         /// </summary>
         protected State _state = State.Idle;
@@ -135,6 +145,11 @@ namespace Genetic
             ControlObject.Acceleration.X = 0;
             ControlObject.Acceleration.Y = 0;
 
+            if (ControlObject.IsTouching(GenObject.Direction.Down))
+                _inAir = false;
+            else
+                _inAir = true;
+
             if (MovementType == Movement.Instant)
             {
                 if (MovementSpeedX != 0)
@@ -144,6 +159,7 @@ namespace Genetic
                         ControlObject.Velocity.X = -MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
 
+                        _movingX = true;
                         SetState(State.Moving);
                     }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
@@ -151,10 +167,15 @@ namespace Genetic
                         ControlObject.Velocity.X = MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
 
+                        _movingX = true;
                         SetState(State.Moving);
                     }
                     else if (StoppingType == Stopping.Instant)
+                    {
                         ControlObject.Velocity.X = 0f;
+
+                        _movingX = false;
+                    }
                 }
 
                 if (MovementSpeedY != 0)
@@ -163,16 +184,22 @@ namespace Genetic
                     {
                         ControlObject.Velocity.Y = -MovementSpeedY;
 
+                        _movingY = true;
                         SetState(State.Moving);
                     }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
                     {
                         ControlObject.Velocity.Y = MovementSpeedY;
 
+                        _movingY = true;
                         SetState(State.Moving);
                     }
                     else if (StoppingType == Stopping.Instant)
+                    {
                         ControlObject.Velocity.Y = 0f;
+
+                        _movingY = false;
+                    }
                 }
             }
             else
@@ -184,6 +211,7 @@ namespace Genetic
                         ControlObject.Acceleration.X = -MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
 
+                        _movingX = true;
                         SetState(State.Moving);
                     }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
@@ -191,13 +219,14 @@ namespace Genetic
                         ControlObject.Acceleration.X = MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
 
+                        _movingX = true;
                         SetState(State.Moving);
                     }
                     else
                     {
                         ControlObject.Acceleration.X = 0;
 
-                        SetState(State.Idle);
+                        _movingX = false;
                     }
                 }
 
@@ -207,23 +236,24 @@ namespace Genetic
                     {
                         ControlObject.Acceleration.Y = -MovementSpeedY;
 
+                        _movingY = true;
                         SetState(State.Moving);
                     }
                     else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
                     {
                         ControlObject.Acceleration.Y = MovementSpeedY;
 
+                        _movingY = true;
                         SetState(State.Moving);
                     }
                     else
+                    {
                         ControlObject.Acceleration.Y = 0;
+
+                        _movingY = false;
+                    }
                 }
             }
-
-            if (ControlObject.IsTouching(GenObject.Direction.Down))
-                _inAir = false;
-            else
-                _inAir = true;
 
             if (!_inAir && (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4])))
             {
@@ -235,6 +265,26 @@ namespace Genetic
 
             if (_inAir && (ControlObject.Velocity.Y > 0))
                 SetState(State.Falling);
+
+            // If the object is touching the ground and not being controlled to move, set its state to idle.
+            if (!_inAir)
+            {
+                if (MovementSpeedX != 0 && MovementSpeedY != 0)
+                {
+                    if (!_movingX && !_movingY)
+                        SetState(State.Idle);
+                }
+                else if (MovementSpeedX != 0)
+                {
+                    if (!_movingX)
+                        SetState(State.Idle);
+                }
+                else if (MovementSpeedY != 0)
+                {
+                    if (!_movingY)
+                        SetState(State.Idle);
+                }
+            }
             
             ControlObject.Acceleration.X += Gravity.X;
             ControlObject.Acceleration.Y += Gravity.Y;
@@ -321,23 +371,17 @@ namespace Genetic
                 switch (state)
                 {
                     case State.Idle:
-                        if (!_inAir)
-                        {
-                            if (IdleAnimation != null)
-                                ((GenSprite)ControlObject).Play(IdleAnimation);
+                        if (IdleAnimation != null)
+                            ((GenSprite)ControlObject).Play(IdleAnimation);
 
-                            _state = state;
-                        }
+                        _state = state;
 
                         break;
                     case State.Moving:
-                        if (!_inAir)
-                        {
-                            if (MoveAnimation != null)
-                                ((GenSprite)ControlObject).Play(MoveAnimation);
+                        if (MoveAnimation != null)
+                            ((GenSprite)ControlObject).Play(MoveAnimation);
 
-                            _state = state;
-                        }
+                        _state = state;
 
                         break;
                     case State.Jumping:

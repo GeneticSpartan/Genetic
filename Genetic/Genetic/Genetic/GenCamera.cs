@@ -383,25 +383,25 @@ namespace Genetic
                 if (_followTargets.Count > 1)
                 {
                     // Set the initial minimum and maximum x and y values based on the first follow target.
-                    float followXMin = _followTargets[0].PositionRect.Left;
-                    float followXMax = _followTargets[0].PositionRect.Right;
-                    float followYMin = _followTargets[0].PositionRect.Top;
-                    float followYMax = _followTargets[0].PositionRect.Bottom;
+                    float followXMin = _followTargets[0].BoundingBox.Left;
+                    float followXMax = _followTargets[0].BoundingBox.Right;
+                    float followYMin = _followTargets[0].BoundingBox.Top;
+                    float followYMax = _followTargets[0].BoundingBox.Bottom;
 
                     // Loop through the remaining follow targets and adjust the minimum and maximum x and y values accordingly.
                     for (int i = 1; i < _followTargets.Count; i++)
                     {
-                        if (_followTargets[i].PositionRect.Left < followXMin)
-                            followXMin = _followTargets[i].PositionRect.Left;
+                        if (_followTargets[i].BoundingBox.Left < followXMin)
+                            followXMin = _followTargets[i].BoundingBox.Left;
 
-                        if (_followTargets[i].PositionRect.Right > followXMax)
-                            followXMax = _followTargets[i].PositionRect.Right;
+                        if (_followTargets[i].BoundingBox.Right > followXMax)
+                            followXMax = _followTargets[i].BoundingBox.Right;
 
-                        if (_followTargets[i].PositionRect.Top < followYMin)
-                            followYMin = _followTargets[i].PositionRect.Top;
+                        if (_followTargets[i].BoundingBox.Top < followYMin)
+                            followYMin = _followTargets[i].BoundingBox.Top;
 
-                        if (_followTargets[i].PositionRect.Bottom > followYMax)
-                            followYMax = _followTargets[i].PositionRect.Bottom;
+                        if (_followTargets[i].BoundingBox.Bottom > followYMax)
+                            followYMax = _followTargets[i].BoundingBox.Bottom;
                     }
 
                     // Set the follow target to the center point between the minimum and maximum x and y values of all combined follow targets.
@@ -493,7 +493,7 @@ namespace Genetic
             ScrollY += _shakeOffset.Y;
 
             // Create the camera transform.
-            Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+            Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
 
             /*Transform = Matrix.CreateTranslation(-Viewport.Width / (2 * Zoom), -Viewport.Height / (2 * Zoom), 0f) *
                         Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) *

@@ -58,7 +58,7 @@ namespace Genetic
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-
+            
             //IsFixedTimeStep = false;
             //graphics.SynchronizeWithVerticalRetrace = false;
             
@@ -115,11 +115,7 @@ namespace Genetic
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-                this.Exit();
-
-            GenG.Update();
+            GenG.Update(gameTime);
             
             base.Update(gameTime);
         }

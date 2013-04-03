@@ -101,7 +101,7 @@ namespace Genetic
             }
             else
             {
-                if (_level != 0 || (_level == 0 && (((GenObject)objectOrGroup).PositionRect.Left < _right && ((GenObject)objectOrGroup).PositionRect.Right > _left && ((GenObject)objectOrGroup).PositionRect.Top < _bottom && ((GenObject)objectOrGroup).PositionRect.Bottom > _top)))
+                if (_level != 0 || (_level == 0 && (((GenObject)objectOrGroup).BoundingBox.Left < _right && ((GenObject)objectOrGroup).BoundingBox.Right > _left && ((GenObject)objectOrGroup).BoundingBox.Top < _bottom && ((GenObject)objectOrGroup).BoundingBox.Bottom > _top)))
                 {
                     if (_nodes[0] != null)
                     {

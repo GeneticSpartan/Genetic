@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
@@ -54,6 +55,11 @@ namespace Genetic
         public static Texture2D Pixel;
 
         /// <summary>
+        /// The global default spritefont used for drawing strings.
+        /// </summary>
+        public static SpriteFont Font;
+
+        /// <summary>
         /// An effect shader used to apply post-processing effects to the render target texture.
         /// </summary>
         private static Effect _effect;
@@ -98,6 +104,11 @@ namespace Genetic
         /// The total amount of seconds that have elapsed relative to the time scale.
         /// </summary>
         private static float _elapsedTime;
+
+        /// <summary>
+        /// A stopwatch used to calculate the game's frame rate.
+        /// </summary>
+        private static Stopwatch _stopwatch = new Stopwatch();
 
         /// <summary>
         /// Represents the bounding rectangle of the world space.
@@ -198,6 +209,7 @@ namespace Genetic
         {
             Pixel = new Texture2D(graphicsDevice, 1, 1);
             Pixel.SetData<Color>(new Color[] { Color.White });
+            Font = content.Load<SpriteFont>("Nokia");
 
             Game = game;
             GraphicsDevice = graphicsDevice;
@@ -217,7 +229,7 @@ namespace Genetic
         /// <summary>
         /// Called by the game object every frame to update the game components.
         /// </summary>
-        public static void Update()
+        public static void Update(GameTime gameTime)
         {
             _physicsTimeStep = TimeScale * _timeStep;
             _elapsedTime += _physicsTimeStep;
@@ -292,12 +304,6 @@ namespace Genetic
                     // Draw the camera effects.
                     SpriteBatch.Begin();
                     camera.DrawFx();
-
-                    //if (watch.ElapsedMilliseconds != 0)
-                    //    spriteBatch.DrawString(Font, (1000 / watch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
-                    //watch.Reset();
-                    //watch.Start();
-
                     SpriteBatch.End();
                 }
             }
@@ -322,6 +328,13 @@ namespace Genetic
                     SpriteBatch.End();
                 }
             }
+
+            SpriteBatch.Begin();
+            _stopwatch.Stop();
+            SpriteBatch.DrawString(Font, (1000f / (float)_stopwatch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
+            _stopwatch.Reset();
+            _stopwatch.Start();
+            SpriteBatch.End();
         }
 
         /// <summary>
@@ -380,11 +393,11 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for overlap.</param>
         /// <param name="objectOrGroup2">The second object, group, or tilemap to check for overlap.</param>
-        /// <param name="callback">The method that will be invoked if an overlap occurs.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <param name="separate">Determines if objects should collide with each other.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, Action callback = null, bool separate = false, bool penetrate = true)
+        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, CollideEvent callback = null, bool separate = false, bool penetrate = true)
         {
             Quadtree.Clear();
 
@@ -404,9 +417,9 @@ namespace Genetic
                 if (objectOrGroup2 is GenObject)
                 {
                     if (separate)
-                        overlap = ((GenObject)objectOrGroup1).Collide((GenObject)objectOrGroup2, penetrate);
+                        overlap = ((GenObject)objectOrGroup1).Collide((GenObject)objectOrGroup2, callback, penetrate);
                     else
-                        overlap = ((GenObject)objectOrGroup1).Overlap((GenObject)objectOrGroup2);
+                        overlap = ((GenObject)objectOrGroup1).Overlap((GenObject)objectOrGroup2, callback);
                 }
                 else if (objectOrGroup2 is GenGroup)
                 {
@@ -417,12 +430,12 @@ namespace Genetic
                     {
                         if (separate)
                         {
-                            if (((GenObject)objectOrGroup1).Collide((GenObject)_quadtreeObjects[i], penetrate) && !overlap)
+                            if (((GenObject)objectOrGroup1).Collide((GenObject)_quadtreeObjects[i], callback, penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (((GenObject)objectOrGroup1).Overlap((GenObject)_quadtreeObjects[i]) && !overlap)
+                            if (((GenObject)objectOrGroup1).Overlap((GenObject)_quadtreeObjects[i], callback) && !overlap)
                                 overlap = true;
                         }
                     }
@@ -436,12 +449,12 @@ namespace Genetic
                     {
                         if (separate)
                         {
-                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)objectOrGroup2, penetrate) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)objectOrGroup2, callback, penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)objectOrGroup2) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)objectOrGroup2, callback) && !overlap)
                                 overlap = true;
                         }
                     }
@@ -456,21 +469,18 @@ namespace Genetic
                         {
                             if (separate)
                             {
-                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)_quadtreeObjects[j], penetrate) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)_quadtreeObjects[j], callback, penetrate) && !overlap)
                                     overlap = true;
                             }
                             else
                             {
-                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)_quadtreeObjects[j]) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)_quadtreeObjects[j], callback) && !overlap)
                                     overlap = true;
                             }
                         }
                     }
                 }
             }
-
-            if (overlap && (callback != null))
-                callback.Invoke();
 
             return overlap;
         }
@@ -480,15 +490,15 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
         /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
-        /// <param name="callback">The method that will be invoked if a collision occurs.</param>
+        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, Action callback = null, bool penetrate = true)
+        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, CollideEvent callback = null, bool penetrate = true)
         {
             if (objectOrGroup1 is GenTilemap)
-                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2);
+                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2, callback);
             else if (objectOrGroup2 is GenTilemap)
-                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1);
+                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1, callback);
 
             return Overlap(objectOrGroup1, objectOrGroup2, callback, true, penetrate);
         }

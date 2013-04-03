@@ -29,10 +29,10 @@ namespace Genetic
         protected GenAABB _boundingBox;
 
         /// <summary>
-        /// The bounding rectangle of the object relative to the position.
-        /// Used during draw calls.
+        /// The bounding rectangle of the object.
+        /// Used during draw debug calls.
         /// </summary>
-        protected Rectangle _positionRect;
+        protected Rectangle _boundingRect;
 
         /// <summary>
         /// The x and y distances the object has moved between the current and previous updates relative to its velocity.
@@ -102,7 +102,6 @@ namespace Genetic
             {
                 _position.X = value;
                 _boundingBox.X = value;
-                _positionRect.X = (int)value;
             }
         }
 
@@ -117,7 +116,6 @@ namespace Genetic
             {
                 _position.Y = value;
                 _boundingBox.Y = value;
-                _positionRect.Y = (int)value;
             }
         }
 
@@ -130,15 +128,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the bounding rectangle of the object relative to the position.
-        /// Used for draw calls.
-        /// </summary>
-        public Rectangle PositionRect
-        {
-            get { return _positionRect; }
-        }
-
-        /// <summary>
         /// Gets or sets the width the object.
         /// </summary>
         public float Width
@@ -148,7 +137,7 @@ namespace Genetic
             set
             {
                 _boundingBox.Width = value;
-                _positionRect.Width = (int)value;
+                _boundingRect.Width = (int)value;
             }
         }
 
@@ -162,7 +151,7 @@ namespace Genetic
             set
             {
                 _boundingBox.Height = value;
-                _positionRect.Height = (int)value;
+                _boundingRect.Height = (int)value;
             }
         }
 
@@ -197,7 +186,7 @@ namespace Genetic
         {
             _position = new Vector2(x, y);
             _boundingBox = new GenAABB(x, y, width, height);
-            _positionRect = new Rectangle((int)_position.X, (int)_position.Y, (int)width, (int)height);
+            _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _moveBounds = new GenAABB(x, y, width, height);
 
             Velocity = Vector2.Zero;
@@ -276,7 +265,7 @@ namespace Genetic
         /// </summary>
         public override void DrawDebug()
         {
-            GenG.SpriteBatch.Draw(GenG.Pixel, _positionRect, _positionRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
+            GenG.SpriteBatch.Draw(GenG.Pixel, _position, _boundingRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
 
             //GenG.DrawLine(_positionRect.Left, _positionRect.Top, _positionRect.Right, _positionRect.Top, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
             //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
@@ -322,20 +311,30 @@ namespace Genetic
         /// Checks for overlap between the movements bounds of this object and a given object.
         /// </summary>
         /// <param name="gameObject">The object to check for an overlap.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public bool Overlap(GenObject gameObject)
+        public bool Overlap(GenObject gameObject, CollideEvent callback = null)
         {
-            return GetMoveBounds().Intersects(gameObject.GetMoveBounds());
+            if (GetMoveBounds().Intersects(gameObject.GetMoveBounds()))
+            {
+                if (callback != null)
+                    callback(new GenCollideEvent(this, gameObject));
+
+                return true;
+            }
+            else
+                return false;
         }
 
         /// <summary>
         /// Applys collision detection and response against another object that may overlap this object.
         /// </summary>
         /// <param name="gameObject">The object to check for a collision.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True is a collision occurs, false if not.</returns>
-        public bool Collide(GenObject gameObject, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        /// <returns>True if a collision occurs, false if not.</returns>
+        public bool Collide(GenObject gameObject, CollideEvent callback = null, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             if (!this.Equals(gameObject))
             {
@@ -460,6 +459,9 @@ namespace Genetic
                                     gameObject.Touching |= Direction.Down;
                                 }
                             }
+
+                            if (callback != null)
+                                callback(new GenCollideEvent(this, gameObject));
 
                             return true;
                         }

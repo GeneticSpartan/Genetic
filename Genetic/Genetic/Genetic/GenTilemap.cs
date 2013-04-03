@@ -217,13 +217,14 @@ namespace Genetic
         /// Applys collision detection and response between an object or group of objects and the tiles of the tilemap.
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
-        /// <param name="objectOrGroup1">The object or group to check for collisions.</param>
+        /// <param name="objectOrGroup">The object or group to check for collisions.</param>
+        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public bool Collide(GenBasic objectOrGroup)
+        public bool Collide(GenBasic objectOrGroup, CollideEvent callback = null)
         {
             if (objectOrGroup is GenObject)
             {
-                return CollideObject((GenObject)objectOrGroup);
+                return CollideObject((GenObject)objectOrGroup, callback);
             }
             else if (objectOrGroup is GenGroup)
             {
@@ -231,7 +232,7 @@ namespace Genetic
 
                 for (int i = 0; i < ((GenGroup)objectOrGroup).Members.Count; i++)
                 {
-                    if (CollideObject((GenObject)((GenGroup)objectOrGroup).Members[i]) && !collided)
+                    if (CollideObject((GenObject)((GenGroup)objectOrGroup).Members[i], callback) && !collided)
                         collided = true;
                 }
 
@@ -245,9 +246,10 @@ namespace Genetic
         /// Applys collision detection and response between an object and the tiles of the tilemap.
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
-        /// <param name="objectOrGroup1">The object to check for collisions.</param>
+        /// <param name="gameObject">The object to check for collisions.</param>
+        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public bool CollideObject(GenObject gameObject)
+        public bool CollideObject(GenObject gameObject, CollideEvent callback = null)
         {
             // Refresh the movement bounding box of the object.
             gameObject.GetMoveBounds();
@@ -270,7 +272,7 @@ namespace Genetic
                     {
                         if ((Tiles[x, y] != null))
                         {
-                            if (gameObject.Collide(Tiles[x, y], false, Tiles[x, y].OpenEdges) && !collided)
+                            if (gameObject.Collide(Tiles[x, y], callback, false, Tiles[x, y].OpenEdges) && !collided)
                                 collided = true;
                         }
                     }

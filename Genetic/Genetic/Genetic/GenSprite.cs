@@ -267,8 +267,8 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _drawPosition.X = _positionRect.X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
-            _drawPosition.Y = _positionRect.Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+            _drawPosition.X = X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
+            _drawPosition.Y = Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
 
             if (_texture != null)
             {
