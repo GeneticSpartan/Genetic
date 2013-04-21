@@ -24,6 +24,11 @@ namespace Genetic
         protected Vector2 _position;
 
         /// <summary>
+        /// The x and y position of the object during the previous update.
+        /// </summary>
+        protected Vector2 _oldPosition;
+
+        /// <summary>
         /// The bounding box of the object relative to the position.
         /// </summary>
         protected GenAABB _boundingBox;
@@ -90,6 +95,22 @@ namespace Genetic
         /// A bit field of flags giving the current directions that the object is colliding in.
         /// </summary>
         public Direction Touching = Direction.None;
+
+        /// <summary>
+        /// Gets the x and y position of the object.
+        /// </summary>
+        public Vector2 Position
+        {
+            get { return _position; }
+        }
+
+        /// <summary>
+        /// Gets the x and y position of the object during the previous update.
+        /// </summary>
+        public Vector2 OldPosition
+        {
+            get { return _oldPosition; }
+        }
 
         /// <summary>
         /// Gets or sets the x position the object.
@@ -244,6 +265,8 @@ namespace Genetic
 
             if (MaxVelocity.Y != 0)
                 Velocity.Y = MathHelper.Clamp(Velocity.Y, -MaxVelocity.Y, MaxVelocity.Y);
+
+            _oldPosition = _position;
 
             // Move the object.
             X += Velocity.X * GenG.PhysicsTimeStep;

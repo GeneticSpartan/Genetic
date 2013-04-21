@@ -53,10 +53,13 @@ namespace Genetic
         /// <summary>
         /// Adds any GenBasic object to the group's members list.
         /// </summary>
-        /// <param name="basic"></param>
-        public void Add(GenBasic basic)
+        /// <param name="basicObject">The GenBasic object to add.</param>
+        /// <returns>The GenBasic object added to the members list.</returns>
+        public GenBasic Add(GenBasic basicObject)
         {
-            Members.Add(basic);
+            Members.Add(basicObject);
+
+            return basicObject;
         }
     }
 }

@@ -3,6 +3,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+using Genetic.Input;
+
 namespace Genetic
 {
     public class MenuState : GenState
@@ -22,7 +24,7 @@ namespace Genetic
             startGame.Deceleration.Y = 700;
             Add(startGame);
 
-            GenG.Camera.Flash(1.2f, 3f, Color.White);
+            //GenG.Camera.Flash(1.2f, 3f, Color.White);
         }
 
         public override void Update()

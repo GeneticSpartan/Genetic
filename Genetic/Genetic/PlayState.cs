@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+using Genetic.Physics;
+
 namespace Genetic
 {
     /// <summary>
@@ -12,7 +14,7 @@ namespace Genetic
     public class PlayState : GenState
     {
         public GenTilemap Map;
-        public GenCave Cave;
+        //public GenCave Cave;
 
         public GenGroup Boxes;
 
@@ -24,13 +26,15 @@ namespace Genetic
 
         public GenControl PlayerControl;
 
-        public GenCamera camera2;
+        //public GenCamera camera2;
 
         public GenSound Beep;
         public GenText Text;
         //public GenSound Music;
 
         //public GenTimer Timer;
+
+        public GenVerlet Chain;
 
         public override void Create()
         {
@@ -62,18 +66,27 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
                 "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
                 , 8, 8, GenTilemap.ImageAuto);
-            //Add(Map);
+            Add(Map);
 
-            Cave = new GenCave();
-            Cave.MakeCave(160, 320);
-            Add(Cave);
+            //Cave = new GenCave();
+            //Cave.MakeCave(160, 320);
+            //Add(Cave);
 
             GenG.BackgroundColor = Color.CornflowerBlue;
 
-            camera2 = GenG.AddCamera(new GenCamera(0, GenG.Game.Height / 2, GenG.Game.Width, GenG.Game.Height / 2, 2f));
-            camera2.BgColor = new Color(50, 50, 70);
+            //camera2 = GenG.AddCamera(new GenCamera(0, GenG.Game.Height / 2, GenG.Game.Width, GenG.Game.Height / 2, 2f));
+            //camera2.BgColor = new Color(50, 50, 70);
 
             GenG.Camera.BgColor = new Color(70, 50, 50);
+
+            Chain = new GenVerlet();
+            Chain.MakeGrid(100, 100, 5, 10, 1);
+            Chain.LineColor = Color.Orange;
+            Chain.SetMass(0.2f);
+            Chain.SetGravity(0f, 700f);
+            ((GenObject)Chain.Members[0]).Immovable = true;
+            ((GenObject)Chain.Members[0]).Acceleration.Y = 0f;
+            Add(Chain);
             
             Boxes = new GenGroup();
             Add(Boxes);
@@ -132,8 +145,11 @@ namespace Genetic
             Add(Warthog4);
 
             Warthog5 = new GenSprite(500, 100, "warthog", 78, 49);
-            Warthog5.Mass = 1f;
+            Warthog5.Acceleration.Y = 700;
             Add(Warthog5);
+
+            //Chain.MakeLink(Warthog5, (GenObject)Chain.Members[9]);
+            //Chain.SetRestingDistance(10f);
 
             Beep = new GenSound("beep", 1, true);
             //beep.Play();
@@ -161,14 +177,14 @@ namespace Genetic
             GenG.Camera.MaxZoom = 10f;
             GenG.Camera.AddTarget(Player);
             //GenG.Camera.AddTarget(Warthog3);
-            GenG.Camera.SetCameraView(0, 0, GenG.Game.Width, GenG.Game.Height / 2);
+            //GenG.Camera.SetCameraView(0, 0, GenG.Game.Width, GenG.Game.Height / 2);
 
             GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
             GenG.Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
 
-            camera2.Flash(1f, 1f, Color.Black);
-            camera2.FollowStrength = 0.05f;
-            camera2.AddTarget(Player);
+            //camera2.Flash(1f, 1f, Color.Black);
+            //camera2.FollowStrength = 0.05f;
+            //camera2.AddTarget(Player);
             //camera2.AddTarget(Warthog3);
 
             Player.Flicker(40f, 1f, Color.Black * 0.5f, true);
@@ -183,15 +199,15 @@ namespace Genetic
             base.Update();
 
             GenG.Collide(Player, Text);
-            //GenG.Collide(Map, Player);
-            GenG.Collide(Cave, Player, HitCave);
-            //GenG.Collide(Map, Boxes);
-            GenG.Collide(Cave, Boxes);
+            GenG.Collide(Map, Player, HitCave);
+            GenG.Collide(Map, Boxes);
             GenG.Collide(Player, Boxes, HitBox);
-            //GenG.Collide(Spring, Boxes);
-            //GenG.Collide(warthog3, warthogs);
             GenG.Collide(Boxes, Boxes);
             GenG.Collide(Warthog4, Warthog5);
+            GenG.Collide(Map, Chain);
+            GenG.Collide(Map, Warthog5);
+            GenG.Collide(Player, Warthog5);
+            //GenG.Collide(Chain, Chain);
 
             GenG.Collide(Player, Warthog3, FadeOut);
 
@@ -211,6 +227,11 @@ namespace Genetic
             if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Escape) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Back))
                 GenG.Game.Exit();
 
+            ((GenObject)Chain.Members[0]).X = Player.X;
+            ((GenObject)Chain.Members[0]).Y = Player.Y;
+
+            Chain.LineColor = GenU.RandomColor();
+
             /*if (Player.IsTouching(GenObject.Direction.Down))
                 Player.Rotation = 0;
             else if (Player.IsTouching(GenObject.Direction.Right))
@@ -220,9 +241,8 @@ namespace Genetic
             else if (Player.IsTouching(GenObject.Direction.Up))
                 Player.Rotation = 180;
             else if (!Player.IsTouching(GenObject.Direction.Any))
-                Player.RotationSpeed = Player.Velocity.X * 4;*/
+                Player.RotationSpeed = Player.Velocity.X * 4;
 
-            /*
             if (GenG.Keyboards.JustPressed(Keys.Space) || GenG.GamePads.JustPressed(Buttons.A, 1))
             {
                 GenG.camera.AddTarget(warthog2);
@@ -237,9 +257,9 @@ namespace Genetic
                 //GenG.camera.RemoveTarget(text);
                 //camera2.SetFollow(warthog2);
                 //GenG.ResetState();
-            }*/
+            }
 
-            /*if (warthog2.X < 0)
+            if (warthog2.X < 0)
             {
                 warthog2.X = 0;
                 warthog2.velocity.X = 0;
@@ -259,27 +279,12 @@ namespace Genetic
                 warthog2.Y = camera2.Viewport.Height - warthog2.Height;
                 warthog2.velocity.Y = 0;
             }*/
-
-            //for (int i = 0; i < objects.Count; i++)
-            //{
-                //(objects[i] as GenSprite).color = Color.CornflowerBlue;
-            //}
-
-            //objects.Clear();
-
-            //GenG.quadtree.Retrieve(objects, warthog2.PositionRect);
-
-            //for (int i = 0; i < objects.Count; i++)
-            //{
-                //(objects[i] as GenSprite).color = Color.Red;
-                //GenG.Collide(warthog2, objects[i]);
-            //}
         }
 
         public void FadeOut(GenCollideEvent e)
         {
             GenG.Camera.Fade(2, Color.Black, EndGame);
-            camera2.Fade(2, Color.White);
+            //camera2.Fade(2, Color.White);
 
             ((GenSprite)e.Object2).Flicker(40f, 2f, Color.OrangeRed, true);
         }

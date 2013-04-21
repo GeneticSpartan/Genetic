@@ -7,6 +7,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
+using Genetic.Input;
 using Genetic.Geometry;
 
 namespace Genetic
@@ -409,7 +410,8 @@ namespace Genetic
         /// <param name="x2">The x position of the ending point.</param>
         /// <param name="y2">The y position of the ending point.</param>
         /// <param name="color">The color of the line. Defaults to white if set to null.</param>
-        public static void DrawLine(float x1, float y1, float x2, float y2, Color? color = null)
+        /// <param name="thickness">The thickness of the line, in pixels.</param>
+        public static void DrawLine(float x1, float y1, float x2, float y2, Color? color = null, float thickness = 1)
         {
             color = color.HasValue ? color.Value : Color.White;
 
@@ -419,7 +421,7 @@ namespace Genetic
             float angle = (float)Math.Atan2(point2.Y - point1.Y, point2.X - point1.X);
             float length = (point2 - point1).Length();
 
-            SpriteBatch.Draw(Pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, 1), SpriteEffects.None, 0);
+            SpriteBatch.Draw(Pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, thickness), SpriteEffects.None, 0);
         }
 
         /// <summary>
