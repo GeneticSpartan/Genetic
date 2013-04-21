@@ -29,9 +29,9 @@ namespace Genetic
         public Stopping StoppingType;
 
         /// <summary>
-        /// The index number of the player controlling the object, a value of 1 through 4.
+        /// The index number of the player controlling the object.
         /// </summary>
-        public int Player;
+        public PlayerIndex PlayerIndex;
 
         /// <summary>
         /// The keyboard controls for movement direction and jumping.
@@ -119,13 +119,13 @@ namespace Genetic
         /// <param name="controlObject">The object that is controlled.</param>
         /// <param name="movementType">How acceleration or velocity should be handled as the object moves.</param>
         /// <param name="stoppingType">How acceleration or velocity should be handled as the object stops.</param>
-        /// <param name="player">The index number of the player controlling the object, a value of 1 through 4.</param>
-        public GenControl(GenObject controlObject, Movement movementType, Stopping stoppingType, int player = 1)
+        /// <param name="player">The index number of the player controlling the object.</param>
+        public GenControl(GenObject controlObject, Movement movementType, Stopping stoppingType, PlayerIndex playerIndex = PlayerIndex.One)
         {
             ControlObject = controlObject;
             MovementType = movementType;
             StoppingType = stoppingType;
-            Player = player;
+            PlayerIndex = playerIndex;
 
             // Set the default movement direction keyboard controls.
             SetDirectionControls(Keys.Left, Keys.Right, Keys.Up, Keys.Down);
@@ -154,7 +154,7 @@ namespace Genetic
             {
                 if (MovementSpeedX != 0)
                 {
-                    if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
                     {
                         ControlObject.Velocity.X = -MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
@@ -162,7 +162,7 @@ namespace Genetic
                         _movingX = true;
                         SetState(State.Moving);
                     }
-                    else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
                     {
                         ControlObject.Velocity.X = MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
@@ -180,14 +180,14 @@ namespace Genetic
 
                 if (MovementSpeedY != 0)
                 {
-                    if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
                     {
                         ControlObject.Velocity.Y = -MovementSpeedY;
 
                         _movingY = true;
                         SetState(State.Moving);
                     }
-                    else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
                     {
                         ControlObject.Velocity.Y = MovementSpeedY;
 
@@ -206,7 +206,7 @@ namespace Genetic
             {
                 if (MovementSpeedX != 0)
                 {
-                    if (GenG.Keyboards.IsPressed(_keyboardControls[0]) || GenG.GamePads.IsPressed(_gamePadControls[0]))
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
                     {
                         ControlObject.Acceleration.X = -MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
@@ -214,7 +214,7 @@ namespace Genetic
                         _movingX = true;
                         SetState(State.Moving);
                     }
-                    else if (GenG.Keyboards.IsPressed(_keyboardControls[1]) || GenG.GamePads.IsPressed(_gamePadControls[1]))
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
                     {
                         ControlObject.Acceleration.X = MovementSpeedX;
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
@@ -232,14 +232,14 @@ namespace Genetic
 
                 if (MovementSpeedY != 0)
                 {
-                    if (GenG.Keyboards.IsPressed(_keyboardControls[2]) || GenG.GamePads.IsPressed(_gamePadControls[2]))
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
                     {
                         ControlObject.Acceleration.Y = -MovementSpeedY;
 
                         _movingY = true;
                         SetState(State.Moving);
                     }
-                    else if (GenG.Keyboards.IsPressed(_keyboardControls[3]) || GenG.GamePads.IsPressed(_gamePadControls[3]))
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
                     {
                         ControlObject.Acceleration.Y = MovementSpeedY;
 
@@ -255,7 +255,7 @@ namespace Genetic
                 }
             }
 
-            if (!_inAir && (GenG.Keyboards.JustPressed(_keyboardControls[4]) || GenG.GamePads.JustPressed(_gamePadControls[4])))
+            if (!_inAir && (GenG.Keyboards[PlayerIndex].JustPressed(_keyboardControls[4]) || GenG.GamePads[PlayerIndex].JustPressed(_gamePadControls[4])))
             {
                 ControlObject.Velocity.Y -= JumpSpeed;
 

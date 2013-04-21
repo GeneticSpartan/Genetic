@@ -94,7 +94,7 @@ namespace Genetic
                     //warthog.acceleration.X = -1000;
                     Box.Acceleration.Y = 700;
                     Box.MaxVelocity.Y = 400;
-                    Box.Color = GenU.randomColor(100, 255);
+                    Box.Color = GenU.RandomColor(100, 255);
                     Boxes.Add(Box);
                 }
             }
@@ -195,20 +195,20 @@ namespace Genetic
 
             GenG.Collide(Player, Warthog3, FadeOut);
 
-            if (GenG.Keyboards.JustPressed(Keys.Tab) || GenG.GamePads.JustPressed(Buttons.X, 1))
+            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Tab) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
 
-            if (GenG.Keyboards.JustPressed(Keys.R) || GenG.GamePads.JustPressed(Buttons.Y, 1))
+            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.R) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Y))
                 GenG.ResetState();
 
-            if (GenG.Keyboards.IsPressed(Keys.Z) || GenG.GamePads.IsPressed(Buttons.LeftTrigger))
+            if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Z) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.LeftTrigger))
                 GenG.TimeScale = 0.2f;
-            else if (GenG.Keyboards.IsPressed(Keys.X) || GenG.GamePads.IsPressed(Buttons.RightTrigger))
+            else if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.X) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.RightTrigger))
                 GenG.TimeScale = 2f;
             else
                 GenG.TimeScale = 1f;
 
-            if (GenG.Keyboards.JustPressed(Keys.Escape) || GenG.GamePads.JustPressed(Buttons.Back))
+            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Escape) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Back))
                 GenG.Game.Exit();
 
             /*if (Player.IsTouching(GenObject.Direction.Down))
@@ -303,8 +303,8 @@ namespace Genetic
 
         public void HitBox(GenCollideEvent e)
         {
-            e.Object1.Velocity.Y = -200;
-            //e.Object2.Exists = false;
+            //e.Object1.Velocity.Y = -200;
+            ((GenSprite)e.Object2).Color = GenU.RandomColor();
         }
 
         public void HitCave(GenCollideEvent e)

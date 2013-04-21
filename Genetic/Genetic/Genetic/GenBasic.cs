@@ -1,6 +1,6 @@
 ﻿namespace Genetic
 {
-    public class GenBasic
+    public abstract class GenBasic
     {
         /// <summary>
         /// Determines if Update and Draw should be called by a state or group.

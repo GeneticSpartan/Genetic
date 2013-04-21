@@ -22,7 +22,7 @@ namespace Genetic
         /// <summary>
         /// Generates a random color.
         /// </summary>
-        public static Color randomColor(int minValue = 0, int maxValue = 255)
+        public static Color RandomColor(int minValue = 0, int maxValue = 255)
         {
             int r = Random.Next(minValue, maxValue);
             int g = Random.Next(minValue, maxValue);

@@ -78,6 +78,7 @@
     <Compile Include="Genetic\GenEvent.cs" />
     <Compile Include="Genetic\GenGamePad.cs" />
     <Compile Include="Genetic\GenKeyboard.cs" />
+    <Compile Include="Genetic\GenMouse.cs" />
     <Compile Include="Genetic\GenQuadtree.cs" />
     <Compile Include="Genetic\GenSound.cs" />
     <Compile Include="Genetic\GenText.cs" />

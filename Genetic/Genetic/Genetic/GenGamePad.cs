@@ -6,29 +6,92 @@ namespace Genetic
     public class GenGamePad
     {
         /// <summary>
-        /// The current states of the game pads.
+        /// The current state of the game pad.
         /// </summary>
-        protected GamePadState[] gamePadStates;
+        protected GamePadState _gamePadState;
 
         /// <summary>
-        /// The states of the game pads during the previous update.
+        /// The state of the game pad during the previous update.
         /// </summary>
-        protected GamePadState[] oldGamePadStates;
+        protected GamePadState _oldGamePadState;
 
-        public GenGamePad()
+        /// <summary>
+        /// The player index associated with the game pad.
+        /// </summary>
+        protected PlayerIndex _playerIndex;
+
+        /// <summary>
+        /// Gets the x position of the left thumbstick, a value between -1 and 1.
+        /// </summary>
+        public float ThumbStickLeftX
         {
-            gamePadStates = new GamePadState[4];
-            oldGamePadStates = new GamePadState[4];
+            get { return _gamePadState.ThumbSticks.Left.X; }
+        }
 
-            //gamePadStates[0] = GamePad.GetState(PlayerIndex.One);
-            //gamePadStates[1] = GamePad.GetState(PlayerIndex.Two);
-            //gamePadStates[2] = GamePad.GetState(PlayerIndex.Three);
-            //gamePadStates[3] = GamePad.GetState(PlayerIndex.Four);
+        /// <summary>
+        /// Gets the y position of the left thumbstick, a value between -1 and 1.
+        /// </summary>
+        public float ThumbStickLeftY
+        {
+            get { return _gamePadState.ThumbSticks.Left.Y; }
+        }
 
-            //oldGamePadStates[0] = gamePadStates[0];
-            //oldGamePadStates[1] = gamePadStates[1];
-            //oldGamePadStates[2] = gamePadStates[2];
-            //oldGamePadStates[3] = gamePadStates[3];
+        /// <summary>
+        /// Gets the x position of the right thumbstick, a value between -1 and 1.
+        /// </summary>
+        public float ThumbStickRightX
+        {
+            get { return _gamePadState.ThumbSticks.Right.X; }
+        }
+
+        /// <summary>
+        /// Gets the y position of the right thumbstick, a value between -1 and 1.
+        /// </summary>
+        public float ThumbStickRightY
+        {
+            get { return _gamePadState.ThumbSticks.Right.Y; }
+        }
+
+        /// <summary>
+        /// Gets the position of the left trigger, a value between 0 and 1.
+        /// </summary>
+        public float TriggerLeft
+        {
+            get { return _gamePadState.Triggers.Left; }
+        }
+
+        /// <summary>
+        /// Gets the position of the right trigger, a value between 0 and 1.
+        /// </summary>
+        public float TriggerRight
+        {
+            get { return _gamePadState.Triggers.Right; }
+        }
+
+        /// <summary>
+        /// Gets whether or not the game pad is currently connected.
+        /// </summary>
+        public bool IsConnected
+        {
+            get { return _gamePadState.IsConnected; }
+        }
+
+        /// <summary>
+        /// Gets the current packet number of the game pad.
+        /// If the packet number has not changed between two sequential game pad states, then the input has not changed.
+        /// </summary>
+        public int PacketNumber
+        {
+            get { return _gamePadState.PacketNumber; }
+        }
+
+        /// <summary>
+        /// An object used to retrieve input from a game pad.
+        /// </summary>
+        /// <param name="playerIndex">The player index associated with the game pad.</param>
+        public GenGamePad(PlayerIndex playerIndex = PlayerIndex.One)
+        {
+            _playerIndex = playerIndex;
         }
 
         /// <summary>
@@ -36,65 +99,59 @@ namespace Genetic
         /// </summary>
         public void Update()
         {
-            oldGamePadStates[0] = gamePadStates[0];
-            oldGamePadStates[1] = gamePadStates[1];
-            oldGamePadStates[2] = gamePadStates[2];
-            oldGamePadStates[3] = gamePadStates[3];
-
-            gamePadStates[0] = GamePad.GetState(PlayerIndex.One);
-            gamePadStates[1] = GamePad.GetState(PlayerIndex.Two);
-            gamePadStates[2] = GamePad.GetState(PlayerIndex.Three);
-            gamePadStates[3] = GamePad.GetState(PlayerIndex.Four);
+            _oldGamePadState = _gamePadState;
+            _gamePadState = GamePad.GetState(_playerIndex);
         }
 
         /// <summary>
         /// Checks if the specified button is currently pressed.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
-        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
-        /// <returns>True, if the button is currently pressed. False, if not.</returns>
-        public bool IsPressed(Buttons button, int player = 1)
+        /// <returns>True if the button is currently pressed, false if not.</returns>
+        public bool IsPressed(Buttons button)
         {
-            return gamePadStates[--player].IsButtonDown(button);
+            return _gamePadState.IsButtonDown(button);
         }
 
         /// <summary>
         /// Checks if the specified button is currently released.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
-        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
-        /// <returns>True, if the button is currently released. False, if not.</returns>
-        public bool IsReleased(Buttons button, int player = 1)
+        /// <returns>True if the button is currently released, false if not.</returns>
+        public bool IsReleased(Buttons button)
         {
-            return gamePadStates[--player].IsButtonUp(button);
+            return _gamePadState.IsButtonUp(button);
         }
 
         /// <summary>
         /// Checks if the specified button was just pressed.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
-        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
-        /// <returns>True, if the button was just pressed. False, if not.</returns>
-        public bool JustPressed(Buttons button, int player = 1)
+        /// <returns>True if the button was just pressed, false if not.</returns>
+        public bool JustPressed(Buttons button)
         {
-            if (oldGamePadStates[--player].IsButtonUp(button) && gamePadStates[player].IsButtonDown(button))
-                return true;
-            else
-                return false;
+            return (_oldGamePadState.IsButtonUp(button) && _gamePadState.IsButtonDown(button)) ? true : false;
         }
 
         /// <summary>
         /// Checks if the specified button was just released.
         /// </summary>
         /// <param name="button">The game pad button to check.</param>
-        /// <param name="player">The player index number of the game pad to check, a value of 1 through 4.</param>
-        /// <returns>True, if the button was just released. False, if not.</returns>
-        public bool JustReleased(Buttons button, int player = 1)
+        /// <returns>True if the button was just released, false if not.</returns>
+        public bool JustReleased(Buttons button)
         {
-            if (oldGamePadStates[--player].IsButtonDown(button) && gamePadStates[player].IsButtonUp(button))
-                return true;
-            else
-                return false;
+            return (_oldGamePadState.IsButtonDown(button) && _gamePadState.IsButtonUp(button)) ? true : false;
+        }
+
+        /// <summary>
+        /// Sets the vibration speeds of the left and right motors of the game pad.
+        /// </summary>
+        /// <param name="leftMotor">The speed of the left motor, a value between 0.0 and 1.0. This motor is a low-frequency motor.</param>
+        /// <param name="rightMotor">The speed of the right motor, a value between 0.0 and 1.0. This motor is a high-frequency motor.</param>
+        /// <returns>True if the vibration of the motors were successfully set, false if not.</returns>
+        public bool SetVibration(float leftMotor, float rightMotor)
+        {
+            return GamePad.SetVibration(_playerIndex, leftMotor, rightMotor);
         }
     }
 }

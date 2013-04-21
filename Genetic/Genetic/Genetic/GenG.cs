@@ -132,14 +132,19 @@ namespace Genetic
         public static GenCamera CurrentCamera;
 
         /// <summary>
-        /// The keyboard input used for checking key presses and releases.
+        /// A dictionary containing multiple keyboard inputs used for checking key presses and releases.
         /// </summary>
-        private static GenKeyboard _keyboards;
+        private static Dictionary<PlayerIndex, GenKeyboard> _keyboards;
 
         /// <summary>
-        /// The game pad input used for checking button presses and releases.
+        /// A dictionary containing multiple game pad inputs used for checking button presses and releases.
         /// </summary>
-        private static GenGamePad _gamePads;
+        private static Dictionary<PlayerIndex, GenGamePad> _gamePads;
+
+        /// <summary>
+        /// The mouse input used for checking button presses and releases.
+        /// </summary>
+        private static GenMouse _mouse;
 
         /// <summary>
         /// A quadtree data structure used to partition the screen space for faster object-to-object checking.
@@ -182,19 +187,27 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the keyboard input used for checking key presses and releases.
+        /// Gets a dictionary containing the multiple keyboard inputs used for checking key presses and releases.
         /// </summary>
-        public static GenKeyboard Keyboards
+        public static Dictionary<PlayerIndex, GenKeyboard> Keyboards
         {
             get { return _keyboards; }
         }
 
         /// <summary>
-        /// Gets the game pad input used for checking button presses and releases.
+        /// Gets a dictionary containing the multiple game pad inputs used for checking button presses and releases.
         /// </summary>
-        public static GenGamePad GamePads
+        public static Dictionary<PlayerIndex, GenGamePad> GamePads
         {
             get { return _gamePads; }
+        }
+
+        /// <summary>
+        /// Gets the mouse input used for checking button presses and releases.
+        /// </summary>
+        public static GenMouse Mouse
+        {
+            get { return _mouse; }
         }
 
         /// <summary>
@@ -221,8 +234,20 @@ namespace Genetic
             TimeScale = 1.0f;
             WorldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
             Cameras = new List<GenCamera>();
-            _keyboards = new GenKeyboard();
-            _gamePads = new GenGamePad();
+
+            _keyboards = new Dictionary<PlayerIndex, GenKeyboard>();
+            _keyboards.Add(PlayerIndex.One, new GenKeyboard(PlayerIndex.One));
+            _keyboards.Add(PlayerIndex.Two, new GenKeyboard(PlayerIndex.Two));
+            _keyboards.Add(PlayerIndex.Three, new GenKeyboard(PlayerIndex.Three));
+            _keyboards.Add(PlayerIndex.Four, new GenKeyboard(PlayerIndex.Four));
+
+            _gamePads = new Dictionary<PlayerIndex, GenGamePad>();
+            _gamePads.Add(PlayerIndex.One, new GenGamePad(PlayerIndex.One));
+            _gamePads.Add(PlayerIndex.Two, new GenGamePad(PlayerIndex.Two));
+            _gamePads.Add(PlayerIndex.Three, new GenGamePad(PlayerIndex.Three));
+            _gamePads.Add(PlayerIndex.Four, new GenGamePad(PlayerIndex.Four));
+
+            _mouse = new GenMouse();
             Quadtree = new GenQuadtree(0, 0, Game.Width, Game.Height);
         }
 
@@ -235,12 +260,21 @@ namespace Genetic
             _elapsedTime += _physicsTimeStep;
 
             // Update the keyboards.
-            _keyboards.Update();
+            _keyboards[PlayerIndex.One].Update();
+            _keyboards[PlayerIndex.Two].Update();
+            _keyboards[PlayerIndex.Three].Update();
+            _keyboards[PlayerIndex.Four].Update();
 
             // Update the game pads.
-            _gamePads.Update();
+            _gamePads[PlayerIndex.One].Update();
+            _gamePads[PlayerIndex.Two].Update();
+            _gamePads[PlayerIndex.Three].Update();
+            _gamePads[PlayerIndex.Four].Update();
 
-            if (_keyboards.JustPressed(Keys.OemTilde))
+            // Update the mouse.
+            _mouse.Update();
+
+            if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemTilde))
                 IsDebug = !IsDebug;
 
             if (_requestedState != null)
