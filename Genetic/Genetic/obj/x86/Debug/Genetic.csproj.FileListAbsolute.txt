@@ -20,3 +20,5 @@ C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.pdb
 D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb
 D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.csprojResolveAssemblyReference.cache
 D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb

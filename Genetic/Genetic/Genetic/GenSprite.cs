@@ -214,7 +214,7 @@ namespace Genetic
         /// <param name="textureFile">The sprite texture file to load.</param>
         /// <param name="width">The width of the object.</param>
         /// <param name="height">The height of the object.</param>
-        public GenSprite(float x = 0, float y = 0, string textureFile = null, int width = 0, int height = 0)
+        public GenSprite(float x = 0, float y = 0, string textureFile = null, int width = 1, int height = 1)
             : base(x, y, width, height)
         {
             if (textureFile != null)
@@ -277,8 +277,6 @@ namespace Genetic
                 else
                     GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, 1, _spriteEffect, 0);
             }
-
-            base.Draw();
         }
 
         /// <summary>

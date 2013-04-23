@@ -91,7 +91,7 @@ namespace Genetic
         /// <param name="y">The y position of the object.</param>
         /// <param name="width">The width of the bounding rectangle.</param>
         /// <param name="height">The height of the bounding rectangle.</param>
-        public GenText(string text = null, float x = 0, float y = 0, int width = 0, int height = 0)
+        public GenText(string text = null, float x = 0, float y = 0, int width = 1, int height = 1)
             : base(x, y, null, width, height)
         {
             if (text == null)

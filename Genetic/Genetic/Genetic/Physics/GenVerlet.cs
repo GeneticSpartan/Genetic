@@ -73,7 +73,7 @@ namespace Genetic.Physics
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    GenObject point = (GenObject)Add(new GenSprite(startX + x * distance, startY + y * distance, null, 0, 0));
+                    GenObject point = (GenObject)Add(new GenSprite(startX + x * distance, startY + y * distance, null, 1, 1));
 
                     // Make a link to the left point.
                     if (x != 0)

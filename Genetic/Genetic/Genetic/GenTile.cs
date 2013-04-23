@@ -17,7 +17,7 @@ namespace Genetic
         /// <param name="y">The y position of the top-left corner of the tile.</param>
         /// <param name="width">The width of the tile.</param>
         /// <param name="height">The height of the tile.</param>
-        public GenTile(float x = 0, float y = 0, int width = 0, int height = 0)
+        public GenTile(float x = 0, float y = 0, int width = 1, int height = 1)
             : base(x, y, null, width, height)
         {
             Immovable = true;

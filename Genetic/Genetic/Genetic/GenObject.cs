@@ -97,6 +97,16 @@ namespace Genetic
         public Direction Touching = Direction.None;
 
         /// <summary>
+        /// The object that this object will be parented to.
+        /// </summary>
+        public GenObject Parent = null;
+
+        /// <summary>
+        /// The x and y position offsets relative to the parent object's position.
+        /// </summary>
+        public Vector2 ParentOffset = Vector2.Zero;
+
+        /// <summary>
         /// Gets the x and y position of the object.
         /// </summary>
         public Vector2 Position
@@ -203,7 +213,7 @@ namespace Genetic
         /// <param name="y">The y position of the top-left corner of the object.</param>
         /// <param name="width">The width of the object.</param>
         /// <param name="height">The height of the object.</param>
-        public GenObject(float x = 0, float y = 0, float width = 0, float height = 0)
+        public GenObject(float x = 0, float y = 0, float width = 1, float height = 1)
         {
             _position = new Vector2(x, y);
             _boundingBox = new GenAABB(x, y, width, height);
@@ -278,6 +288,10 @@ namespace Genetic
         /// </summary>
         public override void PostUpdate()
         {
+            // Set the position of the object relative to the parent.
+            if (Parent != null)
+                _position = Parent.Position + ParentOffset;
+
             // Reset the bit fields for collision flags.
             WasTouching = Touching;
             Touching = Direction.None;
@@ -338,15 +352,19 @@ namespace Genetic
         /// <returns>True if an overlap occurs, false if not.</returns>
         public bool Overlap(GenObject gameObject, CollideEvent callback = null)
         {
-            if (GetMoveBounds().Intersects(gameObject.GetMoveBounds()))
+            // Check if this object is alive to avoid unwanted overlap checks that may be called by a quadtree.
+            if (Exists && Active)
             {
-                if (callback != null)
-                    callback(new GenCollideEvent(this, gameObject));
+                if (gameObject.Exists && gameObject.Active && GetMoveBounds().Intersects(gameObject.GetMoveBounds()))
+                {
+                    if (callback != null)
+                        callback(new GenCollideEvent(this, gameObject));
 
-                return true;
+                    return true;
+                }
             }
-            else
-                return false;
+
+            return false;
         }
 
         /// <summary>

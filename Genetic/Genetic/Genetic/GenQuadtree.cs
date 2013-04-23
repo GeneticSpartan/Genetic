@@ -8,17 +8,115 @@ using Genetic.Geometry;
 
 namespace Genetic
 {
-    public class GenQuadtree : GenAABB
+    public class GenQuadtree
     {
         /// <summary>
         /// The maximum amount of objects allowed in a node.
         /// </summary>
-        protected const int MAX_OBJECTS = 5;
+        internal const int MAX_OBJECTS = 5;
 
         /// <summary>
         /// The maximum amount of splits that can occur through a series of nodes.
         /// </summary>
-        protected const int MAX_LEVELS = 6;
+        internal const int MAX_LEVELS = 6;
+
+        /// <summary>
+        /// The highest level node of the quadtree in which all other nodes will be contained.
+        /// </summary>
+        protected GenQuadtreeNode _rootNode;
+
+        /// <summary>
+        /// A list of reusable quadtree nodes.
+        /// Used to avoid massive garbage collection when quadtree nodes need to be created each update.
+        /// </summary>
+        protected List<GenQuadtreeNode> _quadtreeNodes;
+
+        /// <summary>
+        /// The current index for the quadtree nodes list.
+        /// Used to determine the next available node in the list.
+        /// </summary>
+        internal int NodeIndex = 0;
+
+        /// <summary>
+        /// A manager for a quadtree data structure.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the root node bounding box.</param>
+        /// <param name="y">The y position of the top-left corner of the root node bounding box.</param>
+        /// <param name="width">The width of the root node bounding box.</param>
+        /// <param name="height">The height of the root node bounding box.</param>
+        public GenQuadtree(float x, float y, float width, float height)
+        {
+            _rootNode = new GenQuadtreeNode(x, y, width, height, this, 0);
+            _quadtreeNodes = new List<GenQuadtreeNode>();
+        }
+
+        /// <summary>
+        /// Gets an available node from the quadtree nodes list.
+        /// If no nodes are available, a new node is created and added to the quadtree nodes list.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the node bounding box.</param>
+        /// <param name="y">The y position of the top-left corner of the node bounding box.</param>
+        /// <param name="width">The width of the node bounding box.</param>
+        /// <param name="height">The height of the node bounding box.</param>
+        /// <param name="level">The split level of the node.</param>
+        /// <returns></returns>
+        internal GenQuadtreeNode GetNode(float x, float y, float width, float height, int level)
+        {
+            // Create a new quadtree node object if the node index is out of range, and add the new node to the quadtree nodes list.
+            if (NodeIndex >= _quadtreeNodes.Count)
+            {
+                _quadtreeNodes.Add(new GenQuadtreeNode(x, y, width, height, this, level));
+
+                return _quadtreeNodes[NodeIndex++];
+            }
+
+            // Reuse a node in the quadtree nodes list by initializing it with new values.
+            return _quadtreeNodes[NodeIndex++].Initialize(x, y, width, height, level);
+        }
+
+        /// <summary>
+        /// Calls Clear on each quadtree node, starting with the root node, and resets the node index value to 0.
+        /// </summary>
+        public void Clear()
+        {
+            _rootNode.Clear();
+            NodeIndex = 0;
+        }
+
+        /// <summary>
+        /// Iterates through each node that entirely contains the given object or group of objects, and adds the object to the lowest level node possible.
+        /// </summary>
+        /// <param name="objectOrGroup">The object or group of objects to insert into the quadtree.</param>
+        public void Insert(GenBasic objectOrGroup)
+        {
+            _rootNode.Insert(objectOrGroup);
+        }
+
+        /// <summary>
+        /// Iterates through each node that entirely contains the given bounding box, and retrieves a list of objects from each node.
+        /// </summary>
+        /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
+        /// <param name="box">The bounding box used to search for nodes.</param>
+        public void Retrieve(List<GenBasic> returnObjects, GenAABB box)
+        {
+            _rootNode.Retrieve(returnObjects, box);
+        }
+
+        /// <summary>
+        /// Draws debug lines that visually represent each node.
+        /// </summary>
+        public void Draw()
+        {
+            _rootNode.Draw();
+        }
+    }
+
+    public class GenQuadtreeNode : GenAABB
+    {
+        /// <summary>
+        /// A reference to the quadtree manager of this node.
+        /// </summary>
+        protected GenQuadtree _quadtree;
 
         /// <summary>
         /// The current split level of the node.
@@ -33,14 +131,46 @@ namespace Genetic
         /// <summary>
         /// An array of four leaf nodes that are created when a split occurs.
         /// </summary>
-        protected GenQuadtree[] _nodes;
+        protected GenQuadtreeNode[] _nodes;
 
-        public GenQuadtree(float x, float y, float width, float height, int level = 0)
+        /// <summary>
+        /// A single node within a quadtree data structure.
+        /// Used as a container for objects or other nodes.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the node bounding box.</param>
+        /// <param name="y">The y position of the top-left corner of the node bounding box.</param>
+        /// <param name="width">The width of the node bounding box.</param>
+        /// <param name="height">The height of the node bounding box.</param>
+        /// <param name="quadtree">A reference to the quadtree manager of this node.</param>
+        /// <param name="level">The split level of the node.</param>
+        public GenQuadtreeNode(float x, float y, float width, float height, GenQuadtree quadtree, int level)
             : base(x, y, width, height)
         {
+            _quadtree = quadtree;
             _level = level;
             _objects = new List<GenBasic>();
-            _nodes = new GenQuadtree[4];
+            _nodes = new GenQuadtreeNode[4];
+        }
+
+        /// <summary>
+        /// Initializes the quadtree node.
+        /// Useful for setting up a new node without creating a new node object.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the node bounding box.</param>
+        /// <param name="y">The y position of the top-left corner of the node bounding box.</param>
+        /// <param name="width">The width of the node bounding box.</param>
+        /// <param name="height">The height of the node bounding box.</param>
+        /// <param name="level">The split level of the node.</param>
+        /// <returns>This quadtree node itself.</returns>
+        public GenQuadtreeNode Initialize(float x, float y, float width, float height, int level)
+        {
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+            _level = level;
+
+            return this;
         }
 
         /// <summary>
@@ -117,14 +247,14 @@ namespace Genetic
 
                     _objects.Add(objectOrGroup);
 
-                    if ((_objects.Count > MAX_OBJECTS) && (_level < MAX_LEVELS))
+                    if ((_objects.Count > GenQuadtree.MAX_OBJECTS) && (_level < GenQuadtree.MAX_LEVELS))
                     {
                         if (_nodes[0] == null)
                         {
-                            _nodes[0] = new GenQuadtree(_midpointX, _top, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[1] = new GenQuadtree(_left, _top, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[2] = new GenQuadtree(_left, _midpointY, _halfWidth, _halfHeight, _level + 1);
-                            _nodes[3] = new GenQuadtree(_midpointX, _midpointY, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[0] = _quadtree.GetNode(_midpointX, _top, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[1] = _quadtree.GetNode(_left, _top, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[2] = _quadtree.GetNode(_left, _midpointY, _halfWidth, _halfHeight, _level + 1);
+                            _nodes[3] = _quadtree.GetNode(_midpointX, _midpointY, _halfWidth, _halfHeight, _level + 1);
                         }
 
                         int i = 0;
@@ -153,7 +283,6 @@ namespace Genetic
         /// </summary>
         /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
         /// <param name="box">The bounding box used to search for nodes.</param>
-        /// <returns>A list populated with accessible game objects.</returns>
         public void Retrieve(List<GenBasic> returnObjects, GenAABB box)
         {
             if (_nodes[0] != null)
@@ -223,7 +352,7 @@ namespace Genetic
         /// Draws debug lines that visually represent a node.
         /// </summary>
         /// <param name="_nodes">The array of leaf nodes to draw.</param>
-        protected void Draw(GenQuadtree[] _nodes)
+        protected void Draw(GenQuadtreeNode[] _nodes)
         {
             for (int i = 0; i < 4; i++)
             {
