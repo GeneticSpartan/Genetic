@@ -75,7 +75,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Calls Clear on each quadtree node, starting with the root node, and resets the node index value to 0.
+        /// Calls Clear on the root quadtree node, and resets the node index value to 0.
         /// </summary>
         public void Clear()
         {
@@ -170,24 +170,20 @@ namespace Genetic
             Height = height;
             _level = level;
 
+            Clear();
+
             return this;
         }
 
         /// <summary>
-        /// Clears the quadtree and each of its leaf nodes.
+        /// Clears the quadtree node objects list and sets the leaf nodes to null.
         /// </summary>
         public void Clear()
         {
             _objects.Clear();
 
             for (int i = 0; i < _nodes.Length; i++)
-            {
-                if (_nodes[i] != null)
-                {
-                    _nodes[i].Clear();
-                    _nodes[i] = null;
-                }
-            }
+                _nodes[i] = null;
         }
 
         /// <summary>

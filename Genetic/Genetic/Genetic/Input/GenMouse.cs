@@ -18,14 +18,9 @@ namespace Genetic.Input
         protected MouseState _oldMouseState;
 
         /// <summary>
-        /// The horizontal position of the mouse cursor.
+        /// The x and y positions of the mouse cursor.
         /// </summary>
-        protected int _x = 0;
-
-        /// <summary>
-        /// The vertical position of the mouse cursor.
-        /// </summary>
-        protected int _y = 0;
+        protected Vector2 _position = Vector2.Zero;
 
         /// <summary>
         /// The change in the scroll wheel value between the current and previous updates.
@@ -33,11 +28,19 @@ namespace Genetic.Input
         protected int _wheel = 0;
 
         /// <summary>
+        /// Gets the x and y positions of the mouse cursor.
+        /// </summary>
+        public Vector2 Position
+        {
+            get { return _position; }
+        }
+
+        /// <summary>
         /// Gets the horizontal position of the mouse cursor.
         /// </summary>
         public int X
         {
-            get { return _x; }
+            get { return (int)_position.X; }
         }
 
         /// <summary>
@@ -45,7 +48,7 @@ namespace Genetic.Input
         /// </summary>
         public int Y
         {
-            get { return _y; }
+            get { return (int)_position.Y; }
         }
 
         /// <summary>
@@ -78,8 +81,8 @@ namespace Genetic.Input
             _oldMouseState = _mouseState;
             _mouseState = Mouse.GetState();
 
-            _x = _mouseState.X;
-            _y = _mouseState.Y;
+            _position.X = _mouseState.X;
+            _position.Y = _mouseState.Y;
 
             _wheel = _mouseState.ScrollWheelValue - _oldMouseState.ScrollWheelValue;
         }

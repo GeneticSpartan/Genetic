@@ -292,8 +292,6 @@ namespace Genetic
                         member.Reset();
                 }
 
-                Quadtree.Clear();
-
                 // Create a new state from the requested state.
                 _state = _requestedState;
                 _state.Create();
@@ -405,18 +403,18 @@ namespace Genetic
         /// <summary>
         /// Draws a line between the two given points.
         /// </summary>
-        /// <param name="x1">The x position of the starting point.</param>
-        /// <param name="y1">The y position of the starting point.</param>
-        /// <param name="x2">The x position of the ending point.</param>
-        /// <param name="y2">The y position of the ending point.</param>
+        /// <param name="xA">The x position of the starting point.</param>
+        /// <param name="yA">The y position of the starting point.</param>
+        /// <param name="xB">The x position of the ending point.</param>
+        /// <param name="yB">The y position of the ending point.</param>
         /// <param name="color">The color of the line. Defaults to white if set to null.</param>
         /// <param name="thickness">The thickness of the line, in pixels.</param>
-        public static void DrawLine(float x1, float y1, float x2, float y2, Color? color = null, float thickness = 1)
+        public static void DrawLine(float xA, float yA, float xB, float yB, Color? color = null, float thickness = 1)
         {
             color = color.HasValue ? color.Value : Color.White;
 
-            Vector2 point1 = new Vector2(x1, y1);
-            Vector2 point2 = new Vector2(x2, y2);
+            Vector2 point1 = new Vector2(xA, yA);
+            Vector2 point2 = new Vector2(xB, yB);
 
             float angle = (float)Math.Atan2(point2.Y - point1.Y, point2.X - point1.X);
             float length = (point2 - point1).Length();
@@ -427,90 +425,90 @@ namespace Genetic
         /// <summary>
         /// Checks for overlap between two objects, groups of objects, or tilemaps.
         /// </summary>
-        /// <param name="objectOrGroup1">The first object, group, or tilemap to check for overlap.</param>
-        /// <param name="objectOrGroup2">The second object, group, or tilemap to check for overlap.</param>
+        /// <param name="objectOrGroupA">The first object, group, or tilemap to check for overlap.</param>
+        /// <param name="objectOrGroupB">The second object, group, or tilemap to check for overlap.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <param name="separate">Determines if objects should collide with each other.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool Overlap(GenBasic objectOrGroup1, GenBasic objectOrGroup2, CollideEvent callback = null, bool separate = false, bool penetrate = true)
+        public static bool Overlap(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool separate = false, bool penetrate = true)
         {
             Quadtree.Clear();
 
             // Insert the objects into the quadtree for faster overlap checks.
-            Quadtree.Insert(objectOrGroup1);
+            Quadtree.Insert(objectOrGroupA);
 
             // If the second object or group is the same as the first, do not insert it into the quadtree twice.
-            if (!objectOrGroup1.Equals(objectOrGroup2))
-                Quadtree.Insert(objectOrGroup2);
+            if (!objectOrGroupA.Equals(objectOrGroupB))
+                Quadtree.Insert(objectOrGroupB);
 
             _quadtreeObjects.Clear();
 
             bool overlap = false;
 
-            if (objectOrGroup1 is GenObject)
+            if (objectOrGroupA is GenObject)
             {
-                if (objectOrGroup2 is GenObject)
+                if (objectOrGroupB is GenObject)
                 {
                     if (separate)
-                        overlap = ((GenObject)objectOrGroup1).Collide((GenObject)objectOrGroup2, callback, penetrate);
+                        overlap = ((GenObject)objectOrGroupA).Collide((GenObject)objectOrGroupB, callback, penetrate);
                     else
-                        overlap = ((GenObject)objectOrGroup1).Overlap((GenObject)objectOrGroup2, callback);
+                        overlap = ((GenObject)objectOrGroupA).Overlap((GenObject)objectOrGroupB, callback);
                 }
-                else if (objectOrGroup2 is GenGroup)
+                else if (objectOrGroupB is GenGroup)
                 {
                     // Retrieve the objects from the quadtree that the first object may overlap with.
-                    GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)objectOrGroup1).BoundingBox);
+                    GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)objectOrGroupA).BoundingBox);
 
                     for (int i = 0; i < _quadtreeObjects.Count; i++)
                     {
                         if (separate)
                         {
-                            if (((GenObject)objectOrGroup1).Collide((GenObject)_quadtreeObjects[i], callback, penetrate) && !overlap)
+                            if (((GenObject)objectOrGroupA).Collide((GenObject)_quadtreeObjects[i], callback, penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (((GenObject)objectOrGroup1).Overlap((GenObject)_quadtreeObjects[i], callback) && !overlap)
+                            if (((GenObject)objectOrGroupA).Overlap((GenObject)_quadtreeObjects[i], callback) && !overlap)
                                 overlap = true;
                         }
                     }
                 }
             }
-            else if (objectOrGroup1 is GenGroup)
+            else if (objectOrGroupA is GenGroup)
             {
-                for (int i = 0; i < ((GenGroup)objectOrGroup1).Members.Count; i++)
+                for (int i = 0; i < ((GenGroup)objectOrGroupA).Members.Count; i++)
                 {
-                    if (objectOrGroup2 is GenObject)
+                    if (objectOrGroupB is GenObject)
                     {
                         if (separate)
                         {
-                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)objectOrGroup2, callback, penetrate) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Collide((GenObject)objectOrGroupB, callback, penetrate) && !overlap)
                                 overlap = true;
                         }
                         else
                         {
-                            if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)objectOrGroup2, callback) && !overlap)
+                            if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Overlap((GenObject)objectOrGroupB, callback) && !overlap)
                                 overlap = true;
                         }
                     }
-                    else if (objectOrGroup2 is GenGroup)
+                    else if (objectOrGroupB is GenGroup)
                     {
                         _quadtreeObjects.Clear();
 
                         // Retrieve the objects from the quadtree that the current object may overlap with.
-                        GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)((GenGroup)objectOrGroup1).Members[i]).BoundingBox);
+                        GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)((GenGroup)objectOrGroupA).Members[i]).BoundingBox);
 
                         for (int j = 0; j < _quadtreeObjects.Count; j++)
                         {
                             if (separate)
                             {
-                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Collide((GenObject)_quadtreeObjects[j], callback, penetrate) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Collide((GenObject)_quadtreeObjects[j], callback, penetrate) && !overlap)
                                     overlap = true;
                             }
                             else
                             {
-                                if (((GenObject)((GenGroup)objectOrGroup1).Members[i]).Overlap((GenObject)_quadtreeObjects[j], callback) && !overlap)
+                                if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Overlap((GenObject)_quadtreeObjects[j], callback) && !overlap)
                                     overlap = true;
                             }
                         }
@@ -524,19 +522,19 @@ namespace Genetic
         /// <summary>
         /// Applys collision detection and response between two objects, groups of objects, or tilemap that may overlap.
         /// </summary>
-        /// <param name="objectOrGroup1">The first object, group, or tilemap to check for collisions.</param>
-        /// <param name="objectOrGroup2">The second object, group, or tilemap to check for collisions.</param>
+        /// <param name="objectOrGroupA">The first object, group, or tilemap to check for collisions.</param>
+        /// <param name="objectOrGroupB">The second object, group, or tilemap to check for collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public static bool Collide(GenBasic objectOrGroup1, GenBasic objectOrGroup2, CollideEvent callback = null, bool penetrate = true)
+        public static bool Collide(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool penetrate = true)
         {
-            if (objectOrGroup1 is GenTilemap)
-                return ((GenTilemap)objectOrGroup1).Collide(objectOrGroup2, callback);
-            else if (objectOrGroup2 is GenTilemap)
-                return ((GenTilemap)objectOrGroup2).Collide(objectOrGroup1, callback);
+            if (objectOrGroupA is GenTilemap)
+                return ((GenTilemap)objectOrGroupA).Collide(objectOrGroupB, callback);
+            else if (objectOrGroupB is GenTilemap)
+                return ((GenTilemap)objectOrGroupB).Collide(objectOrGroupA, callback);
 
-            return Overlap(objectOrGroup1, objectOrGroup2, callback, true, penetrate);
+            return Overlap(objectOrGroupA, objectOrGroupB, callback, true, penetrate);
         }
     }
 }

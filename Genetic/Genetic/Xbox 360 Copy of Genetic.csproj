@@ -89,6 +89,9 @@
     <Compile Include="Genetic\Input\GenGamePad.cs" />
     <Compile Include="Genetic\Input\GenKeyboard.cs" />
     <Compile Include="Genetic\Input\GenMouse.cs" />
+    <Compile Include="Genetic\Path\GenMove.cs" />
+    <Compile Include="Genetic\Path\GenPath.cs" />
+    <Compile Include="Genetic\Path\GenPathNode.cs" />
     <Compile Include="Genetic\Physics\GenVerlet.cs" />
     <Compile Include="MenuState.cs" />
     <Compile Include="PlayState.cs" />

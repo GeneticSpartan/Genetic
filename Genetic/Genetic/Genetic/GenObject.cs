@@ -3,6 +3,7 @@
 using Microsoft.Xna.Framework;
 
 using Genetic.Geometry;
+using Genetic.Path;
 
 namespace Genetic
 {
@@ -105,6 +106,34 @@ namespace Genetic
         /// The x and y position offsets relative to the parent object's position.
         /// </summary>
         public Vector2 ParentOffset = Vector2.Zero;
+
+        #region Path Fields
+        /// <summary>
+        /// A reference to the current path that the object is following.
+        /// </summary>
+        public GenPath Path = null;
+
+        /// <summary>
+        /// The velocity or acceleration of the object as it moves along the path.
+        /// </summary>
+        public float PathSpeed = 0;
+
+        /// <summary>
+        /// The index number of the current node in the path nodes list to move towards.
+        /// </summary>
+        public int PathNodeIndex = 0;
+
+        /// <summary>
+        /// The current path movement type of the object along a path.
+        /// </summary>
+        public GenPath.Type PathType = GenPath.Type.Clockwise;
+
+        /// <summary>
+        /// The current path movement direction of the object along a path.
+        /// Used to constrain movement along a path horizontally, vertically, or both.
+        /// </summary>
+        public GenPath.Direction PathDirection = GenPath.Direction.Both;
+        #endregion
 
         /// <summary>
         /// Gets the x and y position of the object.
@@ -281,6 +310,9 @@ namespace Genetic
             // Move the object.
             X += Velocity.X * GenG.PhysicsTimeStep;
             Y += Velocity.Y * GenG.PhysicsTimeStep;
+
+            if (Path != null)
+                MoveAlongPath();
         }
 
         /// <summary>
@@ -541,6 +573,111 @@ namespace Genetic
         public bool JustTouched(Direction direction)
         {
             return (((WasTouching & direction) == Direction.None) && ((Touching & direction) > Direction.None));
+        }
+
+        /// <summary>
+        /// Sets the velocity and acceleration of the object to 0.
+        /// </summary>
+        /// <param name="stopAcceleration">A flag used to set the acceleration to 0.</param>
+        public void StopMoving(bool stopAcceleration = true)
+        {
+            Velocity.X = 0;
+            Velocity.Y = 0;
+
+            if (stopAcceleration)
+            {
+                Acceleration.X = 0;
+                Acceleration.Y = 0;
+            }
+        }
+
+        /// <summary>
+        /// Sets the path for the object to follow.
+        /// </summary>
+        /// <param name="path">The path to follow.</param>
+        /// <param name="speed">The velocity or acceleration of the object as it moves along the path.</param>
+        /// <param name="type">The path movement type.</param>
+        /// <param name="direction">The allowed movement direction of the object.</param>
+        /// <returns>The path that was set.</returns>
+        public GenPath SetPath(GenPath path, float speed, GenPath.Type type = GenPath.Type.Clockwise, GenPath.Direction direction = GenPath.Direction.Both)
+        {
+            Path = path;
+            PathSpeed = speed;
+            PathType = type;
+            PathDirection = direction;
+
+            // Set the initial path node index relative to the path movement type.
+            switch (PathType)
+            {
+                case GenPath.Type.CounterClockwise:
+                    PathNodeIndex = Path.Nodes.Count - 1;
+                    break;
+                case GenPath.Type.Random:
+                    PathNodeIndex = GenU.Random.Next(0, Path.Nodes.Count);
+                    break;
+                default:
+                    PathNodeIndex = 0;
+                    break;
+            }
+
+            return path;
+        }
+
+        /// <summary>
+        /// Moves the object along a path relative to the path movement type.
+        /// </summary>
+        public void MoveAlongPath()
+        {
+            if (PathSpeed != 0)
+            {
+                GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed);
+
+                // Get the next movement node in the path when the object reaches the current node.
+                if (GenMove.CanReachPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, Path.Nodes[PathNodeIndex].Radius))
+                {
+                    if (Path.Nodes[PathNodeIndex].Callback != null)
+                        Path.Nodes[PathNodeIndex].Callback.Invoke();
+
+                    // Check if the path is null in case the callback function set the path to null.
+                    if (Path != null)
+                    {
+                        switch (PathType)
+                        {
+                            case GenPath.Type.Clockwise:
+                                {
+                                    if (PathNodeIndex < Path.Nodes.Count - 1)
+                                        PathNodeIndex++;
+                                    else
+                                        PathNodeIndex = 0;
+
+                                    break;
+                                }
+                            case GenPath.Type.CounterClockwise:
+                                {
+                                    if (PathNodeIndex > 0)
+                                        PathNodeIndex--;
+                                    else
+                                        PathNodeIndex = Path.Nodes.Count - 1;
+
+                                    break;
+                                }
+                            case GenPath.Type.Random:
+                                {
+                                    PathNodeIndex = GenU.Random.Next(0, Path.Nodes.Count);
+
+                                    break;
+                                }
+                            /*NOT IMPLEMENTED YET case GenPath.Type.Yoyo:
+                                {
+                                    if (PathNodeIndex < Path.Nodes.Count - 1)
+                                        PathNodeIndex++;
+
+                                    break;
+                                }*/
+                        }
+                    }
+                }
+            }
         }
     }
 }

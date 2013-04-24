@@ -151,8 +151,8 @@ namespace Genetic
                 // Adjust the sound pan value according to the game object's position relative to the camera.
                 if (_follow != null && IsPlaying == true)
                 {
-                    _position.X = _follow.X + (_follow.Width / 2) - GenG.Camera.CameraView.X;
-                    _position.Y = _follow.Y + (_follow.Height / 2) - GenG.Camera.CameraView.Y;
+                    _position.X = _follow.X + (_follow.Width * 0.5f) - GenG.Camera.CameraView.X;
+                    _position.Y = _follow.Y + (_follow.Height * 0.5f) - GenG.Camera.CameraView.Y;
 
                     Pan = (_position.X / GenG.Camera.CameraView.Width) * 2 - 1;
 

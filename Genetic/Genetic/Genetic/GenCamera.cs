@@ -369,7 +369,7 @@ namespace Genetic
             RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
-            Origin = new Vector2(width / 2, height / 2);
+            Origin = new Vector2(width * 0.5f, height * 0.5f);
             _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
             Zoom = zoom;
@@ -405,8 +405,8 @@ namespace Genetic
                     }
 
                     // Set the follow target to the center point between the minimum and maximum x and y values of all combined follow targets.
-                    _followPosition.X += ((followXMin + followXMax) / 2 - _followPosition.X) * _followStrength;
-                    _followPosition.Y += ((followYMin + followYMax) / 2 - _followPosition.Y) * _followStrength;
+                    _followPosition.X += ((followXMin + followXMax) * 0.5f - _followPosition.X) * _followStrength;
+                    _followPosition.Y += ((followYMin + followYMax) * 0.5f - _followPosition.Y) * _followStrength;
 
                     float distanceX = Math.Abs(followXMax - followXMin) * 2;
                     float distanceY = Math.Abs(followYMax - followYMin) * 2;
@@ -443,8 +443,8 @@ namespace Genetic
                     }
                 }
 
-                ScrollX = -_followPosition.X + _cameraView.Width / 2;
-                ScrollY = -_followPosition.Y + _cameraView.Height / 2;
+                ScrollX = -_followPosition.X + _cameraView.Width * 0.5f;
+                ScrollY = -_followPosition.Y + _cameraView.Height * 0.5f;
 
                 // Prevent the camera view from moving outside of the world bounds.
                 if (_scroll.X > -GenG.WorldBounds.Left)
@@ -572,8 +572,8 @@ namespace Genetic
             _position.X = x;
             _position.Y = y;
 
-            Origin.X = width / 2;
-            Origin.Y = height / 2;
+            Origin.X = width * 0.5f;
+            Origin.Y = height * 0.5f;
 
             _drawPosition.X = x + Origin.X;
             _drawPosition.Y = y + Origin.Y;

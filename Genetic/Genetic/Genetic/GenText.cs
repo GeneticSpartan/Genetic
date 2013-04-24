@@ -108,7 +108,7 @@ namespace Genetic
             if (TextAlignment == TextAlign.RIGHT)
                 _textOrigin.X = (Origin.X - Width) * (1 / _fontScale) + _textMeasure.X;
             else if (TextAlignment == TextAlign.CENTER)
-                _textOrigin.X = Origin.X - ((Width / 2) - (_textMeasure.X / 2));
+                _textOrigin.X = Origin.X - ((Width * 0.5f) - (_textMeasure.X * 0.5f));
             else
                 _textOrigin.X = Origin.X * (1 / _fontScale);
 

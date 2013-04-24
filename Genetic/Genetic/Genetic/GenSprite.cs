@@ -226,7 +226,7 @@ namespace Genetic
             Color = Color.White;
             _rotation = 0f;
             RotationSpeed = 0f;
-            Origin = new Vector2(width / 2, height / 2);
+            Origin = new Vector2(width * 0.5f, height * 0.5f);
             _animations = new Dictionary<string, GenAnimation>();
         }
 
@@ -358,8 +358,8 @@ namespace Genetic
 
         public void CenterOrigin()
         {
-            Origin.X = _sourceRect.Width / 2;
-            Origin.Y = _sourceRect.Height / 2;
+            Origin.X = _sourceRect.Width * 0.5f;
+            Origin.Y = _sourceRect.Height * 0.5f;
         }
 
         /// <summary>

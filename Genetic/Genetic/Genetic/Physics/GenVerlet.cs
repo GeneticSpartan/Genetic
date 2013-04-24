@@ -190,8 +190,8 @@ namespace Genetic.Physics
             PointB = pointB;
 
             // Set the link point offsets to the center of the connected objects.
-            OffsetA = new Vector2(PointA.Width / 2, PointA.Height / 2);
-            OffsetB = new Vector2(PointB.Width / 2, PointB.Height / 2);
+            OffsetA = new Vector2(PointA.Width * 0.5f, PointA.Height * 0.5f);
+            OffsetB = new Vector2(PointB.Width * 0.5f, PointB.Height * 0.5f);
 
             RestingDistance = Vector2.Distance(PointA.Position, PointB.Position);
         }
@@ -216,21 +216,20 @@ namespace Genetic.Physics
             float scalarPointB = Stiffness - scalarPointA;
 
             // Push or pull the point objects based on their distance and mass.
+            // Set the velocity of each point object to account for the distance they have been moved.
             if (!PointA.Immovable && PointA.Exists && PointA.Active)
             {
                 PointA.X += differenceX * scalarPointA * difference;
                 PointA.Y += differenceY * scalarPointA * difference;
+                PointA.Velocity = (PointA.Position - PointA.OldPosition) / GenG.PhysicsTimeStep;
             }
 
             if (!PointB.Immovable && PointB.Exists && PointB.Active)
             {
                 PointB.X -= differenceX * scalarPointB * difference;
                 PointB.Y -= differenceY * scalarPointB * difference;
+                PointB.Velocity = (PointB.Position - PointB.OldPosition) / GenG.PhysicsTimeStep;
             }
-
-            // Set the velocity of each point object to account for the distance they have been moved.
-            PointA.Velocity = (PointA.Position - PointA.OldPosition) / GenG.PhysicsTimeStep;
-            PointB.Velocity = (PointB.Position - PointB.OldPosition) / GenG.PhysicsTimeStep;
         }
     }
 }
