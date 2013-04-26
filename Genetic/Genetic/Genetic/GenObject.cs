@@ -20,14 +20,19 @@ namespace Genetic
         }
 
         /// <summary>
-        /// The x and y position of the object.
+        /// The x and y positions of the object.
         /// </summary>
         protected Vector2 _position;
 
         /// <summary>
-        /// The x and y position of the object during the previous update.
+        /// The x and y positions of the object during the previous update.
         /// </summary>
         protected Vector2 _oldPosition;
+
+        /// <summary>
+        /// The x and y positions to draw debug objects.
+        /// </summary>
+        protected Vector2 _debugDrawPosition;
 
         /// <summary>
         /// The bounding box of the object relative to the position.
@@ -266,6 +271,7 @@ namespace Genetic
         public GenObject(float x = 0, float y = 0, float width = 1, float height = 1)
         {
             _position = new Vector2(x, y);
+            _debugDrawPosition = Vector2.Zero;
             _boundingBox = new GenAABB(x, y, width, height);
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _moveBounds = new GenAABB(x, y, width, height);
@@ -362,7 +368,19 @@ namespace Genetic
         /// </summary>
         public override void DrawDebug()
         {
-            GenG.SpriteBatch.Draw(GenG.Pixel, _position, _boundingRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
+            if (GenG.DrawMode == GenG.DrawType.Pixel)
+            {
+                // Get the debug drawing position by converting the object's x and y positions to integers to avoid render offset issues.
+                _debugDrawPosition.X = (int)_position.X;
+                _debugDrawPosition.Y = (int)_position.Y;
+            }
+            else if (GenG.DrawMode == GenG.DrawType.Smooth)
+            {
+                _debugDrawPosition.X = _position.X;
+                _debugDrawPosition.Y = _position.Y;
+            }
+
+            GenG.SpriteBatch.Draw(GenG.Pixel, _debugDrawPosition, _boundingRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
 
             //GenG.DrawLine(_positionRect.Left, _positionRect.Top, _positionRect.Right, _positionRect.Top, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
             //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);

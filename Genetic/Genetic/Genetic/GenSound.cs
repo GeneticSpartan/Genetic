@@ -16,7 +16,7 @@ namespace Genetic
         protected SoundEffectInstance _soundInstance;
 
         /// <summary>
-        /// The volume of the sound effect instance, a value from 0 to 1.
+        /// The volume of the sound effect instance, a value from 0.0 to 1.0.
         /// </summary>
         protected float _volume;
 
@@ -86,57 +86,46 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets or sets the volume of the sound effect instance, a value from 0 to 1.
+        /// Gets or sets the volume of the sound effect instance, a value from 0.0 to 1.0.
         /// </summary>
         public float Volume
         {
             get { return _volume; }
 
-            set
-            {
-                _volume = MathHelper.Clamp(value, 0, 1);
-            }
+            set { _volume = MathHelper.Clamp(value, 0, 1); }
         }
 
         /// <summary>
-        /// Gets or sets the pitch of the sound effect instance, a value from -1 to 1.
+        /// Gets or sets the pitch of the sound effect instance, a value from -1.0 to 1.0.
         /// </summary>
         public float Pitch
         {
             get { return _soundInstance.Pitch; }
 
-            set
-            {
-                _soundInstance.Pitch = MathHelper.Clamp(value, -1, 1);
-            }
+            set { _soundInstance.Pitch = MathHelper.Clamp(value, -1, 1); }
         }
 
         /// <summary>
-        /// Gets or sets the pan of the sound effect instance, a value from -1 (full left) to 1 (full right).
+        /// Gets or sets the pan of the sound effect instance, a value from -1.0 (full left) to 1.0 (full right).
         /// A value of 0 is centered.
         /// </summary>
         public float Pan
         {
             get { return _soundInstance.Pan; }
 
-            set
-            {
-                _soundInstance.Pan = MathHelper.Clamp(value, -1, 1);
-            }
+            set { _soundInstance.Pan = MathHelper.Clamp(value, -1, 1); }
         }
 
         /// <summary>
         /// Creates a playable sound.
         /// </summary>
         /// <param name="soundFile">The sound file to load.</param>
-        /// <param name="volume">The volume of the sound, a value from 0 to 1.</param>
+        /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
         /// <param name="looping">Determines if the sound is played on a loop.</param>
         public GenSound(string soundFile = null, float volume = 1, bool looping = false)
         {
             if (soundFile != null)
-            {
                 LoadSound(soundFile, volume, looping);
-            }
             else
             {
                 _sound = null;
@@ -149,7 +138,7 @@ namespace Genetic
             if (IsPlaying == true)
             {
                 // Adjust the sound pan value according to the game object's position relative to the camera.
-                if (_follow != null && IsPlaying == true)
+                if (_follow != null)
                 {
                     _position.X = _follow.X + (_follow.Width * 0.5f) - GenG.Camera.CameraView.X;
                     _position.Y = _follow.Y + (_follow.Height * 0.5f) - GenG.Camera.CameraView.Y;
@@ -178,11 +167,13 @@ namespace Genetic
                         _volumeAdjust = MathHelper.Clamp((DistanceFadingLength - _cameraDistance.Length()) / DistanceFadingLength, 0, 1);
 
                     // Set the volume of the sound effect instance.
-                    if ((_volumeAdjust < 1) || (_soundInstance.Volume != _volume))
-                        _soundInstance.Volume = _volume * _volumeAdjust;
+                    if (_volumeAdjust < 1)
+                        _soundInstance.Volume = _volume * _volumeAdjust * GenG.Volume;
+                    else
+                        _soundInstance.Volume = _volume * GenG.Volume;
                 }
-                else if (_soundInstance.Volume != _volume)
-                    _soundInstance.Volume = _volume;
+                else
+                    _soundInstance.Volume = _volume * GenG.Volume;
             }
         }
 
@@ -190,7 +181,7 @@ namespace Genetic
         /// Loads a sound file.
         /// </summary>
         /// <param name="soundFile">The sound file to load.</param>
-        /// <param name="volume">The volume of the sound, a value from 0 to 1.</param>
+        /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
         /// <param name="looping">Determines if the sound is played on a loop.</param>
         public void LoadSound(string soundFile, float volume = 1, bool looping = false)
         {

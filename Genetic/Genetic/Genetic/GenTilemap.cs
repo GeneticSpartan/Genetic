@@ -177,37 +177,37 @@ namespace Genetic
 
                         // Set the source rect of each tile, setting the tile image relative to its open edges using the automatic tile sheet.
                         if (Tiles[x, y].OpenEdges == GenObject.Direction.Any)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(0, 0, TileWidth, TileWidth); // Open edges: Left, Right, Up, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(1, 1, TileWidth, TileWidth); // Open edges: Left, Right, Up, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0111)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth, 0, TileWidth, TileWidth); // Open edges: Left, Right, Up
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth + 2, 1, TileWidth, TileWidth); // Open edges: Left, Right, Up
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1110)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 2, 0, TileWidth, TileWidth); // Open edges: Right, Up, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 2 + 3, 1, TileWidth, TileWidth); // Open edges: Right, Up, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1011)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 3, 0, TileWidth, TileWidth); // Open edges: Left, Right, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 3 + 4, 1, TileWidth, TileWidth); // Open edges: Left, Right, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1101)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 4, 0, TileWidth, TileWidth); // Open edges: Left, Up, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 4 + 5, 1, TileWidth, TileWidth); // Open edges: Left, Up, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1100)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 5, 0, TileWidth, TileWidth); // Open edges: Up, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 5 + 6, 1, TileWidth, TileWidth); // Open edges: Up, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0011)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 6, 0, TileWidth, TileWidth); // Open edges: Left, Right
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 6 + 7, 1, TileWidth, TileWidth); // Open edges: Left, Right
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0100)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 7, 0, TileWidth, TileWidth); // Open edges: Up
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 7 + 8, 1, TileWidth, TileWidth); // Open edges: Up
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0110)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 8, 0, TileWidth, TileWidth); // Open edges: Right, Up
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 8 + 9, 1, TileWidth, TileWidth); // Open edges: Right, Up
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0010)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 9, 0, TileWidth, TileWidth); // Open edges: Right
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 9 + 10, 1, TileWidth, TileWidth); // Open edges: Right
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1010)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 10, 0, TileWidth, TileWidth); // Open edges: Right, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 10 + 11, 1, TileWidth, TileWidth); // Open edges: Right, Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1000)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 11, 0, TileWidth, TileWidth); // Open edges: Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 11 + 12, 1, TileWidth, TileWidth); // Open edges: Down
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x1001)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 12, 0, TileWidth, TileWidth); // Open edges: Left, Down
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 12 + 13, 1, TileWidth, TileWidth); // Open edges: Left, Down
                         else if (Tiles[x, y].OpenEdges == GenObject.Direction.Left)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 13, 0, TileWidth, TileWidth); // Open edges: Left
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 13 + 14, 1, TileWidth, TileWidth); // Open edges: Left
                         else if (Tiles[x, y].OpenEdges == (GenObject.Direction)0x0101)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 14, 0, TileWidth, TileWidth); // Open edges: Left, Up
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 14 + 15, 1, TileWidth, TileWidth); // Open edges: Left, Up
                         else if (Tiles[x, y].OpenEdges == GenObject.Direction.None)
-                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 15, 0, TileWidth, TileWidth); // Open edges: None
+                            ((GenSprite)Tiles[x, y]).SetSourceRect(TileWidth * 15 + 16, 1, TileWidth, TileWidth); // Open edges: None
                     }
                 }
             }
@@ -254,10 +254,10 @@ namespace Genetic
             // Refresh the movement bounding box of the object.
             gameObject.GetMoveBounds();
 
-            _tileBounds[0] = (int)(gameObject.MoveBounds.Left / TileWidth);
-            _tileBounds[1] = (int)(gameObject.MoveBounds.Right / TileWidth);
-            _tileBounds[2] = (int)(gameObject.MoveBounds.Top / TileHeight);
-            _tileBounds[3] = (int)(gameObject.MoveBounds.Bottom / TileHeight);
+            _tileBounds[0] = (int)(gameObject.MoveBounds.Left / TileWidth); // Left bound.
+            _tileBounds[1] = (int)(gameObject.MoveBounds.Right / TileWidth); // Right bound.
+            _tileBounds[2] = (int)(gameObject.MoveBounds.Top / TileHeight); // Top bound.
+            _tileBounds[3] = (int)(gameObject.MoveBounds.Bottom / TileHeight); // Bottom bound.
 
             bool collided = false;
 
@@ -270,6 +270,7 @@ namespace Genetic
                 {
                     if ((x >= 0) && (x < Tiles.GetLength(0)) && (y >= 0) && (y < Tiles.GetLength(1)))
                     {
+                        // Do not check for a collision if the tile is empty.
                         if ((Tiles[x, y] != null))
                         {
                             if (gameObject.Collide(Tiles[x, y], callback, false, Tiles[x, y].OpenEdges) && !collided)

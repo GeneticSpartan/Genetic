@@ -267,8 +267,18 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _drawPosition.X = X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
-            _drawPosition.Y = Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+            // Calculate the draw position from the position, origin, offset, camera scroll, and scroll factor values.
+            if (GenG.DrawMode == GenG.DrawType.Pixel)
+            {
+                // Convert the x and y values to integers to avoid render offset issues.
+                _drawPosition.X = (int)(X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor));
+                _drawPosition.Y = (int)(Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor));
+            }
+            else if (GenG.DrawMode == GenG.DrawType.Smooth)
+            {
+                _drawPosition.X = X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
+                _drawPosition.Y = Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+            }
 
             if (_texture != null)
             {
@@ -312,7 +322,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Creates a solid color 1 x 1 texture to use as the sprite's image.
+        /// Creates a solid color texture to use as the sprite's image.
         /// Sets the source rectangle according to the given width and height values.
         /// A value of 0 for either the width or height will cause the source rectangle to use the existing sprite dimensions.
         /// </summary>
@@ -324,6 +334,10 @@ namespace Genetic
         public Texture2D MakeTexture(Color? color = null, int width = 0, int height = 0, bool centerOrigin = true)
         {
             color = color.HasValue ? color.Value : Color.White;
+
+            // Make sure neither the width or height values are 0.
+            width = (width != 0) ? width : (int)Width;
+            height = (height != 0) ? height : (int)Height;
 
             _texture = GenU.MakeTexture(color.Value, width, height);
 

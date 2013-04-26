@@ -493,13 +493,13 @@ namespace Genetic
             ScrollY += _shakeOffset.Y;
 
             // Create the camera transform.
-            Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
-
-            /*Transform = Matrix.CreateTranslation(-Viewport.Width / (2 * Zoom), -Viewport.Height / (2 * Zoom), 0f) *
-                        Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) *
-                        Matrix.CreateRotationZ(_rotation) *
-                        Matrix.CreateScale(_zoom) *
-                        Matrix.CreateTranslation((Viewport.Width / 2) + _shakeOffset.X, (Viewport.Height / 2) + _shakeOffset.Y, 0f);*/
+            if (GenG.DrawMode == GenG.DrawType.Pixel)
+            {
+                // Convert the scroll values to integers to avoid render offset issues.
+                Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+            }
+            else if (GenG.DrawMode == GenG.DrawType.Smooth)
+                Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
         }
 
         /// <summary>
@@ -524,7 +524,8 @@ namespace Genetic
 
                     GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _flashColor * _fxAlpha);
 
-                    _flashTimer += GenG.PhysicsTimeStep;
+                    if (!GenG.Paused)
+                        _flashTimer += GenG.PhysicsTimeStep;
                 }
                 else
                 {
@@ -543,14 +544,16 @@ namespace Genetic
 
                     GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _fadeColor * _fxAlpha);
 
-                    _fadeTimer += GenG.PhysicsTimeStep;
-                }
-                else
-                {
-                    _fading = false;
+                    if (!GenG.Paused)
+                        _fadeTimer += GenG.PhysicsTimeStep;
 
-                    if (_fadeCallback != null)
-                        _fadeCallback.Invoke();
+                    if (_fadeTimer >= _fadeDuration)
+                    {
+                        _fading = false;
+
+                        if (_fadeCallback != null)
+                            _fadeCallback.Invoke();
+                    }
                 }
             }
         }

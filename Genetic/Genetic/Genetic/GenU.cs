@@ -42,6 +42,10 @@ namespace Genetic
         {
             color = color.HasValue ? color.Value : Color.White;
 
+            // Set the width or height value to 1 if either are 0.
+            width = (width != 0) ? width : 1;
+            height = (height != 0) ? height : 1;
+
             Texture2D texture = new Texture2D(GenG.GraphicsDevice, width, height);
 
             Color[] colorData = new Color[width * height];
@@ -114,6 +118,19 @@ namespace Genetic
         public static float SineWave(float start, float rate, float intensity)
         {
             return start + (float)Math.Sin(GenG.ElapsedTime * rate) * intensity;
+        }
+
+        /// <summary>
+        /// Retrieves the current position of a cosine wave relative to the total elapsed time.
+        /// Call this during each update to simulate a cosine wave motion.
+        /// </summary>
+        /// <param name="start">The starting position that the wave will be relative to, usually the center point of the wave.</param>
+        /// <param name="rate">The rate at which the wave will fluctuate.</param>
+        /// <param name="intensity">The instensity or size of the wave.</param>
+        /// <returns>The current position of the wave relative to the total elapsed time.</returns>
+        public static float CosineWave(float start, float rate, float intensity)
+        {
+            return start + (float)Math.Cos(GenG.ElapsedTime * rate) * intensity;
         }
     }
 }

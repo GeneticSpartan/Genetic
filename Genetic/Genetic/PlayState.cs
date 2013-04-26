@@ -14,8 +14,8 @@ namespace Genetic
     /// </summary>
     public class PlayState : GenState
     {
-        public GenTilemap Map;
-        //public GenCave Cave;
+        //public GenTilemap Map;
+        public GenCave Cave;
 
         public GenGroup Boxes;
 
@@ -43,7 +43,7 @@ namespace Genetic
         {
             base.Create();
 
-            Map = new GenTilemap();
+            /*Map = new GenTilemap();
 
             Map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 8, 8);
             Map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 8, 8);
@@ -67,13 +67,13 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
-                "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
+                "1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
                 , 8, 8, GenTilemap.ImageAuto);
-            Add(Map);
+            Add(Map);*/
 
-            //Cave = new GenCave();
-            //Cave.MakeCave(160, 320);
-            //Add(Cave);
+            Cave = new GenCave();
+            Cave.MakeCave(160, 320);
+            Add(Cave);
 
             GenG.BackgroundColor = Color.CornflowerBlue;
 
@@ -138,7 +138,7 @@ namespace Genetic
                 }
             }
 
-            Player = new GenSprite(100, 100, "player", 16, 16);
+            Player = new GenSprite(50, 100, "player", 16, 16);
             Player.AddAnimation("idle", 16, 18, new int[] { 0 }, 6, false, 1);
             Player.AddAnimation("run", 16, 18, new int[] { 1, 0, 2, 0 }, 6, true, 1);
             Player.AddAnimation("jump", 16, 18, new int[] { 2 }, 6, false, 1);
@@ -183,7 +183,7 @@ namespace Genetic
             Beep = new GenSound("beep", 1, true);
             //Beep.Play();
             Beep.SetFollow(Player);
-            Beep.Volume = 0.1f;
+            Beep.Volume = 1f;
             Add(Beep);
 
             Text = new GenText("Hello, World!", 100, 150, 100, 12);
@@ -247,6 +247,9 @@ namespace Genetic
             else
                 GenG.TimeScale = 1f;
 
+            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.A))
+                GenG.Paused = !GenG.Paused;
+
             if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Escape) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Back))
                 GenG.Game.Exit();
 
@@ -257,7 +260,7 @@ namespace Genetic
             //GenMove.AccelerateToPoint(Boxes, Player.Position, 500);
 
             Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.Position + new Vector2(Warthog3.BoundingBox.HalfWidth, Warthog3.BoundingBox.HalfHeight), Player.Position + new Vector2(Player.BoundingBox.HalfWidth, Player.BoundingBox.HalfHeight));
-            GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 400);
+            GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
 
             //Chain.LineColor = GenU.RandomColor();
 
@@ -274,13 +277,13 @@ namespace Genetic
 
             // Do collision checking last.
             GenG.Collide(Player, Text);
-            GenG.Collide(Map, Player, HitCave);
-            GenG.Collide(Map, Boxes);
+            GenG.Collide(Cave, Player, HitCave);
+            GenG.Collide(Cave, Boxes);
             GenG.Collide(Player, Boxes, HitBox);
             //GenG.Collide(Boxes, Boxes);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
-            GenG.Collide(Map, Warthog3);
+            GenG.Collide(Cave, Warthog3);
 
             GenG.Collide(Player, Warthog3);
         }

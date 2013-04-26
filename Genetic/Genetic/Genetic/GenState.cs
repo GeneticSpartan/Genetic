@@ -24,7 +24,8 @@ namespace Genetic
         /// </summary>
         public override void Update()
         {
-            base.Update();
+            if (!GenG.Paused)
+                base.Update();
         }
 
         /// <summary>
