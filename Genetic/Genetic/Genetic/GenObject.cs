@@ -107,6 +107,15 @@ namespace Genetic
         /// </summary>
         public Vector2 ParentOffset = Vector2.Zero;
 
+        /// <summary>
+        /// A flag used to allow other colliding objects to inherit the x velocity when sitting on this object.
+        /// The colliding object will move horizontally along with this object.
+        /// </summary>
+        public bool IsPlatform = false;
+
+
+        protected bool _onPlatform = false;
+
         #region Path Fields
         /// <summary>
         /// A reference to the current path that the object is following.
@@ -114,25 +123,37 @@ namespace Genetic
         public GenPath Path = null;
 
         /// <summary>
-        /// The velocity or acceleration of the object as it moves along the path.
-        /// </summary>
-        public float PathSpeed = 0;
-
-        /// <summary>
         /// The index number of the current node in the path nodes list to move towards.
         /// </summary>
         public int PathNodeIndex = 0;
 
         /// <summary>
-        /// The current path movement type of the object along a path.
+        /// The direction that the object will move along the path.
+        /// Used to change direction in a yoyo path type.
+        /// A value of 1 will move clockwise, and a value of -1 will move counterclockwise.
+        /// </summary>
+        public int PathDirection = 1;
+
+        /// <summary>
+        /// The velocity or acceleration of the object as it moves along the path.
+        /// </summary>
+        public float PathSpeed = 0;
+
+        /// <summary>
+        /// Determines the order to move along the path nodes.
         /// </summary>
         public GenPath.Type PathType = GenPath.Type.Clockwise;
 
         /// <summary>
-        /// The current path movement direction of the object along a path.
+        /// A bit field of flags used to determine the current movement axis of the object along a path.
         /// Used to constrain movement along a path horizontally, vertically, or both.
         /// </summary>
-        public GenPath.Direction PathDirection = GenPath.Direction.Both;
+        public GenMove.Axis PathAxis = GenMove.Axis.Both;
+
+        /// <summary>
+        /// Determines whether to set the object's velocity or acceleration to move along the path.
+        /// </summary>
+        public GenPath.Movement PathMovement = GenPath.Movement.Instant;
         #endregion
 
         /// <summary>
@@ -264,14 +285,16 @@ namespace Genetic
             {
                 if (Velocity.X > 0)
                 {
-                    Velocity.X -= Deceleration.X * GenG.PhysicsTimeStep;
+                    if (!_onPlatform)
+                        Velocity.X -= Deceleration.X * GenG.PhysicsTimeStep;
 
                     if (Velocity.X < 0)
                         Velocity.X = 0;
                 }
                 else if (Velocity.X < 0)
                 {
-                    Velocity.X += Deceleration.X * GenG.PhysicsTimeStep;
+                    if (!_onPlatform)
+                        Velocity.X += Deceleration.X * GenG.PhysicsTimeStep;
 
                     if (Velocity.X > 0)
                         Velocity.X = 0;
@@ -308,8 +331,11 @@ namespace Genetic
             _oldPosition = _position;
 
             // Move the object.
-            X += Velocity.X * GenG.PhysicsTimeStep;
-            Y += Velocity.Y * GenG.PhysicsTimeStep;
+            if (Velocity.X != 0)
+                X += Velocity.X * GenG.PhysicsTimeStep;
+
+            if (Velocity.Y != 0)
+                Y += Velocity.Y * GenG.PhysicsTimeStep;
 
             if (Path != null)
                 MoveAlongPath();
@@ -323,6 +349,8 @@ namespace Genetic
             // Set the position of the object relative to the parent.
             if (Parent != null)
                 _position = Parent.Position + ParentOffset;
+
+            _onPlatform = false;
 
             // Reset the bit fields for collision flags.
             WasTouching = Touching;
@@ -525,6 +553,15 @@ namespace Genetic
                                 {
                                     Touching |= Direction.Down;
                                     gameObject.Touching |= Direction.Up;
+
+                                    if (gameObject.IsPlatform)
+                                    {
+                                        if (Acceleration.X == 0)
+                                        {
+                                            _onPlatform = true;
+                                            Velocity.X = gameObject.Velocity.X + (gameObject.Acceleration.X * GenG.PhysicsTimeStep);
+                                        }
+                                    }
                                 }
                                 else
                                 {
@@ -597,19 +634,26 @@ namespace Genetic
         /// <param name="path">The path to follow.</param>
         /// <param name="speed">The velocity or acceleration of the object as it moves along the path.</param>
         /// <param name="type">The path movement type.</param>
-        /// <param name="direction">The allowed movement direction of the object.</param>
+        /// <param name="axis">The allowed movement axis of the object.</param>
+        /// <param name="accelerates">A flag used to set the object's acceleration or velocity as it moves along the path.</param>
         /// <returns>The path that was set.</returns>
-        public GenPath SetPath(GenPath path, float speed, GenPath.Type type = GenPath.Type.Clockwise, GenPath.Direction direction = GenPath.Direction.Both)
+        public GenPath SetPath(
+            GenPath path,
+            float speed,
+            GenPath.Type type = GenPath.Type.Clockwise,
+            GenMove.Axis axis = GenMove.Axis.Both,
+            GenPath.Movement movement = GenPath.Movement.Instant)
         {
             Path = path;
             PathSpeed = speed;
             PathType = type;
-            PathDirection = direction;
+            PathAxis = axis;
+            PathMovement = movement;
 
             // Set the initial path node index relative to the path movement type.
             switch (PathType)
             {
-                case GenPath.Type.CounterClockwise:
+                case GenPath.Type.Counterclockwise:
                     PathNodeIndex = Path.Nodes.Count - 1;
                     break;
                 case GenPath.Type.Random:
@@ -630,10 +674,8 @@ namespace Genetic
         {
             if (PathSpeed != 0)
             {
-                GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed);
-
-                // Get the next movement node in the path when the object reaches the current node.
-                if (GenMove.CanReachPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, Path.Nodes[PathNodeIndex].Radius))
+                // Get the next movement node in the path if the object reaches the current node.
+                if (GenMove.CanReachPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, Path.Nodes[PathNodeIndex].Radius, PathAxis))
                 {
                     if (Path.Nodes[PathNodeIndex].Callback != null)
                         Path.Nodes[PathNodeIndex].Callback.Invoke();
@@ -645,14 +687,14 @@ namespace Genetic
                         {
                             case GenPath.Type.Clockwise:
                                 {
-                                    if (PathNodeIndex < Path.Nodes.Count - 1)
+                                    if (PathNodeIndex < (Path.Nodes.Count - 1))
                                         PathNodeIndex++;
                                     else
                                         PathNodeIndex = 0;
 
                                     break;
                                 }
-                            case GenPath.Type.CounterClockwise:
+                            case GenPath.Type.Counterclockwise:
                                 {
                                     if (PathNodeIndex > 0)
                                         PathNodeIndex--;
@@ -667,14 +709,51 @@ namespace Genetic
 
                                     break;
                                 }
-                            /*NOT IMPLEMENTED YET case GenPath.Type.Yoyo:
+                            case GenPath.Type.Yoyo:
                                 {
-                                    if (PathNodeIndex < Path.Nodes.Count - 1)
-                                        PathNodeIndex++;
+                                    if (PathDirection > 0) // Move along the path clockwise.
+                                    {
+                                        // If the object has not reached the end of the path, increment the path node index.
+                                        // Otherwise, reverse the path movement direction and decrement the path node index.
+                                        if (PathNodeIndex < (Path.Nodes.Count - 1))
+                                            PathNodeIndex++;
+                                        else
+                                        {
+                                            PathDirection = -1;
+                                            PathNodeIndex--;
+                                        }
+                                    }
+                                    else if (PathDirection < 0) // Move along the path counterclockwise.
+                                    {
+                                        // If the object has not reached the beginning of the path, decrement the path node index.
+                                        // Otherwise, reverse the path movement direction and increment the path node index.
+                                        if (PathNodeIndex > 0)
+                                            PathNodeIndex--;
+                                        else
+                                        {
+                                            PathDirection = 1;
+                                            PathNodeIndex++;
+                                        }
+                                    }
 
                                     break;
-                                }*/
+                                }
                         }
+                    }
+                }
+
+                // Check if the path is null in case the callback function set the path to null.
+                if (Path != null)
+                {
+                    // Move the object to the next node.
+                    switch (PathMovement)
+                    {
+                        case GenPath.Movement.Instant:
+                            GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis);
+                            break;
+                        case GenPath.Movement.Accelerates:
+                            GenMove.AccelerateToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis);
+                            break;
                     }
                 }
             }

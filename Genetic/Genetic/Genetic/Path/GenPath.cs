@@ -7,7 +7,7 @@ namespace Genetic.Path
     public class GenPath : GenBasic
     {
         /// <summary>
-        /// The movement type of an object along a path.
+        /// The path type determines the order to move along the path nodes.
         /// </summary>
         public enum Type
         { 
@@ -19,7 +19,7 @@ namespace Genetic.Path
             /// <summary>
             /// The object moves through each path node from the last node to the first node. 
             /// </summary>
-            CounterClockwise, 
+            Counterclockwise, 
             
             /// <summary>
             /// The object moves through each path node, and reverses direction.
@@ -30,13 +30,23 @@ namespace Genetic.Path
             /// The object moves from the current path node to a randomly selected node.
             /// </summary>
             Random
-        };
+        }
 
         /// <summary>
-        /// The allowed movement direction of an object along a path.
-        /// Used to constrain movement along a path horizontally, vertically, or both.
+        /// Determines whether to set the object's velocity or acceleration to move along the path.
         /// </summary>
-        public enum Direction { Horizontal, Vertical, Both };
+        public enum Movement
+        {
+            /// <summary>
+            /// Set an object's velocity to move along the path.
+            /// </summary>
+            Instant,
+
+            /// <summary>
+            /// Set an object's acceleration to move along the path.
+            /// </summary>
+            Accelerates
+        }
 
         /// <summary>
         /// A list of nodes that make up the path.

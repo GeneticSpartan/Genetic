@@ -14,8 +14,8 @@ namespace Genetic
     /// </summary>
     public class PlayState : GenState
     {
-        //public GenTilemap Map;
-        public GenCave Cave;
+        public GenTilemap Map;
+        //public GenCave Cave;
 
         public GenGroup Boxes;
 
@@ -43,7 +43,7 @@ namespace Genetic
         {
             base.Create();
 
-            /*Map = new GenTilemap();
+            Map = new GenTilemap();
 
             Map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 8, 8);
             Map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 8, 8);
@@ -69,11 +69,11 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
                 "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
                 , 8, 8, GenTilemap.ImageAuto);
-            Add(Map);*/
+            Add(Map);
 
-            Cave = new GenCave();
-            Cave.MakeCave(160, 320);
-            Add(Cave);
+            //Cave = new GenCave();
+            //Cave.MakeCave(160, 320);
+            //Add(Cave);
 
             GenG.BackgroundColor = Color.CornflowerBlue;
 
@@ -83,7 +83,7 @@ namespace Genetic
             GenG.Camera.BgColor = new Color(70, 50, 50);
 
             Path = new GenPath();
-            Path.AddNode(new GenPathNode(100, 100, 0, HitNode));
+            Path.AddNode(new GenPathNode(100, 100, 0));
             Path.AddNode(new GenPathNode(200, 100));
             Path.AddNode(new GenPathNode(200, 200));
             Path.AddNode(new GenPathNode(100, 150));
@@ -109,7 +109,7 @@ namespace Genetic
 
             ((GenObject)Chain.Members[0]).Immovable = true;
             ((GenObject)Chain.Members[0]).Acceleration.Y = 0f;
-            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Random);
+            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Yoyo, GenMove.Axis.Both, GenPath.Movement.Instant);
             Add(Chain);
             
             Boxes = new GenGroup();
@@ -162,9 +162,10 @@ namespace Genetic
             Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
             Warthog3.Deceleration.X = 400;
             Warthog3.Deceleration.Y = 400;
-            Warthog3.MaxVelocity.X = 100;
-            Warthog3.MaxVelocity.Y = 100;
-            Warthog3.Mass = 1f;
+            Warthog3.MaxVelocity.X = 250;
+            Warthog3.MaxVelocity.Y = 400;
+            Warthog3.Mass = 2f;
+            Warthog3.IsPlatform = true;
             Add(Warthog3);
 
             Warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
@@ -180,7 +181,7 @@ namespace Genetic
             //Chain.SetRestingDistance(10f);
 
             Beep = new GenSound("beep", 1, true);
-            //beep.Play();
+            //Beep.Play();
             Beep.SetFollow(Player);
             Beep.Volume = 0.1f;
             Add(Beep);
@@ -253,7 +254,10 @@ namespace Genetic
             //((GenObject)Chain.Members[0]).Y = Player.Y;
 
             //GenMove.AccelerateToPoint(Chain.Members[0], Player.Position, 200);
-            //GenMove.AccelerateToPoint(Boxes, Text.Position, 500);
+            //GenMove.AccelerateToPoint(Boxes, Player.Position, 500);
+
+            Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.Position + new Vector2(Warthog3.BoundingBox.HalfWidth, Warthog3.BoundingBox.HalfHeight), Player.Position + new Vector2(Player.BoundingBox.HalfWidth, Player.BoundingBox.HalfHeight));
+            GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 400);
 
             //Chain.LineColor = GenU.RandomColor();
 
@@ -270,12 +274,13 @@ namespace Genetic
 
             // Do collision checking last.
             GenG.Collide(Player, Text);
-            GenG.Collide(Cave, Player, HitCave);
-            GenG.Collide(Cave, Boxes);
+            GenG.Collide(Map, Player, HitCave);
+            GenG.Collide(Map, Boxes);
             GenG.Collide(Player, Boxes, HitBox);
             //GenG.Collide(Boxes, Boxes);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
+            GenG.Collide(Map, Warthog3);
 
             GenG.Collide(Player, Warthog3);
         }
@@ -325,6 +330,7 @@ namespace Genetic
             ((GenObject)Chain.Members[0]).SetPath(null, 0);
             ((GenObject)Chain.Members[0]).StopMoving();
             GenG.Camera.Flash(0.5f, 1f, Color.Red);
+            GenG.Camera.Shake();
         }
     }
 }
