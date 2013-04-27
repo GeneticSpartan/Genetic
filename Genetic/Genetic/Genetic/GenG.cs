@@ -60,6 +60,12 @@ namespace Genetic
         }
 
         /// <summary>
+        /// A global seed value used for random number generation.
+        /// Useful for achieving deterministic random values.
+        /// </summary>
+        public static int GlobalSeed;
+
+        /// <summary>
         /// The draw type used for rendering either sharp or smooth textures.
         /// </summary>
         public static DrawType DrawMode = DrawType.Pixel;
@@ -288,6 +294,8 @@ namespace Genetic
 
         public static void Initialize(GenGame game, GraphicsDevice graphicsDevice, ContentManager content, SpriteBatch spriteBatch)
         {
+            GlobalSeed = Environment.TickCount;
+
             Pixel = new Texture2D(graphicsDevice, 1, 1);
             Pixel.SetData<Color>(new Color[] { Color.White });
             Font = content.Load<SpriteFont>("Nokia");
@@ -480,7 +488,7 @@ namespace Genetic
             SpriteBatch.Begin();
             _volumeDisplay.Draw();
             _stopwatch.Stop();
-            SpriteBatch.DrawString(Font, (1000f / (float)_stopwatch.ElapsedMilliseconds).ToString(), new Vector2(100, 200), Color.White);
+            SpriteBatch.DrawString(Font, ((int)(1000f / (float)_stopwatch.ElapsedMilliseconds)).ToString(), new Vector2(100, 200), Color.White);
             _stopwatch.Reset();
             _stopwatch.Start();
             SpriteBatch.End();

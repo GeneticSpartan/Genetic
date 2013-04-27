@@ -40,7 +40,7 @@ namespace Genetic
                     if ((x == 0) || (x == (_width - cellSize)) || (y == 0) || (y == (_height - cellSize)))
                         alive = true;
                     else
-                        alive = (GenU.Random.Next(0, 100) <= startPercentage) ? true : false;
+                        alive = (GenU.Random(0, 100) <= startPercentage) ? true : false;
 
                     for (int i = 0; i < cellSize; i++)
                     {

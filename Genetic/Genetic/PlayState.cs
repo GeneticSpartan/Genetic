@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
-using Genetic.Physics;
+using Genetic.Particles;
 using Genetic.Path;
+using Genetic.Physics;
 
 namespace Genetic
 {
@@ -38,6 +39,8 @@ namespace Genetic
         public GenVerlet Chain;
 
         public GenPath Path;
+
+        public GenEmitter Emitter;
 
         public override void Create()
         {
@@ -138,6 +141,30 @@ namespace Genetic
                 }
             }
 
+            Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
+            Warthog3.Deceleration.X = 400;
+            Warthog3.Deceleration.Y = 400;
+            Warthog3.MaxVelocity.X = 250;
+            Warthog3.MaxVelocity.Y = 400;
+            Warthog3.Mass = 2f;
+            Warthog3.IsPlatform = true;
+            Add(Warthog3);
+
+            Emitter = new GenEmitter(100, 100);
+            Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 400);
+            Emitter.EmitQuantity = 400;
+            Emitter.EmitFrequency = 3f;
+            Emitter.SetXSpeed(-300, 300);
+            Emitter.SetYSpeed(-100, 100);
+            Emitter.SetRotationSpeed(-360, 360);
+            Emitter.SetLifetime(2.8f);
+            Emitter.SetColor(Color.Cyan, Color.MediumVioletRed);
+            Emitter.SetAlpha(2f, 0f);
+            //Emitter.SetGravity(0, 700);
+            Add(Emitter);
+
+            Emitter.Start();
+
             Player = new GenSprite(50, 100, "player", 16, 16);
             Player.AddAnimation("idle", 16, 18, new int[] { 0 }, 6, false, 1);
             Player.AddAnimation("run", 16, 18, new int[] { 1, 0, 2, 0 }, 6, true, 1);
@@ -158,15 +185,6 @@ namespace Genetic
             PlayerControl.JumpAnimation = "jump";
             PlayerControl.FallAnimation = "fall";
             Add(PlayerControl);
-
-            Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
-            Warthog3.Deceleration.X = 400;
-            Warthog3.Deceleration.Y = 400;
-            Warthog3.MaxVelocity.X = 250;
-            Warthog3.MaxVelocity.Y = 400;
-            Warthog3.Mass = 2f;
-            Warthog3.IsPlatform = true;
-            Add(Warthog3);
 
             Warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
             Warthog4.Velocity.X = 500;
@@ -247,7 +265,10 @@ namespace Genetic
             else
                 GenG.TimeScale = 1f;
 
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.A))
+            if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.LeftTrigger))
+                GenG.Camera.Flash(0.5f, 0.1f, Color.CornflowerBlue);
+
+            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.A) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Start))
                 GenG.Paused = !GenG.Paused;
 
             if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Escape) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Back))
@@ -257,10 +278,13 @@ namespace Genetic
             //((GenObject)Chain.Members[0]).Y = Player.Y;
 
             //GenMove.AccelerateToPoint(Chain.Members[0], Player.Position, 200);
-            //GenMove.AccelerateToPoint(Boxes, Player.Position, 500);
+            GenMove.AccelerateToPoint(Emitter, Player.Position, 500);
 
             Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.Position + new Vector2(Warthog3.BoundingBox.HalfWidth, Warthog3.BoundingBox.HalfHeight), Player.Position + new Vector2(Player.BoundingBox.HalfWidth, Player.BoundingBox.HalfHeight));
             GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
+
+            Emitter.X = Player.X;
+            Emitter.Y = Player.Y;
 
             //Chain.LineColor = GenU.RandomColor();
 
@@ -284,8 +308,8 @@ namespace Genetic
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
             GenG.Collide(Cave, Warthog3);
-
             GenG.Collide(Player, Warthog3);
+            GenG.Collide(Cave, Emitter);
         }
 
         public void FadeOut(GenCollideEvent e)

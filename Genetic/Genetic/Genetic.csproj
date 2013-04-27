@@ -75,6 +75,7 @@
     <Compile Include="Genetic\GenAnimation.cs" />
     <Compile Include="Genetic\GenCave.cs" />
     <Compile Include="Genetic\GenControl.cs" />
+    <Compile Include="Genetic\Particles\GenEmitter.cs" />
     <Compile Include="Genetic\GenEvent.cs" />
     <Compile Include="Genetic\Input\GenGamePad.cs" />
     <Compile Include="Genetic\Input\GenKeyboard.cs" />
@@ -85,6 +86,7 @@
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
     <Compile Include="Genetic\Geometry\GenAABB.cs" />
+    <Compile Include="Genetic\Particles\GenParticle.cs" />
     <Compile Include="Genetic\Path\GenPath.cs" />
     <Compile Include="Genetic\Path\GenMove.cs" />
     <Compile Include="Genetic\Path\GenPathNode.cs" />

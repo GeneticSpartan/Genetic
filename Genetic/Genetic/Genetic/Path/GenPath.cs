@@ -181,7 +181,7 @@ namespace Genetic.Path
         public GenPathNode GetRandom()
         {
             if (Nodes.Count > 0)
-                return Nodes[GenU.Random.Next(0, Nodes.Count)];
+                return Nodes[GenU.Random(0, Nodes.Count)];
 
             return null;
         }

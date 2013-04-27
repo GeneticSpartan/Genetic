@@ -463,9 +463,9 @@ namespace Genetic
                 if (_shakeTimer < _shakeDuration)
                 {
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Horizontal))
-                        _shakeOffset.X = (((float)GenU.Random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
+                        _shakeOffset.X = (((float)GenU.Random() * _shakeIntensity * 2) - _shakeIntensity);
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Vertical))
-                        _shakeOffset.Y = (((float)GenU.Random.NextDouble() * _shakeIntensity * 2) - _shakeIntensity);
+                        _shakeOffset.Y = (((float)GenU.Random() * _shakeIntensity * 2) - _shakeIntensity);
 
                     if (_shakeDecreasing)
                     {

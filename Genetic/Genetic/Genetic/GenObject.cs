@@ -178,7 +178,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets or sets the x position the object.
+        /// Gets or sets the x position of the top-left corner the object.
         /// </summary>
         public float X
         {
@@ -192,7 +192,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets or sets the y position the object.
+        /// Gets or sets the y position of the top-left corner the object.
         /// </summary>
         public float Y
         {
@@ -675,7 +675,7 @@ namespace Genetic
                     PathNodeIndex = Path.Nodes.Count - 1;
                     break;
                 case GenPath.Type.Random:
-                    PathNodeIndex = GenU.Random.Next(0, Path.Nodes.Count);
+                    PathNodeIndex = GenU.Random(0, Path.Nodes.Count);
                     break;
                 default:
                     PathNodeIndex = 0;
@@ -723,7 +723,7 @@ namespace Genetic
                                 }
                             case GenPath.Type.Random:
                                 {
-                                    PathNodeIndex = GenU.Random.Next(0, Path.Nodes.Count);
+                                    PathNodeIndex = GenU.Random(0, Path.Nodes.Count);
 
                                     break;
                                 }

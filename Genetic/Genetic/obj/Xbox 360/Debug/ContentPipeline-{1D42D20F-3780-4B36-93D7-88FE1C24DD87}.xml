@@ -44,7 +44,7 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\auto_tiles.xnb</Output>
-      <Time>2013-04-21T17:55:12-07:00</Time>
+      <Time>2013-04-26T07:26:19.990761-07:00</Time>
     </Item>
     <Item>
       <Source>grayscale.fx</Source>
@@ -53,7 +53,7 @@
       <Processor>EffectProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\grayscale.xnb</Output>
-      <Time>2013-04-21T17:55:12-07:00</Time>
+      <Time>2013-04-26T23:58:42.9602464-07:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>

@@ -66,7 +66,7 @@ namespace Genetic
         public GenBasic Add(GenBasic basic)
         {
             // Do not add the same object twice.
-            if (Members.IndexOf(basic) > -1)
+            if (Members.Contains(basic))
                 return basic;
 
             Members.Add(basic);
@@ -208,7 +208,7 @@ namespace Genetic
             if (length == 0)
                 length = Members.Count;
 
-            int index = GenU.Random.Next(startIndex, startIndex + length);
+            int index = GenU.Random(startIndex, startIndex + length);
 
             // Check if the index is outside of the list.
             if (Members.Count < (index - 1))

@@ -10,23 +10,58 @@ namespace Genetic
     public static class GenU
     {
         /// <summary>
-        /// Used to generate random numbers.
+        /// A random number object used to generate psuedo-random values.
         /// </summary>
-        public static Random Random;
+        private static Random _random;
 
         public static void Initialize()
         {
-            Random = new Random();
+            SetRandomSeed(GenG.GlobalSeed);
         }
 
         /// <summary>
-        /// Generates a random color.
+        /// Sets the psuedo-random number seed.
+        /// Useful for achieving deterministic random number values.
         /// </summary>
+        /// <param name="seed">The random number seed.</param>
+        public static void SetRandomSeed(int seed)
+        {
+            _random = new Random(GenG.GlobalSeed);
+        }
+
+        /// <summary>
+        /// Generates a psuedo-random number between 0.0 and 1.0.
+        /// The result will never equal 1.0.
+        /// </summary>
+        /// <returns>A random number between 0.0 to 1.0.</returns>
+        public static float Random()
+        {
+            return (float)_random.NextDouble();
+        }
+
+        /// <summary>
+        /// Generates a random number between a minumum and maximum value.
+        /// The reslut will never equal the maximum value.
+        /// </summary>
+        /// <param name="min">The minimum value of the number.</param>
+        /// <param name="max">The maximum value of the number.</param>
+        /// <returns>A random number between the minumum and maximum values given.</returns>
+        public static int Random(int min, int max)
+        {
+            return (int)(Random() * (max - min) + min);
+        }
+
+        /// <summary>
+        /// Generates a random color using the mimimum and maximum RGB values given.
+        /// </summary>
+        /// <param name="minValue">The minimum RGB value.</param>
+        /// <param name="maxValue">The maximum RGB value.</param>
+        /// <returns>A random color.</returns>
         public static Color RandomColor(int minValue = 0, int maxValue = 255)
         {
-            int r = Random.Next(minValue, maxValue);
-            int g = Random.Next(minValue, maxValue);
-            int b = Random.Next(minValue, maxValue);
+            int r = Random(minValue, maxValue + 1);
+            int g = Random(minValue, maxValue + 1);
+            int b = Random(minValue, maxValue + 1);
 
             return new Color(r, g, b);
         }
