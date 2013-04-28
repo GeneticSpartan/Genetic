@@ -68,7 +68,7 @@ namespace Genetic
         /// <summary>
         /// The draw type used for rendering either sharp or smooth textures.
         /// </summary>
-        public static DrawType DrawMode = DrawType.Pixel;
+        public static DrawType DrawMode;
 
         /// <summary>
         /// A 1 x 1 pixel texture used for drawing lines.

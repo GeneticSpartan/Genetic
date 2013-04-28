@@ -160,7 +160,9 @@ namespace Genetic
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
 
                         _movingX = true;
-                        SetState(State.Moving);
+
+                        if (!_inAir)
+                            SetState(State.Moving);
                     }
                     else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
                     {
@@ -168,7 +170,9 @@ namespace Genetic
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
 
                         _movingX = true;
-                        SetState(State.Moving);
+
+                        if (!_inAir)
+                            SetState(State.Moving);
                     }
                     else if (StoppingType == Stopping.Instant)
                     {
@@ -212,7 +216,9 @@ namespace Genetic
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
 
                         _movingX = true;
-                        SetState(State.Moving);
+
+                        if (!_inAir)
+                            SetState(State.Moving);
                     }
                     else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
                     {
@@ -220,7 +226,9 @@ namespace Genetic
                         ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
 
                         _movingX = true;
-                        SetState(State.Moving);
+
+                        if (!_inAir)
+                            SetState(State.Moving);
                     }
                     else
                     {
@@ -371,33 +379,41 @@ namespace Genetic
                 switch (state)
                 {
                     case State.Idle:
-                        if (IdleAnimation != null)
-                            ((GenSprite)ControlObject).Play(IdleAnimation);
+                        {
+                            if (IdleAnimation != null)
+                                ((GenSprite)ControlObject).Play(IdleAnimation);
 
-                        _state = state;
+                            _state = state;
 
-                        break;
+                            break;
+                        }
                     case State.Moving:
-                        if (MoveAnimation != null)
-                            ((GenSprite)ControlObject).Play(MoveAnimation);
+                        {
+                            if (MoveAnimation != null)
+                                ((GenSprite)ControlObject).Play(MoveAnimation);
 
-                        _state = state;
+                            _state = state;
 
-                        break;
+                            break;
+                        }
                     case State.Jumping:
-                        if (JumpAnimation != null)
-                            ((GenSprite)ControlObject).Play(JumpAnimation);
+                        {
+                            if (JumpAnimation != null)
+                                ((GenSprite)ControlObject).Play(JumpAnimation);
 
-                        _state = state;
+                            _state = state;
 
-                        break;
+                            break;
+                        }
                     case State.Falling:
-                        if (FallAnimation != null)
-                            ((GenSprite)ControlObject).Play(FallAnimation);
+                        {
+                            if (FallAnimation != null)
+                                ((GenSprite)ControlObject).Play(FallAnimation);
 
-                        _state = state;
+                            _state = state;
 
-                        break;
+                            break;
+                        }
                 }
             }
         }

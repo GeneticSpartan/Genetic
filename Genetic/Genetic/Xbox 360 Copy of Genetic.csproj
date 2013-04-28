@@ -69,6 +69,7 @@
     <Compile Include="Genetic\GenCave.cs" />
     <Compile Include="Genetic\GenControl.cs" />
     <Compile Include="Genetic\GenEvent.cs" />
+    <Compile Include="Genetic\GenMove.cs" />
     <Compile Include="Genetic\GenQuadTree.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -91,7 +92,6 @@
     <Compile Include="Genetic\Input\GenMouse.cs" />
     <Compile Include="Genetic\Particles\GenEmitter.cs" />
     <Compile Include="Genetic\Particles\GenParticle.cs" />
-    <Compile Include="Genetic\Path\GenMove.cs" />
     <Compile Include="Genetic\Path\GenPath.cs" />
     <Compile Include="Genetic\Path\GenPathNode.cs" />
     <Compile Include="Genetic\Physics\GenVerlet.cs" />

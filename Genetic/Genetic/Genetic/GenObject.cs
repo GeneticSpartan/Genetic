@@ -30,9 +30,21 @@ namespace Genetic
         protected Vector2 _oldPosition;
 
         /// <summary>
+        /// The x and y positon of the center point of the object.
+        /// </summary>
+        protected Vector2 _centerPosition;
+
+        /// <summary>
         /// The x and y positions to draw debug objects.
         /// </summary>
         protected Vector2 _debugDrawPosition;
+
+        /// <summary>
+        /// The origin, relative to the position, used as an anchor point of the object.
+        /// Useful for rotating objects around this point that are parented to this object.
+        /// Using decimal values may cause sprites to shift between pixels in the pixel draw mode, giving undesired results.
+        /// </summary>
+        public Vector2 Origin;
 
         /// <summary>
         /// The bounding box of the object relative to the position.
@@ -162,7 +174,7 @@ namespace Genetic
         #endregion
 
         /// <summary>
-        /// Gets the x and y position of the object.
+        /// Gets the x and y positions of the object.
         /// </summary>
         public Vector2 Position
         {
@@ -170,11 +182,19 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the x and y position of the object during the previous update.
+        /// Gets the x and y positions of the object during the previous update.
         /// </summary>
         public Vector2 OldPosition
         {
             get { return _oldPosition; }
+        }
+
+        /// <summary>
+        /// Gets the x and y positions of the center point of the object.
+        /// </summary>
+        public Vector2 CenterPosition
+        {
+            get { return _centerPosition; }
         }
 
         /// <summary>
@@ -273,6 +293,8 @@ namespace Genetic
             _position = new Vector2(x, y);
             _debugDrawPosition = Vector2.Zero;
             _boundingBox = new GenAABB(x, y, width, height);
+            _centerPosition = new Vector2(x + _boundingBox.HalfWidth, y + _boundingBox.HalfHeight);
+            Origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _moveBounds = new GenAABB(x, y, width, height);
 
@@ -343,6 +365,10 @@ namespace Genetic
             if (Velocity.Y != 0)
                 Y += Velocity.Y * GenG.PhysicsTimeStep;
 
+            // Update the center position of the object.
+            _centerPosition.X = _position.X + _boundingBox.HalfWidth;
+            _centerPosition.Y = _position.Y + _boundingBox.HalfHeight;
+
             if (Path != null)
                 MoveAlongPath();
         }
@@ -386,6 +412,15 @@ namespace Genetic
             //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
             //GenG.DrawLine(_positionRect.Left, _positionRect.Bottom - 1, _positionRect.Right, _positionRect.Bottom - 1, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
             //GenG.DrawLine(_positionRect.Left + 1, _positionRect.Top, _positionRect.Left + 1, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
+        }
+
+        /// <summary>
+        /// Places the origin at the center of the bounding box.
+        /// </summary>
+        public void CenterOrigin()
+        {
+            Origin.X = (int)_boundingBox.HalfWidth;
+            Origin.Y = (int)_boundingBox.HalfHeight;
         }
 
         /// <summary>
@@ -770,7 +805,7 @@ namespace Genetic
                             GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis);
                             break;
                         case GenPath.Movement.Accelerates:
-                            GenMove.AccelerateToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis);
+                            GenMove.AccelerateToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, 0, PathAxis);
                             break;
                     }
                 }

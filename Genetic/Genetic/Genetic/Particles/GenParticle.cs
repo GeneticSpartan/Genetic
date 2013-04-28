@@ -36,6 +36,16 @@ namespace Genetic.Particles
         public float EndAlpha;
 
         /// <summary>
+        /// The starting scale of the particle sprite when it is emitted.
+        /// </summary>
+        public float StartScale;
+
+        /// <summary>
+        /// The ending scale of the particle sprite when it reaches the end of its lifetime.
+        /// </summary>
+        public float EndScale;
+
+        /// <summary>
         /// A particle used by a particle emitter.
         /// A particle is a GenSprite object, but has additional features useful to particles.
         /// </summary>
@@ -57,6 +67,8 @@ namespace Genetic.Particles
             EndColor = Color.White;
             StartAlpha = 1f;
             EndAlpha = 1f;
+            StartScale = 1f;
+            EndScale = 1f;
         }
 
         /// <summary>
@@ -69,7 +81,13 @@ namespace Genetic.Particles
             if (_lifeTimer < Lifetime)
             {
                 float lerp = _lifeTimer / Lifetime;
+
+                // Interpolate the color and alpha.
                 _color = Color.Lerp(StartColor, EndColor, lerp) * MathHelper.Lerp(StartAlpha, EndAlpha, lerp);
+
+                // Interpolate the sprite scale.
+                Scale.X = MathHelper.Lerp(StartScale, EndScale, lerp);
+                Scale.Y = Scale.X;
 
                 _lifeTimer += GenG.PhysicsTimeStep;
             }

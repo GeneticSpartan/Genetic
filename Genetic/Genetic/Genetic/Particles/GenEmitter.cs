@@ -69,9 +69,20 @@ namespace Genetic.Particles
         protected float _emitTimer;
 
         /// <summary>
+        /// A flag used to determine if the emitted particles should inherit the velocity of the emitter's parent object.
+        /// </summary>
+        public bool InheritVelocity;
+
+        /// <summary>
         /// The particle that the emitter is currently controlling.
         /// </summary>
         protected GenParticle _currentParticle;
+
+        /// <summary>
+        /// The object that the emitter will be parented to.
+        /// The position of the emitter will move with the center point of the parent object.
+        /// </summary>
+        public GenObject Parent;
 
         /// <summary>
         /// Gets the x and y positions of the top-left corner of the emitter.
@@ -148,6 +159,8 @@ namespace Genetic.Particles
             EmitQuantity = 0;
             EmitFrequency = 0.1f;
             _emitTimer = 0f;
+            InheritVelocity = false;
+            Parent = null;
 
             Active = false;
         }
@@ -156,7 +169,10 @@ namespace Genetic.Particles
         {
             if (_emitTimer >= EmitFrequency)
             {
-                EmitParticles(EmitQuantity);
+                if (Explode)
+                    EmitParticles(Members.Count);
+                else
+                    EmitParticles(EmitQuantity);
 
                 _emitTimer -= EmitFrequency;
             }
@@ -164,6 +180,20 @@ namespace Genetic.Particles
                 _emitTimer += GenG.PhysicsTimeStep;
 
             base.Update();
+        }
+
+        public override void PostUpdate()
+        {
+            MoveToParent();
+        }
+
+        /// <summary>
+        /// Sets the position of the emitter to the parent's center position.
+        /// </summary>
+        protected void MoveToParent()
+        {
+            if (Parent != null)
+                _position = Parent.CenterPosition;
         }
 
         /// <summary>
@@ -180,6 +210,10 @@ namespace Genetic.Particles
                 _currentParticle.Y = _position.Y;
                 _currentParticle.Velocity.X = GenU.Random(MinParticleSpeedX, MaxParticleSpeedX + 1);
                 _currentParticle.Velocity.Y = GenU.Random(MinParticleSpeedY, MaxParticleSpeedY + 1);
+
+                if ((Parent != null) && InheritVelocity)
+                    _currentParticle.Velocity += Parent.Velocity;
+
                 _currentParticle.RotationSpeed = GenU.Random(MinRotationSpeed, MaxRotationSpeed + 1);
                 _currentParticle.Reset();
 
@@ -306,6 +340,21 @@ namespace Genetic.Particles
         }
 
         /// <summary>
+        /// Sets the starting and ending scale values of each particle in the emitter group.
+        /// Each particle will interpolate its scale from the starting to the ending scale values over the span of its lifetime.
+        /// </summary>
+        /// <param name="startScale">The starting scale value of a particle.</param>
+        /// <param name="endScale">The ending scale value of a particle.</param>
+        public void SetScale(float startScale, float endScale)
+        {
+            foreach (GenParticle partical in Members)
+            {
+                partical.StartScale = startScale;
+                partical.EndScale = endScale;
+            }
+        }
+
+        /// <summary>
         /// Sets the x and y accelerations of each particle in the emitter group.
         /// </summary>
         /// <param name="gravityX">The x acceleration of a particle.</param>
@@ -322,14 +371,20 @@ namespace Genetic.Particles
         /// <summary>
         /// Starts the emitter.
         /// </summary>
-        /// <param name="explode"></param>
-        public void Start(bool explode = true)
+        /// <param name="explode">A flag used to emit every available particle, ignoring the emit quantity.</param>
+        public void Start(bool explode = false)
         {
-            Explode = explode;
-
             Active = true;
 
-            EmitParticles(EmitQuantity);
+            // Move the emitter relative to its parent before emitting particles.
+            MoveToParent();
+
+            Explode = explode;
+
+            if (Explode)
+                EmitParticles(Members.Count);
+            else
+                EmitParticles(EmitQuantity);
         }
     }
 }

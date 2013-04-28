@@ -10,7 +10,7 @@ namespace Genetic
         /// </summary>
         static void Main(string[] args)
         {
-            using (GenGame game = new GenGame(1920, 1080, new MenuState(), 3f))
+            using (GenGame game = new GenGame(1920, 1080, new MenuState(), GenG.DrawType.Pixel, 3f, true))
             {
                 game.Run();
             }

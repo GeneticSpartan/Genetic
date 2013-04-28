@@ -154,27 +154,31 @@ namespace Genetic
             Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 400);
             Emitter.EmitQuantity = 400;
             Emitter.EmitFrequency = 3f;
+            Emitter.InheritVelocity = true;
             Emitter.SetXSpeed(-300, 300);
-            Emitter.SetYSpeed(-100, 100);
+            Emitter.SetYSpeed(-300, 300);
             Emitter.SetRotationSpeed(-360, 360);
-            Emitter.SetLifetime(2.8f);
+            Emitter.SetLifetime(2.9f);
             Emitter.SetColor(Color.Cyan, Color.MediumVioletRed);
             Emitter.SetAlpha(2f, 0f);
+            Emitter.SetScale(1f, 0f);
             //Emitter.SetGravity(0, 700);
             Add(Emitter);
 
-            Emitter.Start();
-
-            Player = new GenSprite(50, 100, "player", 16, 16);
+            Player = new GenSprite(100, 0, "player", 16, 16);
             Player.AddAnimation("idle", 16, 18, new int[] { 0 }, 6, false, 1);
             Player.AddAnimation("run", 16, 18, new int[] { 1, 0, 2, 0 }, 6, true, 1);
             Player.AddAnimation("jump", 16, 18, new int[] { 2 }, 6, false, 1);
             Player.AddAnimation("fall", 16, 18, new int[] { 1 }, 6, false, 1);
             Player.Mass = 1f;
             // Adjust the origin to keep the player's feet from visually penetrating a wall when rotated.
-            Player.Origin.Y += 2;
+            Player.CenterOrigin(false);
+            Player.Origin.Y += 10;
             Player.DrawOffset.Y -= 2;
             Add(Player);
+
+            Emitter.Parent = Player;
+            Emitter.Start(false);
 
             PlayerControl = new GenControl(Player, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
             PlayerControl.SetMovementSpeed(800, 0, 250, 400, 700, 0);
@@ -252,7 +256,7 @@ namespace Genetic
         {
             base.Update();
 
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Tab) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
+            if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
 
             if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.R) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Y))
@@ -278,15 +282,16 @@ namespace Genetic
             //((GenObject)Chain.Members[0]).Y = Player.Y;
 
             //GenMove.AccelerateToPoint(Chain.Members[0], Player.Position, 200);
-            GenMove.AccelerateToPoint(Emitter, Player.Position, 500);
+            GenMove.AccelerateToPoint(Emitter, Player.CenterPosition, 500, 100);
 
-            Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.Position + new Vector2(Warthog3.BoundingBox.HalfWidth, Warthog3.BoundingBox.HalfHeight), Player.Position + new Vector2(Player.BoundingBox.HalfWidth, Player.BoundingBox.HalfHeight));
+            Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
             GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
 
-            Emitter.X = Player.X;
-            Emitter.Y = Player.Y;
-
             //Chain.LineColor = GenU.RandomColor();
+
+            //Player.Rotation++;
+            Player.Scale.X = GenU.CosineWave(1, 8, 0.1f);
+            Player.Scale.Y = GenU.SineWave(1, 8, 0.1f);
 
             /*if (Player.IsTouching(GenObject.Direction.Down))
                 Player.Rotation = 0;

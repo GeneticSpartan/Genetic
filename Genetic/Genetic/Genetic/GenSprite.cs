@@ -45,14 +45,15 @@ namespace Genetic
         public float RotationSpeed;
 
         /// <summary>
-        /// The origin, relative to the position, that the sprite texture will rotate around.
-        /// </summary>
-        public Vector2 Origin;
-
-        /// <summary>
         /// The amount of pixels in the x-axis and y-axis to offset the sprite texture when drawing.
         /// </summary>
         public Vector2 DrawOffset = Vector2.Zero;
+
+        /// <summary>
+        /// The horizontal and vertical scales at which the sprite texture will be drawn.
+        /// The sprite will be scaled from the origin.
+        /// </summary>
+        public Vector2 Scale;
 
         /// <summary>
         /// A list of animations used by the sprite.
@@ -217,16 +218,17 @@ namespace Genetic
         public GenSprite(float x = 0, float y = 0, string textureFile = null, int width = 1, int height = 1)
             : base(x, y, width, height)
         {
+            _sourceRect = new Rectangle(0, 0, width, height);
+
             if (textureFile != null)
-                LoadTexture(textureFile);
+                LoadTexture(textureFile, true);
             else
                 _texture = null;
 
-            _sourceRect = new Rectangle(0, 0, width, height);
             Color = Color.White;
             _rotation = 0f;
             RotationSpeed = 0f;
-            Origin = new Vector2(width * 0.5f, height * 0.5f);
+            Scale = Vector2.One;
             _animations = new Dictionary<string, GenAnimation>();
         }
 
@@ -283,9 +285,9 @@ namespace Genetic
             if (_texture != null)
             {
                 if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, 1, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
             }
         }
 
@@ -294,7 +296,7 @@ namespace Genetic
         /// Sets the source bounding rectangle according to the new texture.
         /// </summary>
         /// <param name="textureFile">The sprite texture file to load.</param>
-        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered.</param>
+        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
         /// <returns>The Texture2D created from loading the texture file.</returns>
         public Texture2D LoadTexture(string textureFile, bool centerOrigin = true)
         {
@@ -310,7 +312,7 @@ namespace Genetic
         /// Sets the source bounding rectangle according to the texture.
         /// </summary>
         /// <param name="textureFile">The sprite texture.</param>
-        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered.</param>
+        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
         /// <returns>The Texture2D that was given.</returns>
         public Texture2D LoadTexture(Texture2D texture, bool centerOrigin = true)
         {
@@ -329,7 +331,7 @@ namespace Genetic
         /// <param name="color">The color of the sprite. Defaults to white if set to null.</param>
         /// <param name="width">The width to display the texture at. A value of 0 will use the existing sprite width.</param>
         /// <param name="height">The height to display the texture at. A value of 0 will use the existing sprite height.</param>
-        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered.</param>
+        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
         /// <returns>The newly created Texture2D.</returns>
         public Texture2D MakeTexture(Color? color = null, int width = 0, int height = 0, bool centerOrigin = true)
         {
@@ -358,7 +360,7 @@ namespace Genetic
         /// <param name="y">The y position of the bounding rectangle.</param>
         /// <param name="width">The width of the bounding rectangle.</param>
         /// <param name="height">The height of the bounding rectangle.</param>
-        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered.</param>
+        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
         public void SetSourceRect(int x, int y, int width, int height, bool centerOrigin = true)
         {
             _sourceRect.X = x;
@@ -367,13 +369,22 @@ namespace Genetic
             _sourceRect.Height = height;
 
             if (centerOrigin)
-                CenterOrigin();
+                CenterOrigin(true);
         }
 
-        public void CenterOrigin()
+        /// <summary>
+        /// Places the origin at the center of the sprite image or the bounding box.
+        /// </summary>
+        /// <param name="useSprite">A flag used to set the origin at the center of the sprite image instead of the bounding box.</param>
+        public void CenterOrigin(bool useSprite = true)
         {
-            Origin.X = _sourceRect.Width * 0.5f;
-            Origin.Y = _sourceRect.Height * 0.5f;
+            if (useSprite)
+            {
+                Origin.X = (int)(_sourceRect.Width * 0.5f);
+                Origin.Y = (int)(_sourceRect.Height * 0.5f);
+            }
+            else
+                base.CenterOrigin();
         }
 
         /// <summary>
