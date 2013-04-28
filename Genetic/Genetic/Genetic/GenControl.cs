@@ -145,11 +145,6 @@ namespace Genetic
             ControlObject.Acceleration.X = 0;
             ControlObject.Acceleration.Y = 0;
 
-            if (ControlObject.IsTouching(GenObject.Direction.Down))
-                _inAir = false;
-            else
-                _inAir = true;
-
             if (MovementType == Movement.Instant)
             {
                 if (MovementSpeedX != 0)
@@ -296,6 +291,14 @@ namespace Genetic
             
             ControlObject.Acceleration.X += Gravity.X;
             ControlObject.Acceleration.Y += Gravity.Y;
+        }
+
+        public override void PostUpdate()
+        {
+            if (ControlObject.IsTouching(GenObject.Direction.Down))
+                _inAir = false;
+            else
+                _inAir = true;
         }
 
         /// <summary>

@@ -193,7 +193,10 @@ namespace Genetic.Particles
         protected void MoveToParent()
         {
             if (Parent != null)
-                _position = Parent.CenterPosition;
+            {
+                X = Parent.Position.X;
+                Y = Parent.Position.Y;
+            }
         }
 
         /// <summary>
@@ -206,8 +209,8 @@ namespace Genetic.Particles
 
             if (_currentParticle != null)
             {
-                _currentParticle.X = _position.X;
-                _currentParticle.Y = _position.Y;
+                _currentParticle.X = GenU.Random((int)_boundingBox.Left, (int)(_boundingBox.Right + 1));
+                _currentParticle.Y = GenU.Random((int)_boundingBox.Top, (int)(_boundingBox.Bottom + 1));
                 _currentParticle.Velocity.X = GenU.Random(MinParticleSpeedX, MaxParticleSpeedX + 1);
                 _currentParticle.Velocity.Y = GenU.Random(MinParticleSpeedY, MaxParticleSpeedY + 1);
 

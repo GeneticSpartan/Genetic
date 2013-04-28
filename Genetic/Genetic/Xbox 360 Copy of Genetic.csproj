@@ -87,6 +87,7 @@
     <Compile Include="Genetic\GenTimer.cs" />
     <Compile Include="Genetic\GenU.cs" />
     <Compile Include="Genetic\Geometry\GenAABB.cs" />
+    <Compile Include="Genetic\Gui\GenProgressBar.cs" />
     <Compile Include="Genetic\Input\GenGamePad.cs" />
     <Compile Include="Genetic\Input\GenKeyboard.cs" />
     <Compile Include="Genetic\Input\GenMouse.cs" />

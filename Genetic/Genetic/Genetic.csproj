@@ -75,6 +75,7 @@
     <Compile Include="Genetic\GenAnimation.cs" />
     <Compile Include="Genetic\GenCave.cs" />
     <Compile Include="Genetic\GenControl.cs" />
+    <Compile Include="Genetic\Gui\GenProgressBar.cs" />
     <Compile Include="Genetic\Particles\GenEmitter.cs" />
     <Compile Include="Genetic\GenEvent.cs" />
     <Compile Include="Genetic\Input\GenGamePad.cs" />

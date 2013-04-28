@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+using Genetic.Gui;
 using Genetic.Particles;
 using Genetic.Path;
 using Genetic.Physics;
@@ -41,6 +42,8 @@ namespace Genetic
         public GenPath Path;
 
         public GenEmitter Emitter;
+
+        public GenProgressBar ProgressBar;
 
         public override void Create()
         {
@@ -151,6 +154,8 @@ namespace Genetic
             Add(Warthog3);
 
             Emitter = new GenEmitter(100, 100);
+            Emitter.Width = 16;
+            Emitter.Height = 16;
             Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 400);
             Emitter.EmitQuantity = 400;
             Emitter.EmitFrequency = 3f;
@@ -168,8 +173,8 @@ namespace Genetic
             Player = new GenSprite(100, 0, "player", 16, 16);
             Player.AddAnimation("idle", 16, 18, new int[] { 0 }, 6, false, 1);
             Player.AddAnimation("run", 16, 18, new int[] { 1, 0, 2, 0 }, 6, true, 1);
-            Player.AddAnimation("jump", 16, 18, new int[] { 2 }, 6, false, 1);
-            Player.AddAnimation("fall", 16, 18, new int[] { 1 }, 6, false, 1);
+            Player.AddAnimation("jump", 16, 18, new int[] { 1 }, 6, false, 1);
+            Player.AddAnimation("fall", 16, 18, new int[] { 3 }, 6, false, 1);
             Player.Mass = 1f;
             // Adjust the origin to keep the player's feet from visually penetrating a wall when rotated.
             Player.CenterOrigin(false);
@@ -217,6 +222,16 @@ namespace Genetic
             Text.Velocity.Y = 50;
             Add(Text);
 
+            ProgressBar = new GenProgressBar(100, 100);
+            ProgressBar.LoadTexture(GenG.Pixel);
+            ProgressBar.SetSourceRect(0, 0, 100, 10);
+            ProgressBar.MinColor = Color.Red;
+            ProgressBar.MaxColor = Color.CornflowerBlue;
+            //ProgressBar.MinCallback = Shake;
+            ProgressBar.Rotation = -90;
+            ProgressBar.Parent = Player;
+            Add(ProgressBar);
+
             //Music = new GenSound("music", 1, true);
             //Music.Play();
 
@@ -256,6 +271,18 @@ namespace Genetic
         {
             base.Update();
 
+            // Do collision checking first.
+            GenG.Collide(Player, Text);
+            GenG.Collide(Cave, Player, HitCave);
+            GenG.Collide(Cave, Boxes);
+            GenG.Collide(Player, Boxes, HitBox);
+            //GenG.Collide(Boxes, Boxes);
+            //GenG.Collide(Warthog4, Warthog5);
+            //GenG.Collide(Cave, Chain);
+            GenG.Collide(Cave, Warthog3);
+            GenG.Collide(Player, Warthog3);
+            GenG.Collide(Cave, Emitter);
+
             if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
 
@@ -293,9 +320,13 @@ namespace Genetic
             Player.Scale.X = GenU.CosineWave(1, 8, 0.1f);
             Player.Scale.Y = GenU.SineWave(1, 8, 0.1f);
 
-            /*if (Player.IsTouching(GenObject.Direction.Down))
-                Player.Rotation = 0;
-            else if (Player.IsTouching(GenObject.Direction.Right))
+            ProgressBar.Scale.Y = GenU.SineWave(1, 8, 0.2f);
+
+            ProgressBar.Value = GenU.SineWave(50, 2, 51);
+
+            if (Player.IsTouching(GenObject.Direction.Down))
+                Player.Rotation = 90;
+            /*ielse if (Player.IsTouching(GenObject.Direction.Right))
                 Player.Rotation = 270;
             else if (Player.IsTouching(GenObject.Direction.Left))
                 Player.Rotation = 90;
@@ -303,18 +334,6 @@ namespace Genetic
                 Player.Rotation = 180;
             else if (!Player.IsTouching(GenObject.Direction.Any))
                 Player.RotationSpeed = Player.Velocity.X * 4;*/
-
-            // Do collision checking last.
-            GenG.Collide(Player, Text);
-            GenG.Collide(Cave, Player, HitCave);
-            GenG.Collide(Cave, Boxes);
-            GenG.Collide(Player, Boxes, HitBox);
-            //GenG.Collide(Boxes, Boxes);
-            //GenG.Collide(Warthog4, Warthog5);
-            //GenG.Collide(Cave, Chain);
-            GenG.Collide(Cave, Warthog3);
-            GenG.Collide(Player, Warthog3);
-            GenG.Collide(Cave, Emitter);
         }
 
         public void FadeOut(GenCollideEvent e)
@@ -343,6 +362,11 @@ namespace Genetic
             }
 
             Timer.Start();
+        }*/
+
+        /*public void Shake()
+        {
+            GenG.Camera.Shake(5, 1, true);
         }*/
 
         public void HitBox(GenCollideEvent e)

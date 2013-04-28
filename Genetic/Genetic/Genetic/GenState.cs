@@ -20,6 +20,15 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Override this method to add additional pre-update logic.
+        /// </summary>
+        public override void PreUpdate()
+        {
+            if (!GenG.Paused)
+                base.PreUpdate();
+        }
+
+        /// <summary>
         /// Override this method to add additional update logic.
         /// </summary>
         public override void Update()
@@ -33,6 +42,9 @@ namespace Genetic
         /// </summary>
         public override void PostUpdate()
         {
+            if (!GenG.Paused)
+                base.PostUpdate();
+
             foreach (GenCamera camera in GenG.Cameras)
             {
                 if (camera.Exists && camera.Active)

@@ -415,6 +415,7 @@ namespace Genetic
                 _requestedState = null;
             }
 
+            _state.PreUpdate();
             _state.Update();
             _state.PostUpdate();
 

@@ -1,4 +1,6 @@
-﻿namespace Genetic.Geometry
+﻿using Microsoft.Xna.Framework;
+
+namespace Genetic.Geometry
 {
     public class GenAABB
     {
@@ -198,6 +200,16 @@
 
             X = x;
             Y = y;
+        }
+
+        /// <summary>
+        /// Checks if the bounding box intersects with a given point.
+        /// </summary>
+        /// <param name="point">The point to check for an intersection.</param>
+        /// <returns>True if an intersection occurs, false if not.</returns>
+        public bool Intersects(Vector2 point)
+        {
+            return ((_left < point.X) && (_right > point.X) && (_top < point.Y) && (_bottom > point.Y));
         }
 
         /// <summary>

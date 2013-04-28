@@ -303,6 +303,18 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Override this method to add additional pre-update logic.
+        /// </summary>
+        public override void PreUpdate()
+        {
+            _onPlatform = false;
+
+            // Reset the bit fields for collision flags.
+            WasTouching = Touching;
+            Touching = Direction.None;
+        }
+
+        /// <summary>
         /// Override this method to add additional update logic.
         /// </summary>
         public override void Update()
@@ -380,13 +392,10 @@ namespace Genetic
         {
             // Set the position of the object relative to the parent.
             if (Parent != null)
-                _position = Parent.Position + ParentOffset;
-
-            _onPlatform = false;
-
-            // Reset the bit fields for collision flags.
-            WasTouching = Touching;
-            Touching = Direction.None;
+            {
+                X = Parent.Position.X + ParentOffset.X;
+                Y = Parent.Position.Y + ParentOffset.Y;
+            }
         }
 
         /// <summary>
@@ -612,7 +621,7 @@ namespace Genetic
                                         if (Acceleration.X == 0)
                                         {
                                             _onPlatform = true;
-                                            Velocity.X = gameObject.Velocity.X + (gameObject.Acceleration.X * GenG.PhysicsTimeStep);
+                                            Velocity.X = gameObject.Velocity.X;
                                         }
                                     }
                                 }

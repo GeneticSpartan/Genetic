@@ -269,7 +269,24 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            // Calculate the draw position from the position, origin, offset, camera scroll, and scroll factor values.
+            UpdateDrawPosition();
+
+            if (_texture != null)
+            {
+                if (_currentAnimation == null)
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
+                else
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
+            }
+        }
+
+        /// <summary>
+        /// Updates the x and y positions of where the top-left corner of a sprite will be drawn.
+        /// Calculates the draw position from the position, origin, offset, camera scroll, and scroll factor values.
+        /// </summary>
+        /// <returns></returns>
+        protected void UpdateDrawPosition()
+        {
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
                 // Convert the x and y values to integers to avoid render offset issues.
@@ -280,14 +297,6 @@ namespace Genetic
             {
                 _drawPosition.X = X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
                 _drawPosition.Y = Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
-            }
-
-            if (_texture != null)
-            {
-                if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
-                else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
             }
         }
 

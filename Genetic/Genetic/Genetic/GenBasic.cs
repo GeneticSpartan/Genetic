@@ -23,6 +23,14 @@
         }
 
         /// <summary>
+        /// Override this method to add pre-update logic.
+        /// </summary>
+        public virtual void PreUpdate()
+        {
+
+        }
+
+        /// <summary>
         /// Override this method to add update logic.
         /// </summary>
         public virtual void Update()

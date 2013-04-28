@@ -16,6 +16,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Calls PreUpdate on each of the objects in the members list.
+        /// Override this method to add additional pre-update logic.
+        /// </summary>
+        public override void PreUpdate()
+        {
+            if (Exists && Active)
+            {
+                foreach (GenBasic member in Members)
+                {
+                    if (member.Exists && member.Active)
+                        member.PreUpdate();
+                }
+            }
+        }
+
+        /// <summary>
         /// Calls Update on each of the objects in the members list.
         /// Override this method to add additional update logic.
         /// </summary>
@@ -28,7 +44,17 @@ namespace Genetic
                     if (member.Exists && member.Active)
                         member.Update();
                 }
+            }
+        }
 
+        /// <summary>
+        /// Calls PostUpdate on each of the objects in the members list.
+        /// Override this method to add additional post-update logic.
+        /// </summary>
+        public override void PostUpdate()
+        {
+            if (Exists && Active)
+            {
                 foreach (GenBasic member in Members)
                 {
                     if (member.Exists && member.Active)
