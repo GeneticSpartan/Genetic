@@ -130,8 +130,10 @@ namespace Genetic
         /// </summary>
         public bool IsPlatform = false;
 
-
-        protected bool _onPlatform = false;
+        /// <summary>
+        /// The current platform object that the object is interacting with.
+        /// </summary>
+        protected GenObject _platform;
 
         #region Path Fields
         /// <summary>
@@ -300,6 +302,8 @@ namespace Genetic
 
             Velocity = Vector2.Zero;
             MaxVelocity = Vector2.Zero;
+
+            _platform = null;
         }
 
         /// <summary>
@@ -307,8 +311,6 @@ namespace Genetic
         /// </summary>
         public override void PreUpdate()
         {
-            _onPlatform = false;
-
             // Reset the bit fields for collision flags.
             WasTouching = Touching;
             Touching = Direction.None;
@@ -325,7 +327,8 @@ namespace Genetic
             {
                 if (Velocity.X > 0)
                 {
-                    if (!_onPlatform)
+                    // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
+                    if ((_platform == null) || (Velocity.X > _platform.Velocity.X))
                         Velocity.X -= Deceleration.X * GenG.PhysicsTimeStep;
 
                     if (Velocity.X < 0)
@@ -333,7 +336,8 @@ namespace Genetic
                 }
                 else if (Velocity.X < 0)
                 {
-                    if (!_onPlatform)
+                    // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
+                    if ((_platform == null) || (Velocity.X < _platform.Velocity.X))
                         Velocity.X += Deceleration.X * GenG.PhysicsTimeStep;
 
                     if (Velocity.X > 0)
@@ -383,6 +387,8 @@ namespace Genetic
 
             if (Path != null)
                 MoveAlongPath();
+
+            _platform = null;
         }
 
         /// <summary>
@@ -390,6 +396,16 @@ namespace Genetic
         /// </summary>
         public override void PostUpdate()
         {
+            if (_platform != null)
+            {
+                // Do not change the object's velocity if its velocity is already greater than the platform's velocity.
+                if (((Velocity.X >= 0) && (Velocity.X <= _platform.Velocity.X)) || ((Velocity.X <= 0) && (Velocity.X >= _platform.Velocity.X)))
+                {
+                    if (_platform.Velocity.X != 0)
+                        Velocity.X = _platform.Velocity.X + (_platform.Acceleration.X * GenG.PhysicsTimeStep);
+                }
+            }
+
             // Set the position of the object relative to the parent.
             if (Parent != null)
             {
@@ -619,10 +635,7 @@ namespace Genetic
                                     if (gameObject.IsPlatform)
                                     {
                                         if (Acceleration.X == 0)
-                                        {
-                                            _onPlatform = true;
-                                            Velocity.X = gameObject.Velocity.X;
-                                        }
+                                            _platform = gameObject;
                                     }
                                 }
                                 else

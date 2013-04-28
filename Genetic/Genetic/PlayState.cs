@@ -324,9 +324,9 @@ namespace Genetic
 
             ProgressBar.Value = GenU.SineWave(50, 2, 51);
 
-            if (Player.IsTouching(GenObject.Direction.Down))
-                Player.Rotation = 90;
-            /*ielse if (Player.IsTouching(GenObject.Direction.Right))
+            /*if (Player.IsTouching(GenObject.Direction.Down))
+                Player.Rotation = 0;
+            else if (Player.IsTouching(GenObject.Direction.Right))
                 Player.Rotation = 270;
             else if (Player.IsTouching(GenObject.Direction.Left))
                 Player.Rotation = 90;
