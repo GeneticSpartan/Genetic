@@ -124,9 +124,9 @@ namespace Genetic
 
             // Draw the text shadow.
             if (HasShadow)
-                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + ShadowPosition, ShadowColor, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + ShadowPosition, ShadowColor, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
 
-            GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, Color, _rotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+            GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, Color, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
         }
     }
 }

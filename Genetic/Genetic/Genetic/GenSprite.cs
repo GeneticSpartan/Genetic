@@ -29,20 +29,21 @@ namespace Genetic
         protected Color _color;
 
         /// <summary>
-        /// The current color used to tint the sprite. White means no tint.
+        /// The unmodified color used to tint the sprite. White means no tint.
         /// Useful for saving the sprite's color tint while using other color effects.
         /// </summary>
-        protected Color _currentColor;
+        protected Color _baseColor;
 
         /// <summary>
-        /// The rotation of the sprite in radians.
+        /// The color alpha value of the sprite when drawn, a value from 0.0 to 1.0.
         /// </summary>
-        protected float _rotation;
+        protected float _alpha;
 
         /// <summary>
-        /// The speed of the sprite's rotation in degrees per second.
+        /// The unmodified color alpha value of the sprite when drawn, a value from 0.0 to 1.0.
+        /// Useful for saving the sprite's alpha while using other color alpha effects.
         /// </summary>
-        public float RotationSpeed;
+        protected float _baseAlpha;
 
         /// <summary>
         /// The amount of pixels in the x-axis and y-axis to offset the sprite texture when drawing.
@@ -54,6 +55,16 @@ namespace Genetic
         /// The sprite will be scaled from the origin.
         /// </summary>
         public Vector2 Scale;
+
+        /// <summary>
+        /// The rotation of the sprite image when it is drawn.
+        /// </summary>
+        protected float _drawRotation;
+
+        /// <summary>
+        /// A flag used to determine if the sprite wil be drawn rotated when the object is rotated.
+        /// </summary>
+        public bool DrawRotated;
 
         /// <summary>
         /// A list of animations used by the sprite.
@@ -145,23 +156,21 @@ namespace Genetic
             set
             {
                 _color = value;
-                _currentColor = _color;
+                _baseColor = _color;
             }
         }
 
         /// <summary>
-        /// Get or sets the rotation of the sprite in degrees.
+        /// Gets or sets the color alpha of the sprite when drawn, a value from 0.0 to 1.0.
         /// </summary>
-        public float Rotation
+        public float Alpha
         {
-            get { return MathHelper.ToDegrees(_rotation); }
+            get { return _alpha; }
 
             set
             {
-                if ((value > 360) || (value < -360))
-                    value %= 360;
-
-                _rotation = MathHelper.ToRadians(value);
+                _alpha = value;
+                _baseAlpha = _alpha;
             }
         }
 
@@ -225,18 +234,19 @@ namespace Genetic
             else
                 _texture = null;
 
-            Color = Color.White;
-            _rotation = 0f;
-            RotationSpeed = 0f;
+            _baseColor = Color.White;
+            _color = _baseColor;
+            _baseAlpha = 1f;
+            _alpha = _baseAlpha;
             Scale = Vector2.One;
+            _drawRotation = 0f;
+            DrawRotated = true;
             _animations = new Dictionary<string, GenAnimation>();
         }
 
         public override void Update()
         {
             base.Update();
-
-            Rotation += RotationSpeed * GenG.PhysicsTimeStep;
 
             // Update the currently playing animation.
             if (_currentAnimation != null)
@@ -247,21 +257,29 @@ namespace Genetic
                 if (_flickerTimer < _flickerDuration)
                 {
                     if (_flickerPulsing)
-                        _color = _flickerColor * GenU.SineWave(0.5f, _flickerIntensity, 0.5f);
+                    {
+                        _alpha = _baseAlpha * GenU.SineWave(0.5f, _flickerIntensity, 0.5f);
+                        _color = _flickerColor * _alpha;
+                    }
                     else
-                        _color = _flickerColor * (float)Math.Round(GenU.SineWave(0.5f, _flickerIntensity, 0.5f));
+                    {
+                        _alpha = _baseAlpha * (float)Math.Round(GenU.SineWave(0.5f, _flickerIntensity, 0.5f));
+                        _color = _flickerColor * _alpha;
+                    }
 
                     _flickerTimer += GenG.PhysicsTimeStep;
                 }
                 else
                 {
                     _flickering = false;
-                    _color = _currentColor;
+                    _color = _baseColor;
 
                     if (_flickerCallback != null)
                         _flickerCallback.Invoke();
                 }
             }
+            else
+                _alpha = _baseAlpha;
         }
 
         /// <summary>
@@ -271,12 +289,17 @@ namespace Genetic
         {
             UpdateDrawPosition();
 
+            if (DrawRotated)
+                _drawRotation = _rotation;
+            else
+                _drawRotation = 0;
+
             if (_texture != null)
             {
                 if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
             }
         }
 
@@ -289,7 +312,6 @@ namespace Genetic
         {
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                // Convert the x and y values to integers to avoid render offset issues.
                 _drawPosition.X = (int)(X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor));
                 _drawPosition.Y = (int)(Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor));
             }

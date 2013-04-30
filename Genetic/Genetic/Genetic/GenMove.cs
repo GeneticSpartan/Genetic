@@ -209,6 +209,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Rotates an object around a given point.
+        /// </summary>
+        /// <param name="gameObject">The object to rotate around the point.</param>
+        /// <param name="point">The point to rotate around.</param>
+        /// <param name="angle">The angle of rotation, in degrees.</param>
+        /// <param name="radius">The distance from the point that the object will be placed.</param>
+        public static void RotateAroundPoint(GenObject gameObject, Vector2 point, float angle, float radius)
+        {
+            _vector = AngleToVector(angle);
+            _vector = point + _vector * radius;
+
+            gameObject.X = _vector.X;
+            gameObject.Y = _vector.Y;
+        }
+
+        /// <summary>
         /// Determines if an object will reach a specified point on the next update.
         /// Uses the current position and movement direction of the object, and a given speed.
         /// The current velocity of the object will be used if the given speed is 0.

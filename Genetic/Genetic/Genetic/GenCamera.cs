@@ -304,13 +304,8 @@ namespace Genetic
 
             set
             {
-                float zoom = value;
-
-                if (zoom < 0)
-                    _zoom = 0;
-                else
-                    _zoom = zoom;
-
+                _zoom = value;
+                
                 RefreshCameraView();
             }
         }
@@ -372,7 +367,7 @@ namespace Genetic
             Origin = new Vector2(width * 0.5f, height * 0.5f);
             _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
-            Zoom = zoom;
+            Zoom = _initialZoom;
             Transform = Matrix.Identity;
         }
 
@@ -416,30 +411,44 @@ namespace Genetic
                 }
                 else
                 {
+                    float followTargetX = 0;
+                    float followTargetY = 0;
+
+                    if (GenG.DrawMode == GenG.DrawType.Pixel)
+                    {
+                        followTargetX = (int)_followTargets[0].X;
+                        followTargetY = (int)_followTargets[0].Y;
+                    }
+                    else if (GenG.DrawMode == GenG.DrawType.Smooth)
+                    {
+                        followTargetX = _followTargets[0].X;
+                        followTargetY = _followTargets[0].Y;
+                    }
+
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnHorizontal))
-                        _followPosition.X += (_followTargets[0].X + _followTargets[0].BoundingBox.HalfWidth - _followPosition.X) * _followStrength;
+                        _followPosition.X += (followTargetX + _followTargets[0].BoundingBox.HalfWidth - _followPosition.X) * _followStrength;
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnVertical))
-                        _followPosition.Y += (_followTargets[0].Y + _followTargets[0].BoundingBox.HalfHeight - _followPosition.Y) * _followStrength;
+                        _followPosition.Y += (followTargetY + _followTargets[0].BoundingBox.HalfHeight - _followPosition.Y) * _followStrength;
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingHorizontal))
                     {
                         if (_followTargets[0].Facing == GenObject.Direction.Left)
-                            _followPosition.X += (_followTargets[0].X - FollowLeading.X - _followPosition.X) * _followStrength;
+                            _followPosition.X += (followTargetX - FollowLeading.X - _followPosition.X) * _followStrength;
                         else if (_followTargets[0].Facing == GenObject.Direction.Right)
-                            _followPosition.X += (_followTargets[0].X + FollowLeading.X - _followPosition.X) * _followStrength;
+                            _followPosition.X += (followTargetX + FollowLeading.X - _followPosition.X) * _followStrength;
                         else
-                            _followPosition.X += (_followTargets[0].X - _followPosition.X) * _followStrength;
+                            _followPosition.X += (followTargetX - _followPosition.X) * _followStrength;
                     }
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingVertical))
                     {
                         if (_followTargets[0].Facing == GenObject.Direction.Up)
-                            _followPosition.Y += (_followTargets[0].Y - FollowLeading.Y - _followPosition.Y) * _followStrength;
+                            _followPosition.Y += (followTargetY - FollowLeading.Y - _followPosition.Y) * _followStrength;
                         else if (_followTargets[0].Facing == GenObject.Direction.Down)
-                            _followPosition.Y += (_followTargets[0].Y + FollowLeading.Y - _followPosition.Y) * _followStrength;
+                            _followPosition.Y += (followTargetY + FollowLeading.Y - _followPosition.Y) * _followStrength;
                         else
-                            _followPosition.Y += (_followTargets[0].Y - _followPosition.Y) * _followStrength;
+                            _followPosition.Y += (followTargetY - _followPosition.Y) * _followStrength;
                     }
                 }
 
@@ -494,10 +503,7 @@ namespace Genetic
 
             // Create the camera transform.
             if (GenG.DrawMode == GenG.DrawType.Pixel)
-            {
-                // Convert the scroll values to integers to avoid render offset issues.
-                Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f) * Matrix.CreateScale(_zoom);
-            }
+                Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f);
             else if (GenG.DrawMode == GenG.DrawType.Smooth)
                 Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
         }
@@ -575,11 +581,14 @@ namespace Genetic
             _position.X = x;
             _position.Y = y;
 
-            Origin.X = width * 0.5f;
-            Origin.Y = height * 0.5f;
+            if (GenG.DrawMode == GenG.DrawType.Smooth)
+            {
+                Origin.X = width * 0.5f;
+                Origin.Y = height * 0.5f;
 
-            _drawPosition.X = x + Origin.X;
-            _drawPosition.Y = y + Origin.Y;
+                _drawPosition.X = x + Origin.X;
+                _drawPosition.Y = y + Origin.Y;
+            }
 
             // Create a new render target object to comply with the new size settings.
             RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
@@ -688,6 +697,16 @@ namespace Genetic
             // Adjust the camera view dimensions.
             _cameraView.Width = _cameraRect.Width / _zoom;
             _cameraView.Height = _cameraRect.Height / _zoom;
+
+            if (GenG.DrawMode == GenG.DrawType.Pixel)
+            {
+                // Adjust the origin and draw position for drawing the camera render target image in the correct position.
+                Origin.X = (_cameraRect.Width * 0.5f) / _zoom;
+                Origin.Y = (_cameraRect.Height * 0.5f) / _zoom;
+
+                _drawPosition.X = (_cameraRect.X + Origin.X) * _zoom + _position.X;
+                _drawPosition.Y = (_cameraRect.Y + Origin.Y) * _zoom + _position.Y;
+            }
         }
 
         /// <summary>

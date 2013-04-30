@@ -291,6 +291,20 @@ namespace Genetic.Particles
         }
 
         /// <summary>
+        /// Sets the deceleration speed of each particle in the emitter group.
+        /// </summary>
+        /// <param name="decelerationX">The x deceleration speed of a particle.</param>
+        /// <param name="decelerationY">The y deceleration speed of a particle.</param>
+        public void SetDeceleration(float decelerationX, float decelerationY)
+        {
+            foreach (GenParticle particle in Members)
+            {
+                particle.Deceleration.X = decelerationX;
+                particle.Deceleration.Y = decelerationY;
+            }
+        }
+
+        /// <summary>
         /// Sets the minimum and maximum rotation speeds allowed for particles as they are emitted.
         /// </summary>
         /// <param name="min">The minimum rotation speed allowed for particles.</param>
@@ -308,8 +322,8 @@ namespace Genetic.Particles
         /// <param name="seconds">The lifetime of a particle, in seconds.</param>
         public void SetLifetime(float seconds)
         {
-            foreach (GenParticle partical in Members)
-                partical.Lifetime = seconds;
+            foreach (GenParticle particle in Members)
+                particle.Lifetime = seconds;
         }
 
         /// <summary>
@@ -320,10 +334,10 @@ namespace Genetic.Particles
         /// <param name="endAlpha">The ending color tint of a particle.</param>
         public void SetColor(Color startColor, Color endColor)
         {
-            foreach (GenParticle partical in Members)
+            foreach (GenParticle particle in Members)
             {
-                partical.StartColor = startColor;
-                partical.EndColor = endColor;
+                particle.StartColor = startColor;
+                particle.EndColor = endColor;
             }
         }
 
@@ -335,10 +349,10 @@ namespace Genetic.Particles
         /// <param name="endAlpha">The ending alpha value of a particle.</param>
         public void SetAlpha(float startAlpha, float endAlpha)
         {
-            foreach (GenParticle partical in Members)
+            foreach (GenParticle particle in Members)
             {
-                partical.StartAlpha = startAlpha;
-                partical.EndAlpha = endAlpha;
+                particle.StartAlpha = startAlpha;
+                particle.EndAlpha = endAlpha;
             }
         }
 
@@ -350,10 +364,10 @@ namespace Genetic.Particles
         /// <param name="endScale">The ending scale value of a particle.</param>
         public void SetScale(float startScale, float endScale)
         {
-            foreach (GenParticle partical in Members)
+            foreach (GenParticle particle in Members)
             {
-                partical.StartScale = startScale;
-                partical.EndScale = endScale;
+                particle.StartScale = startScale;
+                particle.EndScale = endScale;
             }
         }
 
@@ -364,10 +378,10 @@ namespace Genetic.Particles
         /// <param name="gravityY">The y acceleration of a particle.</param>
         public void SetGravity(float gravityX, float gravityY)
         {
-            foreach (GenParticle partical in Members)
+            foreach (GenParticle particle in Members)
             {
-                partical.Acceleration.X = gravityX;
-                partical.Acceleration.Y = gravityY;
+                particle.Acceleration.X = gravityX;
+                particle.Acceleration.Y = gravityY;
             }
         }
 

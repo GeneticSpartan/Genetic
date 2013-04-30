@@ -52,10 +52,10 @@ namespace Genetic
 
         /// <param name="width">The width of the game window.</param>
         /// <param name="height">The height of the game window.</param>
-        /// <param name="zoom">The scale of the initial camera.</param>
+        /// <param name="zoom">The scale of the initial camera. The value must be 1.0 or greater.</param>
         /// <param name="fps">The amount of frames that the game will run each second.</param>
         /// <param name="fullScreen">A flag used to set the game to fullscreen.</param>
-        public GenGame(int width, int height, GenState initialState, GenG.DrawType drawMode = GenG.DrawType.Pixel, float zoom = 1, bool fullScreen = false)
+        public GenGame(int width, int height, GenState initialState, GenG.DrawType drawMode = GenG.DrawType.Pixel, float zoom = 1f, bool fullScreen = false)
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";

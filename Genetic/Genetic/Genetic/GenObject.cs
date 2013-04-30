@@ -58,6 +58,16 @@ namespace Genetic
         protected Rectangle _boundingRect;
 
         /// <summary>
+        /// The rotation of the object in radians.
+        /// </summary>
+        protected float _rotation;
+
+        /// <summary>
+        /// The speed of the object's rotation in degrees per second.
+        /// </summary>
+        public float RotationSpeed;
+
+        /// <summary>
         /// The x and y distances the object has moved between the current and previous updates relative to its velocity.
         /// Used by GetMoveBounds() to calculate the movement bounding box of the object.
         /// Call GetMoveBounds() to refresh the movement distance.
@@ -123,6 +133,11 @@ namespace Genetic
         /// The x and y position offsets relative to the parent object's position.
         /// </summary>
         public Vector2 ParentOffset = Vector2.Zero;
+
+        /// <summary>
+        /// A flag used to determine if the object should rotate around the parent as the parent object rotates.
+        /// </summary>
+        public bool RotateWithParent;
 
         /// <summary>
         /// A flag used to allow other colliding objects to inherit the x velocity when sitting on this object.
@@ -264,6 +279,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Get or sets the rotation of the object in degrees.
+        /// </summary>
+        public float Rotation
+        {
+            get { return MathHelper.ToDegrees(_rotation); }
+
+            set
+            {
+                if ((value > 360) || (value < -360))
+                    value %= 360;
+
+                _rotation = MathHelper.ToRadians(value);
+            }
+        }
+
+        /// <summary>
         /// Gets the bounding box containing the object at its current and predicted positions relative to its velocity.
         /// Useful for checking if the object may collide with another object during the next update.
         /// Call GetMoveBounds() first to refresh the movement bounding box.
@@ -298,11 +329,12 @@ namespace Genetic
             _centerPosition = new Vector2(x + _boundingBox.HalfWidth, y + _boundingBox.HalfHeight);
             Origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
+            _rotation = 0f;
+            RotationSpeed = 0f;
             _moveBounds = new GenAABB(x, y, width, height);
-
             Velocity = Vector2.Zero;
             MaxVelocity = Vector2.Zero;
-
+            RotateWithParent = true;
             _platform = null;
         }
 
@@ -388,6 +420,8 @@ namespace Genetic
             if (Path != null)
                 MoveAlongPath();
 
+            Rotation += RotationSpeed * GenG.PhysicsTimeStep;
+
             _platform = null;
         }
 
@@ -409,8 +443,13 @@ namespace Genetic
             // Set the position of the object relative to the parent.
             if (Parent != null)
             {
-                X = Parent.Position.X + ParentOffset.X;
-                Y = Parent.Position.Y + ParentOffset.Y;
+                if (Parent.Rotation == 0 || !RotateWithParent)
+                {
+                    X = Parent.Position.X + ParentOffset.X;
+                    Y = Parent.Position.Y + ParentOffset.Y;
+                }
+                else
+                    GenMove.RotateAroundPoint(this, Parent.Position, GenMove.VectortoAngle(ParentOffset) + Parent.Rotation, ParentOffset.Length());
             }
         }
 
@@ -421,7 +460,6 @@ namespace Genetic
         {
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                // Get the debug drawing position by converting the object's x and y positions to integers to avoid render offset issues.
                 _debugDrawPosition.X = (int)_position.X;
                 _debugDrawPosition.Y = (int)_position.Y;
             }

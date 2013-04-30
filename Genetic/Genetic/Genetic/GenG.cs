@@ -477,11 +477,19 @@ namespace Genetic
                     _effect.CurrentTechnique = _effect.Techniques["Grayscale"];
 
                     // Draw the render target texture.
-                    SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+                    if (DrawMode == DrawType.Pixel)
+                        SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.Identity);
+                    else if (DrawMode == DrawType.Smooth)
+                        SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
 
                     _effect.CurrentTechnique.Passes[0].Apply();
 
-                    GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, 1, SpriteEffects.None, 0);
+                    // Draw the render target texture.
+                    if (DrawMode == DrawType.Pixel)
+                        GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, camera.Zoom, SpriteEffects.None, 0);
+                    else if (DrawMode == DrawType.Smooth)
+                        GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, 1f, SpriteEffects.None, 0);
+
                     SpriteBatch.End();
                 }
             }

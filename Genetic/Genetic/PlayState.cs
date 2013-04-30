@@ -51,8 +51,8 @@ namespace Genetic
 
             /*Map = new GenTilemap();
 
-            Map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 8, 8);
-            Map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 8, 8);
+            Map.LoadTile("1", new GenTile()).MakeTexture(Color.LightSkyBlue, 16, 16);
+            Map.LoadTile("2", new GenTile()).MakeTexture(Color.IndianRed, 16, 16);
 
             Map.LoadMap(
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1\n" +
@@ -74,7 +74,7 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
                 "1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
-                , 8, 8, GenTilemap.ImageAuto);
+                , 16, 16, GenTilemap.ImageAuto);
             Add(Map);*/
 
             Cave = new GenCave();
@@ -156,8 +156,8 @@ namespace Genetic
             Emitter = new GenEmitter(100, 100);
             Emitter.Width = 16;
             Emitter.Height = 16;
-            Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 400);
-            Emitter.EmitQuantity = 400;
+            Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 200);
+            Emitter.EmitQuantity = 200;
             Emitter.EmitFrequency = 3f;
             Emitter.InheritVelocity = true;
             Emitter.SetXSpeed(-300, 300);
@@ -166,8 +166,9 @@ namespace Genetic
             Emitter.SetLifetime(2.9f);
             Emitter.SetColor(Color.Cyan, Color.MediumVioletRed);
             Emitter.SetAlpha(2f, 0f);
-            Emitter.SetScale(1f, 0f);
+            //Emitter.SetScale(1f, 0f);
             //Emitter.SetGravity(0, 700);
+            Emitter.SetDeceleration(100, 100);
             Add(Emitter);
 
             Player = new GenSprite(100, 0, "player", 16, 16);
@@ -180,6 +181,8 @@ namespace Genetic
             Player.CenterOrigin(false);
             Player.Origin.Y += 10;
             Player.DrawOffset.Y -= 2;
+            Player.RotationSpeed = 45;
+            Player.DrawRotated = false;
             Add(Player);
 
             Emitter.Parent = Player;
@@ -195,13 +198,20 @@ namespace Genetic
             PlayerControl.FallAnimation = "fall";
             Add(PlayerControl);
 
-            Warthog4 = new GenSprite(0, 100, "warthog", 78, 49);
-            Warthog4.Velocity.X = 500;
-            Warthog4.Mass = 0.5f;
+            Warthog4 = new GenSprite(300, 350, "warthog", 78, 49);
+            //Warthog4.Immovable = true;
+            //Warthog4.IsPlatform = true;
+            //Warthog4.Mass = 10f;
+            Warthog4.Color = Color.Red;
+            Warthog4.Parent = Player;
+            Warthog4.ParentOffset.X = 75;
+            Warthog4.RotationSpeed = 180;
             Add(Warthog4);
 
             Warthog5 = new GenSprite(500, 100, "warthog", 78, 49);
-            Warthog5.Acceleration.Y = 700;
+            //Warthog5.Acceleration.Y = 700;
+            Warthog5.Parent = Warthog4;
+            Warthog5.ParentOffset.X = 150;
             Add(Warthog5);
 
             //Chain.MakeLink(Warthog3, (GenObject)Chain.Members[14]);
@@ -253,7 +263,7 @@ namespace Genetic
             //camera2.AddTarget(Player);
             //camera2.AddTarget(Warthog3);
 
-            Player.Flicker(40f, 1f, Color.Black * 0.5f, true);
+            Player.Flicker(40f, 1f, Color.Red, true);
 
             //Timer = new GenTimer(1f, KillBox);
             //Add(Timer);
@@ -270,7 +280,7 @@ namespace Genetic
         public override void Update()
         {
             base.Update();
-
+            
             // Do collision checking first.
             GenG.Collide(Player, Text);
             GenG.Collide(Cave, Player, HitCave);
@@ -282,6 +292,7 @@ namespace Genetic
             GenG.Collide(Cave, Warthog3);
             GenG.Collide(Player, Warthog3);
             GenG.Collide(Cave, Emitter);
+            //GenG.Collide(Player, Warthog4);
 
             if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
@@ -311,18 +322,39 @@ namespace Genetic
             //GenMove.AccelerateToPoint(Chain.Members[0], Player.Position, 200);
             GenMove.AccelerateToPoint(Emitter, Player.CenterPosition, 500, 100);
 
+            Warthog4.Velocity.X = GenU.SineWave(0, 2, 200);
+            Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
+
             Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
-            GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
+            //GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
+
+            if (Warthog5.Parent != null)
+                Warthog5.Rotation = Warthog5.Parent.Rotation;
 
             //Chain.LineColor = GenU.RandomColor();
 
             //Player.Rotation++;
-            Player.Scale.X = GenU.CosineWave(1, 8, 0.1f);
-            Player.Scale.Y = GenU.SineWave(1, 8, 0.1f);
+            if (Player.Velocity.Y < 0)
+            {
+                Player.Scale.X = MathHelper.Clamp(Math.Abs((Player.Velocity.Y) / Player.MaxVelocity.Y) + 1, 1f, 1.2f);
+                Player.Scale.Y = 1 - (Player.Scale.X - 1);
+            }
+            else if (Player.Velocity.Y > 0)
+            {
+                Player.Scale.X = MathHelper.Clamp(1 - Math.Abs((Player.Velocity.Y) / Player.MaxVelocity.Y), 0.8f, 1f);
+                Player.Scale.Y = 1 + (1 - Player.Scale.X);
+            }
+            else
+            {
+                Player.Scale.X = GenU.CosineWave(1, 8, 0.1f);
+                Player.Scale.Y = GenU.SineWave(1, 8, 0.1f);
+            }
 
             ProgressBar.Scale.Y = GenU.SineWave(1, 8, 0.2f);
 
             ProgressBar.Value = GenU.SineWave(50, 2, 51);
+
+            //Player.Alpha = GenU.SineWave(0.5f, 2f, 0.5f);
 
             /*if (Player.IsTouching(GenObject.Direction.Down))
                 Player.Rotation = 0;
