@@ -6,13 +6,32 @@ namespace Genetic
     public class GenGroup : GenBasic
     {
         /// <summary>
+        /// The GenBasic objects that have been added to the group, and are available for calling updates.
+        /// </summary>
+        protected List<GenBasic> _activeMembers;
+
+        /// <summary>
         /// The GenBasic objects that have been added to the group.
         /// </summary>
         public List<GenBasic> Members;
 
+        /// <summary>
+        /// A flag used to determine if any objects are waiting to be added to the active members list.
+        /// Prevents new objects from being directly added to the active members list during update loops.
+        /// </summary>
+        protected bool _updateMembers;
+
+        /// <summary>
+        /// A flag used to determine if the group should be cleared.
+        /// </summary>
+        protected bool _clear;
+
         public GenGroup()
         {
             Members = new List<GenBasic>();
+            _activeMembers = new List<GenBasic>();
+            _updateMembers = false;
+            _clear = false;
         }
 
         /// <summary>
@@ -21,9 +40,24 @@ namespace Genetic
         /// </summary>
         public override void PreUpdate()
         {
+            // Clear the active members list if the group has been cleared.
+            if (_clear)
+            {
+                _activeMembers.Clear();
+                _clear = false;
+            }
+
+            // if any objects have been recently added or removed, update the active members list.
+            if (_updateMembers)
+            {
+                _activeMembers.Clear();
+                _activeMembers.AddRange(Members);
+                _updateMembers = false;
+            }
+
             if (Exists && Active)
             {
-                foreach (GenBasic member in Members)
+                foreach (GenBasic member in _activeMembers)
                 {
                     if (member.Exists && member.Active)
                         member.PreUpdate();
@@ -39,7 +73,7 @@ namespace Genetic
         {
             if (Exists && Active)
             {
-                foreach (GenBasic member in Members)
+                foreach (GenBasic member in _activeMembers)
                 {
                     if (member.Exists && member.Active)
                         member.Update();
@@ -55,7 +89,7 @@ namespace Genetic
         {
             if (Exists && Active)
             {
-                foreach (GenBasic member in Members)
+                foreach (GenBasic member in _activeMembers)
                 {
                     if (member.Exists && member.Active)
                         member.PostUpdate();
@@ -70,7 +104,7 @@ namespace Genetic
         {
             if (Exists && Visible)
             {
-                foreach (GenBasic member in Members)
+                foreach (GenBasic member in _activeMembers)
                 {
                     if (member.Exists)
                     {
@@ -96,6 +130,7 @@ namespace Genetic
                 return basic;
 
             Members.Add(basic);
+            _updateMembers = true;
 
             return basic;
         }
@@ -104,10 +139,18 @@ namespace Genetic
         /// Removes a specified object from the members list.
         /// </summary>
         /// <param name="basic">The object to remove.</param>
-        /// <returns>The object removed from the members list.</returns>
+        /// <returns>The object removed from the members list. Null if the object was not found in the members list.</returns>
         public GenBasic Remove(GenBasic basic)
         {
-            Members.Remove(basic);
+            int index = Members.IndexOf(basic);
+
+            if (index > -1)
+            {
+                Members.Remove(basic);
+                _updateMembers = true;
+            }
+            else
+                return null;
 
             return basic;
         }
@@ -115,19 +158,22 @@ namespace Genetic
         /// <summary>
         /// Replaces an existing object in the members list with a new object.
         /// </summary>
-        /// <param name="oldBasic">The existing object to replace.</param>
-        /// <param name="newBasic">The new object that will replace the existing object.</param>
+        /// <param name="oldMember">The existing object to replace.</param>
+        /// <param name="newMember">The new object that will replace the existing object.</param>
         /// <returns>The new object that replaced the existing object. Null if the object was not found in the members list.</returns>
-        public GenBasic Replace(GenBasic oldBasic, GenBasic newBasic)
+        public GenBasic Replace(GenBasic oldMember, GenBasic newMember)
         {
-            int index = Members.IndexOf(oldBasic);
+            int index = Members.IndexOf(oldMember);
 
             if (index > -1)
-                Members[index] = newBasic;
+            {
+                Members[index] = newMember;
+                _updateMembers = true;
+            }
             else
                 return null;
 
-            return newBasic;
+            return newMember;
         }
 
         /// <summary>
@@ -136,10 +182,10 @@ namespace Genetic
         /// <returns>The first available object in the members list. Null if no object is available.</returns>
         public GenBasic GetFirstAvailable()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (!basic.Exists)
-                    return basic;
+                if (!member.Exists)
+                    return member;
             }
 
             return null;
@@ -152,10 +198,10 @@ namespace Genetic
         /// <returns>The first existing object in the members list. Null if no object is existing.</returns>
         public GenBasic GetFirstExisting()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (basic.Exists)
-                    return basic;
+                if (member.Exists)
+                    return member;
             }
 
             return null;
@@ -168,10 +214,10 @@ namespace Genetic
         /// <returns>The first alive object in the members list. Null if no object is alive.</returns>
         public GenBasic GetFirstAlive()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (basic.Exists && basic.Active)
-                    return basic;
+                if (member.Exists && member.Active)
+                    return member;
             }
 
             return null;
@@ -183,10 +229,10 @@ namespace Genetic
         /// <returns>The first dead object in the members list. Null if no object is dead.</returns>
         public GenBasic GetFirstDead()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (!basic.Exists || !basic.Active)
-                    return basic;
+                if (!member.Exists || !member.Active)
+                    return member;
             }
 
             return null;
@@ -199,10 +245,10 @@ namespace Genetic
         /// <returns>The first visible object in the members list. Null if no object is visible.</returns>
         public GenBasic GetFirstVisible()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (basic.Exists && basic.Visible)
-                    return basic;
+                if (member.Exists && member.Visible)
+                    return member;
             }
 
             return null;
@@ -214,10 +260,10 @@ namespace Genetic
         /// <returns>The first hidden object in the members list. Null if no object is hidden.</returns>
         public GenBasic GetFirstHidden()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (!basic.Exists || !basic.Visible)
-                    return basic;
+                if (!member.Exists || !member.Visible)
+                    return member;
             }
 
             return null;
@@ -232,15 +278,15 @@ namespace Genetic
         public GenBasic GetRandom(int startIndex = 0, int length = 0)
         {
             if (length == 0)
-                length = Members.Count;
+                length = _activeMembers.Count;
 
             int index = GenU.Random(startIndex, startIndex + length);
 
             // Check if the index is outside of the list.
-            if (Members.Count < (index - 1))
+            if (_activeMembers.Count < (index - 1))
                 return null;
 
-            return Members[index];
+            return _activeMembers[index];
         }
 
         /// <summary>
@@ -251,9 +297,9 @@ namespace Genetic
         {
             int count = 0;
 
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (basic.Exists && basic.Active)
+                if (member.Exists && member.Active)
                     count++;
             }
 
@@ -268,9 +314,9 @@ namespace Genetic
         {
             int count = 0;
 
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                if (!basic.Exists || !basic.Active)
+                if (!member.Exists || !member.Active)
                     count++;
             }
 
@@ -283,9 +329,9 @@ namespace Genetic
         /// </summary>
         public override void Kill()
         {
-            foreach (GenBasic basic in Members)
+            foreach (GenBasic member in _activeMembers)
             {
-                basic.Kill();
+                member.Kill();
             }
 
             base.Kill();
@@ -297,10 +343,8 @@ namespace Genetic
         /// </summary>
         public override void Revive()
         {
-            foreach (GenBasic basic in Members)
-            {
-                basic.Revive();
-            }
+            foreach (GenBasic member in _activeMembers)
+                member.Revive();
 
             base.Revive();
         }
@@ -311,6 +355,7 @@ namespace Genetic
         public void Clear()
         {
             Members.Clear();
+            _clear = true;
         }
     }
 }

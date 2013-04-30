@@ -188,14 +188,17 @@ namespace Genetic
             Emitter.Parent = Player;
             Emitter.Start(false);
 
-            PlayerControl = new GenControl(Player, GenControl.Movement.Accelerates, GenControl.Stopping.Deccelerates);
-            PlayerControl.SetMovementSpeed(800, 0, 250, 400, 700, 0);
+            PlayerControl = new GenControl(Player, GenControl.ControlType.Platformer, GenControl.Movement.Accelerates, GenControl.Stopping.Decelerates);
+            PlayerControl.SetMovementSpeed(1000, 0, 250, 400, 1000, 0);
             PlayerControl.Gravity.Y = 700;
             PlayerControl.JumpSpeed = 400;
             PlayerControl.IdleAnimation = "idle";
             PlayerControl.MoveAnimation = "run";
             PlayerControl.JumpAnimation = "jump";
             PlayerControl.FallAnimation = "fall";
+            PlayerControl.UseSpeedAnimation = true;
+            PlayerControl.MinAnimationFps = 1f;
+            PlayerControl.LandCallback = PlayerLand;
             Add(PlayerControl);
 
             Warthog4 = new GenSprite(300, 350, "warthog", 78, 49);
@@ -419,6 +422,13 @@ namespace Genetic
             ((GenObject)Chain.Members[0]).StopMoving();
             GenG.Camera.Flash(0.5f, 1f, Color.Red);
             GenG.Camera.Shake();
+        }
+
+        public void PlayerLand()
+        {
+            GenG.GamePads[PlayerIndex.One].Vibrate(1f, 0.25f, 0.5f, true);
+            GenG.Camera.Shake(5f, 0.5f, true, null, GenCamera.ShakeDirection.Vertical);
+            GenG.Camera.Flash(0.15f, 0.2f, Color.Red);
         }
     }
 }

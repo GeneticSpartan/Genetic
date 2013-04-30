@@ -94,10 +94,10 @@ namespace Genetic.Gui
             }
             else
             {
-                _progressRect.X = _animations[_currentAnimation].FrameRect.X;
-                _progressRect.Y = _animations[_currentAnimation].FrameRect.Y;
-                _progressRect.Width = (int)(_animations[_currentAnimation].FrameRect.Width * lerp);
-                _progressRect.Height = _animations[_currentAnimation].FrameRect.Height;
+                _progressRect.X = Animations[_currentAnimation].FrameRect.X;
+                _progressRect.Y = Animations[_currentAnimation].FrameRect.Y;
+                _progressRect.Width = (int)(Animations[_currentAnimation].FrameRect.Width * lerp);
+                _progressRect.Height = Animations[_currentAnimation].FrameRect.Height;
             }
 
             // Interpolate the progress bar color relative to the current progress bar value.

@@ -351,6 +351,8 @@ namespace Genetic
             _volumeDisplayTimer = new GenTimer(1f, HideVolumeDisplay, false);
             _volumeDisplay.Add(_volumeDisplayTimer);
 
+            _volumeDisplay.PreUpdate();
+
             // Hide the volume control display initially.
             HideVolumeDisplay();
         }

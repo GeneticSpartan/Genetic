@@ -7,9 +7,25 @@ namespace Genetic
 {
     public class GenControl : GenBasic
     {
+        public enum ControlType
+        {
+            /// <summary>
+            /// A control type common to top-down games.
+            /// Uses movement along both the x-axis and y-axis.
+            /// </summary>
+            TopDown, 
+            
+            /// <summary>
+            /// A control type common to platform games.
+            /// Uses movement along the x-axis, and gravity to affect the object's position along the y-axis.
+            /// An optional jumping ability is also available.
+            /// </summary>
+            Platformer
+        };
+
         public enum Movement { Instant, Accelerates };
 
-        public enum Stopping { Instant, Deccelerates };
+        public enum Stopping { Instant, Decelerates };
 
         protected enum State { Idle, Moving, Jumping, Falling };
 
@@ -17,6 +33,11 @@ namespace Genetic
         /// The object that is controlled.
         /// </summary>
         public GenObject ControlObject;
+
+        /// <summary>
+        /// The type of control available to the control object.
+        /// </summary>
+        public ControlType ControlMode;
 
         /// <summary>
         /// How acceleration or velocity should be handled as the object moves.
@@ -42,6 +63,12 @@ namespace Genetic
         /// The game pad controls for movement direction and jumping.
         /// </summary>
         protected Buttons[] _gamePadControls = new Buttons[5];
+
+        /// <summary>
+        /// A flag that determines if user input should be checked.
+        /// Useful for creating an AI-controlled object.
+        /// </summary>
+        public bool UseInput;
 
         /// <summary>
         /// The speed of the object moving or accelerating horizontally.
@@ -114,18 +141,46 @@ namespace Genetic
         public string FallAnimation = null;
 
         /// <summary>
+        /// A flag used to determine if the frames per second of the move animation changes relative to the velocity of the control object.
+        /// Useful for changing the speed of a running animation as the control object moves faster or slower.
+        /// </summary>
+        public bool UseSpeedAnimation;
+
+        /// <summary>
+        /// The minimum frames per second of the move animation when UseSpeedAnimation is true.
+        /// </summary>
+        public float MinAnimationFps;
+
+        /// <summary>
+        /// The maximum frames per second of the move animation when UseSpeedAnimation is true.
+        /// </summary>
+        public float MaxAnimationFps;
+
+        /// <summary>
+        /// The method that will be invoked when the control object lands on another object.
+        /// </summary>
+        public Action LandCallback;
+
+        /// <summary>
         /// Sets up a control scheme for moving a given object.
         /// </summary>
         /// <param name="controlObject">The object that is controlled.</param>
+        /// <param name="controlMode">The type of control available to the control object.</param>
         /// <param name="movementType">How acceleration or velocity should be handled as the object moves.</param>
         /// <param name="stoppingType">How acceleration or velocity should be handled as the object stops.</param>
         /// <param name="player">The index number of the player controlling the object.</param>
-        public GenControl(GenObject controlObject, Movement movementType, Stopping stoppingType, PlayerIndex playerIndex = PlayerIndex.One)
+        public GenControl(GenObject controlObject, ControlType controlMode = ControlType.TopDown, Movement movementType = Movement.Instant, Stopping stoppingType = Stopping.Instant, PlayerIndex playerIndex = PlayerIndex.One)
         {
+            ControlMode = controlMode;
             ControlObject = controlObject;
             MovementType = movementType;
             StoppingType = stoppingType;
             PlayerIndex = playerIndex;
+            UseInput = true;
+            UseSpeedAnimation = false;
+            MinAnimationFps = 0f;
+            MaxAnimationFps = 12f;
+            LandCallback = null;
 
             // Set the default movement direction keyboard controls.
             SetDirectionControls(Keys.Left, Keys.Right, Keys.Up, Keys.Down);
@@ -142,135 +197,44 @@ namespace Genetic
 
         public override void Update()
         {
+            // Reset the x and y accelerations to 0 to allow new acceleration values to be calculated.
             ControlObject.Acceleration.X = 0;
             ControlObject.Acceleration.Y = 0;
 
-            if (MovementType == Movement.Instant)
+            if (UseInput)
             {
                 if (MovementSpeedX != 0)
                 {
                     if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
-                    {
-                        ControlObject.Velocity.X = -MovementSpeedX;
-                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
-
-                        _movingX = true;
-
-                        if (!_inAir)
-                            SetState(State.Moving);
-                    }
+                        MoveLeft();
                     else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
-                    {
-                        ControlObject.Velocity.X = MovementSpeedX;
-                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
-
-                        _movingX = true;
-
-                        if (!_inAir)
-                            SetState(State.Moving);
-                    }
-                    else if (StoppingType == Stopping.Instant)
-                    {
-                        ControlObject.Velocity.X = 0f;
-
-                        _movingX = false;
-                    }
+                        MoveRight();
+                    else
+                        StopX();
                 }
 
                 if (MovementSpeedY != 0)
                 {
                     if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
-                    {
-                        ControlObject.Velocity.Y = -MovementSpeedY;
-
-                        _movingY = true;
-                        SetState(State.Moving);
-                    }
+                        MoveUp();
                     else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
-                    {
-                        ControlObject.Velocity.Y = MovementSpeedY;
-
-                        _movingY = true;
-                        SetState(State.Moving);
-                    }
-                    else if (StoppingType == Stopping.Instant)
-                    {
-                        ControlObject.Velocity.Y = 0f;
-
-                        _movingY = false;
-                    }
-                }
-            }
-            else
-            {
-                if (MovementSpeedX != 0)
-                {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
-                    {
-                        ControlObject.Acceleration.X = -MovementSpeedX;
-                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
-
-                        _movingX = true;
-
-                        if (!_inAir)
-                            SetState(State.Moving);
-                    }
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
-                    {
-                        ControlObject.Acceleration.X = MovementSpeedX;
-                        ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
-
-                        _movingX = true;
-
-                        if (!_inAir)
-                            SetState(State.Moving);
-                    }
+                        MoveDown();
                     else
-                    {
-                        ControlObject.Acceleration.X = 0;
-
-                        _movingX = false;
-                    }
+                        StopY();
                 }
 
-                if (MovementSpeedY != 0)
-                {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
-                    {
-                        ControlObject.Acceleration.Y = -MovementSpeedY;
-
-                        _movingY = true;
-                        SetState(State.Moving);
-                    }
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
-                    {
-                        ControlObject.Acceleration.Y = MovementSpeedY;
-
-                        _movingY = true;
-                        SetState(State.Moving);
-                    }
-                    else
-                    {
-                        ControlObject.Acceleration.Y = 0;
-
-                        _movingY = false;
-                    }
-                }
+                if (GenG.Keyboards[PlayerIndex].JustPressed(_keyboardControls[4]) || GenG.GamePads[PlayerIndex].JustPressed(_gamePadControls[4]))
+                    Jump();
             }
 
-            if (!_inAir && (GenG.Keyboards[PlayerIndex].JustPressed(_keyboardControls[4]) || GenG.GamePads[PlayerIndex].JustPressed(_gamePadControls[4])))
+            if (ControlMode == ControlType.Platformer)
             {
-                ControlObject.Velocity.Y -= JumpSpeed;
-
-                _inAir = true;
-                SetState(State.Jumping);
+                if (_inAir && (ControlObject.Velocity.Y > 0))
+                    SetState(State.Falling);
             }
-
-            if (_inAir && (ControlObject.Velocity.Y > 0))
-                SetState(State.Falling);
 
             // If the object is touching the ground and not being controlled to move, set its state to idle.
-            if (!_inAir)
+            if ((ControlMode == ControlType.TopDown) || !_inAir)
             {
                 if (MovementSpeedX != 0 && MovementSpeedY != 0)
                 {
@@ -291,13 +255,20 @@ namespace Genetic
             
             ControlObject.Acceleration.X += Gravity.X;
             ControlObject.Acceleration.Y += Gravity.Y;
+
+            UpdateSpeedAnimation();
         }
 
         public override void PostUpdate()
         {
-            if (ControlObject.IsTouching(GenObject.Direction.Down))
+            if (ControlObject.IsTouching(GenObject.Direction.Down) && _inAir)
+            {
                 _inAir = false;
-            else
+
+                if (LandCallback != null)
+                    LandCallback.Invoke();
+            }
+            else if (!ControlObject.IsTouching(GenObject.Direction.Down) && !_inAir)
                 _inAir = true;
         }
 
@@ -368,6 +339,144 @@ namespace Genetic
 
             ControlObject.Deceleration.X = xDeceleration;
             ControlObject.Deceleration.Y = yDeceleration;
+        }
+
+        /// <summary>
+        /// Moves the control object to the left on the x-axis.
+        /// </summary>
+        public void MoveLeft()
+        {
+            if (MovementType == Movement.Instant)
+                ControlObject.Velocity.X = -MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X);
+            else if (MovementType == Movement.Accelerates)
+                ControlObject.Acceleration.X = -MovementSpeedX;
+
+            ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
+
+            _movingX = true;
+
+            if (!_inAir)
+                SetState(State.Moving);
+        }
+
+        /// <summary>
+        /// Moves the control object to the right on the x-axis.
+        /// </summary>
+        public void MoveRight()
+        {
+            if (MovementType == Movement.Instant)
+                ControlObject.Velocity.X = MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X);
+            else if (MovementType == Movement.Accelerates)
+                ControlObject.Acceleration.X = MovementSpeedX;
+            
+            ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+
+            _movingX = true;
+
+            if (!_inAir)
+                SetState(State.Moving);
+        }
+
+        /// <summary>
+        /// Stops the control object moving on the x-axis.
+        /// </summary>
+        public void StopX()
+        {
+            if (StoppingType == Stopping.Instant)
+                ControlObject.Velocity.X = 0;
+            else if (StoppingType == Stopping.Decelerates)
+                ControlObject.Acceleration.X = 0;
+
+            _movingX = false;
+        }
+
+        /// <summary>
+        /// Moves the control object up on the y-axis.
+        /// </summary>
+        public void MoveUp()
+        {
+            if (MovementType == Movement.Instant)
+                ControlObject.Velocity.Y = -MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y);
+            else if (MovementType == Movement.Accelerates)
+                ControlObject.Acceleration.Y = -MovementSpeedY;
+
+            _movingY = true;
+            SetState(State.Moving);
+        }
+
+        /// <summary>
+        /// Moves the control object down on the y-axis.
+        /// </summary>
+        public void MoveDown()
+        {
+            if (MovementType == Movement.Instant)
+                ControlObject.Velocity.Y = MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y);
+            else if (MovementType == Movement.Accelerates)
+                ControlObject.Acceleration.Y = MovementSpeedY;
+
+            _movingY = true;
+            SetState(State.Moving);
+        }
+
+        /// <summary>
+        /// Stops the control object moving on the y-axis.
+        /// </summary>
+        public void StopY()
+        {
+            if (StoppingType == Stopping.Instant)
+                ControlObject.Velocity.Y = 0;
+            else if (StoppingType == Stopping.Decelerates)
+                ControlObject.Acceleration.Y = 0;
+
+            _movingY = false;
+        }
+
+        /// <summary>
+        /// Initiates a jump for the control object.
+        /// </summary>
+        public void Jump()
+        {
+            if (!_inAir)
+            {
+                ControlObject.Velocity.Y -= JumpSpeed;
+
+                _inAir = true;
+                SetState(State.Jumping);
+            }
+        }
+
+        /// <summary>
+        /// Updates the frames per second of the move animation relative to the velocity of the control object.
+        /// </summary>
+        protected void UpdateSpeedAnimation()
+        {
+            if (UseSpeedAnimation && (MoveAnimation != null))
+            {
+                if ((MovementSpeedX != 0) && (MovementSpeedY != 0))
+                {
+                    float lerp = ControlObject.Velocity.Length() / ControlObject.MaxVelocity.Length();
+
+                    ((GenSprite)ControlObject).Animations[MoveAnimation].Fps = MathHelper.Lerp(MinAnimationFps, MaxAnimationFps, lerp);
+                }
+                else if (MovementSpeedX != 0)
+                {
+                    if (ControlObject.MaxVelocity.X != 0)
+                    {
+                        float lerp = Math.Abs(ControlObject.Velocity.X) / ControlObject.MaxVelocity.X;
+
+                        ((GenSprite)ControlObject).Animations[MoveAnimation].Fps = MathHelper.Lerp(MinAnimationFps, MaxAnimationFps, lerp);
+                    }
+                }
+                else if (MovementSpeedY != 0)
+                {
+                    if (ControlObject.MaxVelocity.Y != 0)
+                    {
+                        float lerp = Math.Abs(ControlObject.Velocity.Y) / ControlObject.MaxVelocity.Y;
+
+                        ((GenSprite)ControlObject).Animations[MoveAnimation].Fps = MathHelper.Lerp(MinAnimationFps, MaxAnimationFps, lerp);
+                    }
+                }
+            }
         }
 
         /// <summary>

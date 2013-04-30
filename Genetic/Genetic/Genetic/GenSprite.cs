@@ -69,7 +69,7 @@ namespace Genetic
         /// <summary>
         /// A list of animations used by the sprite.
         /// </summary>
-        protected Dictionary<string, GenAnimation> _animations;
+        public Dictionary<string, GenAnimation> Animations;
 
         /// <summary>
         /// The name of the animation that is currently playing.
@@ -241,7 +241,7 @@ namespace Genetic
             Scale = Vector2.One;
             _drawRotation = 0f;
             DrawRotated = true;
-            _animations = new Dictionary<string, GenAnimation>();
+            Animations = new Dictionary<string, GenAnimation>();
         }
 
         public override void Update()
@@ -250,7 +250,7 @@ namespace Genetic
 
             // Update the currently playing animation.
             if (_currentAnimation != null)
-                _animations[_currentAnimation].Update();
+                Animations[_currentAnimation].Update();
 
             if (_flickering)
             {
@@ -299,7 +299,7 @@ namespace Genetic
                 if (_currentAnimation == null)
                     GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, Animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
             }
         }
 
@@ -431,7 +431,7 @@ namespace Genetic
         /// <returns>The name associated with the animation.</returns>
         public string AddAnimation(string name, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, bool isLooped = true, int frameBuffer = 0)
         {
-            _animations.Add(name, new GenAnimation(this, frameWidth, frameHeight, frames, fps, isLooped, frameBuffer));
+            Animations.Add(name, new GenAnimation(this, frameWidth, frameHeight, frames, fps, isLooped, frameBuffer));
 
             return name;
         }
@@ -443,14 +443,14 @@ namespace Genetic
         /// <param name="forceReset">Determines whether the animation should start playing from the first frame, or continue from the last played frame.</param>
         public void Play(string name, bool forceReset = true)
         {
-            if (_animations.ContainsKey(name))
+            if (Animations.ContainsKey(name))
             {
                 _currentAnimation = name;
 
                 if (forceReset)
-                    _animations[name].Reset();
+                    Animations[name].Reset();
 
-                _animations[name].IsPlaying = true;
+                Animations[name].IsPlaying = true;
             }
         }
 
