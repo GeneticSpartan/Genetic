@@ -484,7 +484,7 @@ namespace Genetic
                         _shakeOffset.Y *= shakeFade;
                     }
 
-                    _shakeTimer += GenG.PhysicsTimeStep;
+                    _shakeTimer += GenG.TimeStep;
                 }
                 else
                 {
@@ -531,7 +531,7 @@ namespace Genetic
                     GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _flashColor * _fxAlpha);
 
                     if (!GenG.Paused)
-                        _flashTimer += GenG.PhysicsTimeStep;
+                        _flashTimer += GenG.ScaleTimeStep;
                 }
                 else
                 {
@@ -551,7 +551,7 @@ namespace Genetic
                     GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _fadeColor * _fxAlpha);
 
                     if (!GenG.Paused)
-                        _fadeTimer += GenG.PhysicsTimeStep;
+                        _fadeTimer += GenG.ScaleTimeStep;
 
                     if (_fadeTimer >= _fadeDuration)
                     {

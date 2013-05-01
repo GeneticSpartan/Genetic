@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 using Genetic.Gui;
+using Genetic.Input;
 using Genetic.Particles;
 using Genetic.Path;
 using Genetic.Physics;
@@ -38,6 +39,7 @@ namespace Genetic
         //public GenTimer Timer;
 
         public GenVerlet Chain;
+        public GenVerlet Cloth;
 
         public GenPath Path;
 
@@ -89,7 +91,7 @@ namespace Genetic
             GenG.Camera.BgColor = new Color(70, 50, 50);
 
             Path = new GenPath();
-            Path.AddNode(new GenPathNode(100, 100, 0));
+            Path.AddNode(new GenPathNode(100, 100));
             Path.AddNode(new GenPathNode(200, 100));
             Path.AddNode(new GenPathNode(200, 200));
             Path.AddNode(new GenPathNode(100, 150));
@@ -100,6 +102,7 @@ namespace Genetic
             Chain.DrawLines = false;
             Chain.SetMass(0.2f);
             Chain.SetGravity(0f, 700f);
+            Chain.Iterations = 10;
             
             for (int i = 0; i < Chain.Members.Count; i++)
             {
@@ -115,7 +118,7 @@ namespace Genetic
 
             ((GenObject)Chain.Members[0]).Immovable = true;
             ((GenObject)Chain.Members[0]).Acceleration.Y = 0f;
-            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Yoyo, GenMove.Axis.Both, GenPath.Movement.Instant);
+            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Random, GenMove.Axis.Both, GenPath.Movement.Instant);
             Add(Chain);
             
             Boxes = new GenGroup();
@@ -131,14 +134,14 @@ namespace Genetic
                     Box.DrawOffset.X = -4;
                     Box.DrawOffset.Y = -3;
                     //warthog.scrollFactor = 2f;
-                    Box.Mass = 0.2f;
-                    //Box.Deceleration.X = 400;
-                    //Box.Deceleration.Y = 400;
+                    Box.Mass = 0.5f;
+                    Box.Deceleration.X = 400f;
+                    //Box.Deceleration.Y = 400f;
                     //warthog.MakeTexture(GenU.randomColor() * 0.5f, 8 + j * 2, 8 + j * 2);
-                    //warthog.acceleration.X = -1000;
-                    //Box.Acceleration.Y = 700;
-                    Box.MaxVelocity.X = 200;
-                    Box.MaxVelocity.Y = 200;
+                    //warthog.acceleration.X = -1000f;
+                    Box.Acceleration.Y = 700f;
+                    //Box.MaxVelocity.X = 200f;
+                    Box.MaxVelocity.Y = 400f;
                     Box.Color = GenU.RandomColor(100, 255);
                     Boxes.Add(Box);
                 }
@@ -156,12 +159,12 @@ namespace Genetic
             Emitter = new GenEmitter(100, 100);
             Emitter.Width = 16;
             Emitter.Height = 16;
-            Emitter.MakeParticles(GenU.MakeTexture(Color.White, 2, 2), 2, 2, 200);
-            Emitter.EmitQuantity = 200;
-            Emitter.EmitFrequency = 3f;
+            Emitter.MakeParticles(GenG.Pixel, 1, 1, 300);
+            Emitter.EmitQuantity = 5;
+            Emitter.EmitFrequency = .05f;
             Emitter.InheritVelocity = true;
-            Emitter.SetXSpeed(-300, 300);
-            Emitter.SetYSpeed(-300, 300);
+            //Emitter.SetXSpeed(-300, 300);
+            //Emitter.SetYSpeed(-300, 300);
             Emitter.SetRotationSpeed(-360, 360);
             Emitter.SetLifetime(2.9f);
             Emitter.SetColor(Color.Cyan, Color.MediumVioletRed);
@@ -189,7 +192,7 @@ namespace Genetic
             Emitter.Start(false);
 
             PlayerControl = new GenControl(Player, GenControl.ControlType.Platformer, GenControl.Movement.Accelerates, GenControl.Stopping.Decelerates);
-            PlayerControl.SetMovementSpeed(1000, 0, 250, 400, 1000, 0);
+            PlayerControl.SetMovementSpeed(700, 0, 150, 400, 1000, 0);
             PlayerControl.Gravity.Y = 700;
             PlayerControl.JumpSpeed = 400;
             PlayerControl.IdleAnimation = "idle";
@@ -198,7 +201,8 @@ namespace Genetic
             PlayerControl.FallAnimation = "fall";
             PlayerControl.UseSpeedAnimation = true;
             PlayerControl.MinAnimationFps = 1f;
-            PlayerControl.LandCallback = PlayerLand;
+            PlayerControl.ButtonsSpecial = GenGamePad.ButtonsSpecial.ThumbStickLeft;
+            //PlayerControl.LandCallback = PlayerLand;
             Add(PlayerControl);
 
             Warthog4 = new GenSprite(300, 350, "warthog", 78, 49);
@@ -206,7 +210,7 @@ namespace Genetic
             //Warthog4.IsPlatform = true;
             //Warthog4.Mass = 10f;
             Warthog4.Color = Color.Red;
-            Warthog4.Parent = Player;
+            Warthog4.Parent = Warthog3;
             Warthog4.ParentOffset.X = 75;
             Warthog4.RotationSpeed = 180;
             Add(Warthog4);
@@ -244,6 +248,28 @@ namespace Genetic
             ProgressBar.Rotation = -90;
             ProgressBar.Parent = Player;
             Add(ProgressBar);
+
+            Cloth = new GenVerlet();
+            Cloth.MakeGrid(100, 200, 8, 10, 11);
+            Cloth.SetGravity(0f, 700f);
+            //Cloth.SetDeceleration(100f, 0f);
+            Cloth.LineColor = Color.Gray;
+            Cloth.Iterations = 2;
+
+            /*for (int i = 0; i < 10; i++)
+            {
+                ((GenObject)Cloth.Members[i]).Immovable = true;
+                ((GenObject)Cloth.Members[i]).Acceleration.Y = 0f;
+            }*/
+
+            ((GenObject)Cloth.Members[0]).Immovable = true;
+            ((GenObject)Cloth.Members[0]).Acceleration.Y = 0f;
+            ((GenObject)Cloth.Members[5]).Immovable = true;
+            ((GenObject)Cloth.Members[5]).Acceleration.Y = 0f;
+            ((GenObject)Cloth.Members[10]).Immovable = true;
+            ((GenObject)Cloth.Members[10]).Acceleration.Y = 0f;
+
+            Add(Cloth);
 
             //Music = new GenSound("music", 1, true);
             //Music.Play();
@@ -304,7 +330,7 @@ namespace Genetic
                 GenG.ResetState();
 
             if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Z) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.LeftTrigger))
-                GenG.TimeScale = 0.2f;
+                GenG.TimeScale = 0.5f;
             else if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.X) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.RightTrigger))
                 GenG.TimeScale = 2f;
             else
@@ -322,14 +348,15 @@ namespace Genetic
             //((GenObject)Chain.Members[0]).X = Player.X;
             //((GenObject)Chain.Members[0]).Y = Player.Y;
 
-            //GenMove.AccelerateToPoint(Chain.Members[0], Player.Position, 200);
+            //GenMove.AccelerateToPoint(Boxes, Player.CenterPosition, 200);
             GenMove.AccelerateToPoint(Emitter, Player.CenterPosition, 500, 100);
+            GenMove.AccelerateToPoint(Cloth, Player.CenterPosition, Player.Velocity.Length() * 3, 70);
 
             Warthog4.Velocity.X = GenU.SineWave(0, 2, 200);
             Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
 
             Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
-            //GenMove.AccelerateToAngle(Warthog3, Warthog3.Rotation, 500);
+            GenMove.AccelerateAtAngle(Warthog3, Warthog3.Rotation, 500);
 
             if (Warthog5.Parent != null)
                 Warthog5.Rotation = Warthog5.Parent.Rotation;
@@ -356,6 +383,8 @@ namespace Genetic
             ProgressBar.Scale.Y = GenU.SineWave(1, 8, 0.2f);
 
             ProgressBar.Value = GenU.SineWave(50, 2, 51);
+
+            Cloth.LineColor = new Color(0.5f, (float)MathHelper.Lerp(0, 1, GenU.SineWave(0.5f, 10f, 0.5f)), 0.5f);
 
             //Player.Alpha = GenU.SineWave(0.5f, 2f, 0.5f);
 

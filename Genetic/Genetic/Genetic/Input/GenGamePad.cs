@@ -8,6 +8,11 @@ namespace Genetic.Input
     public class GenGamePad
     {
         /// <summary>
+        /// A special-case control scheme to use the variable values available to certain gamepad controls to move at variable speeds.
+        /// </summary>
+        public enum ButtonsSpecial { ThumbStickLeft, ThumbStickRight, TriggerLeft, TriggerRight, None };
+
+        /// <summary>
         /// The current state of the game pad.
         /// </summary>
         protected GamePadState _gamePadState;
@@ -38,11 +43,6 @@ namespace Genetic.Input
         protected bool _vibrating;
 
         /// <summary>
-        /// The current intensity of the gamepad vibration.
-        /// </summary>
-        protected float _vibrateIntensity;
-
-        /// <summary>
         /// The current duration of the gamepad vibration.
         /// </summary>
         protected float _vibrateDuration;
@@ -63,7 +63,7 @@ namespace Genetic.Input
         protected Action _vibrateCallback;
 
         /// <summary>
-        /// Gets the x position of the left thumbstick, a value between -1 and 1.
+        /// Gets the x position of the left thumbstick, a value between -1.0 and 1.0.
         /// </summary>
         public float ThumbStickLeftX
         {
@@ -71,7 +71,7 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets the y position of the left thumbstick, a value between -1 and 1.
+        /// Gets the y position of the left thumbstick, a value between -1.0 and 1.0.
         /// </summary>
         public float ThumbStickLeftY
         {
@@ -79,7 +79,7 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets the x position of the right thumbstick, a value between -1 and 1.
+        /// Gets the x position of the right thumbstick, a value between -1.0 and 1.0.
         /// </summary>
         public float ThumbStickRightX
         {
@@ -87,7 +87,7 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets the y position of the right thumbstick, a value between -1 and 1.
+        /// Gets the y position of the right thumbstick, a value between -1.0 and 1.0.
         /// </summary>
         public float ThumbStickRightY
         {
@@ -95,7 +95,7 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets the position of the left trigger, a value between 0 and 1.
+        /// Gets the position of the left trigger, a value between 0.0 and 1.0.
         /// </summary>
         public float TriggerLeft
         {
@@ -103,7 +103,7 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets the position of the right trigger, a value between 0 and 1.
+        /// Gets the position of the right trigger, a value between 0.0 and 1.0.
         /// </summary>
         public float TriggerRight
         {
@@ -142,8 +142,9 @@ namespace Genetic.Input
         public GenGamePad(PlayerIndex playerIndex = PlayerIndex.One)
         {
             _playerIndex = playerIndex;
+            _leftMotorSpeed = 0f;
+            _rightMotorSpeed = 0f;
             _vibrating = false;
-            _vibrateIntensity = 0f;
             _vibrateDuration = 0f;
             _vibrateDecreasing = false;
             _vibrateTimer = 0f;
@@ -169,7 +170,7 @@ namespace Genetic.Input
                         GamePad.SetVibration(_playerIndex, _leftMotorSpeed * vibrateFade, _rightMotorSpeed * vibrateFade);
                     }
 
-                    _vibrateTimer += GenG.PhysicsTimeStep;
+                    _vibrateTimer += GenG.TimeStep;
                 }
                 else
                 {

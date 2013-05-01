@@ -267,7 +267,7 @@ namespace Genetic
                         _color = _flickerColor * _alpha;
                     }
 
-                    _flickerTimer += GenG.PhysicsTimeStep;
+                    _flickerTimer += GenG.TimeStep;
                 }
                 else
                 {

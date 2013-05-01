@@ -177,7 +177,7 @@ namespace Genetic.Particles
                 _emitTimer -= EmitFrequency;
             }
             else
-                _emitTimer += GenG.PhysicsTimeStep;
+                _emitTimer += GenG.TimeStep;
 
             base.Update();
         }

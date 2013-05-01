@@ -106,7 +106,7 @@ namespace Genetic
         public static Color BackgroundColor;
 
         /// <summary>
-        /// The amount of seconds that have elapsed between each update.
+        /// The amount of seconds needed between each update.
         /// </summary>
         private static float _timeStep = 1f / 60f;
 
@@ -119,12 +119,18 @@ namespace Genetic
         /// The amount of seconds that have elapsed between each update relative to the time scale.
         /// Used for calculating physics relative to the time scale.
         /// </summary>
-        private static float _physicsTimeStep;
+        private static float _scaleTimeStep;
 
         /// <summary>
         /// The total amount of seconds that have elapsed relative to the time scale.
         /// </summary>
         private static float _elapsedTime;
+
+        /// <summary>
+        /// The amount of time, in seconds, since the last update call.
+        /// Used to call Update the correct amount of times relative to the time step and time scale.
+        /// </summary>
+        private static float _updateTimer = 0f;
 
         /// <summary>
         /// A stopwatch used to calculate the game's frame rate.
@@ -235,11 +241,10 @@ namespace Genetic
 
         /// <summary>
         /// Gets the amount of seconds that have elapsed between each update relative to the time scale.
-        /// Used for calculating physics relative to the time scale.
         /// </summary>
-        public static float PhysicsTimeStep
+        public static float ScaleTimeStep
         {
-            get { return _physicsTimeStep; }
+            get { return _scaleTimeStep; }
         }
 
         /// <summary>
@@ -362,40 +367,8 @@ namespace Genetic
         /// </summary>
         public static void Update(GameTime gameTime)
         {
-            _physicsTimeStep = TimeScale * _timeStep;
-            _elapsedTime += _physicsTimeStep;
-
-            // Update the keyboards.
-            _keyboards[PlayerIndex.One].Update();
-            _keyboards[PlayerIndex.Two].Update();
-            _keyboards[PlayerIndex.Three].Update();
-            _keyboards[PlayerIndex.Four].Update();
-
-            // Update the game pads.
-            _gamePads[PlayerIndex.One].Update();
-            _gamePads[PlayerIndex.Two].Update();
-            _gamePads[PlayerIndex.Three].Update();
-            _gamePads[PlayerIndex.Four].Update();
-
-            // Update the mouse.
-            _mouse.Update();
-
-            // Volume down control.
-            if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemMinus))
-            {
-                Volume -= 0.1f;
-                ShowVolumeDisplay();
-            }
-
-            // Volume up control.
-            if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemPlus))
-            {
-                Volume += 0.1f;
-                ShowVolumeDisplay();
-            }
-
-            if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemTilde))
-                IsDebug = !IsDebug;
+            _scaleTimeStep = TimeScale * _timeStep;
+            _elapsedTime += _scaleTimeStep;
 
             if (_requestedState != null)
             {
@@ -417,11 +390,50 @@ namespace Genetic
                 _requestedState = null;
             }
 
-            _state.PreUpdate();
-            _state.Update();
-            _state.PostUpdate();
+            while (_updateTimer >= _timeStep)
+            {
+                // Update the keyboards.
+                _keyboards[PlayerIndex.One].Update();
+                _keyboards[PlayerIndex.Two].Update();
+                _keyboards[PlayerIndex.Three].Update();
+                _keyboards[PlayerIndex.Four].Update();
 
-            _volumeDisplay.Update();
+                // Update the game pads.
+                _gamePads[PlayerIndex.One].Update();
+                _gamePads[PlayerIndex.Two].Update();
+                _gamePads[PlayerIndex.Three].Update();
+                _gamePads[PlayerIndex.Four].Update();
+
+                // Update the mouse.
+                _mouse.Update();
+
+                // Volume down control.
+                if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemMinus))
+                {
+                    Volume -= 0.1f;
+                    ShowVolumeDisplay();
+                }
+
+                // Volume up control.
+                if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemPlus))
+                {
+                    Volume += 0.1f;
+                    ShowVolumeDisplay();
+                }
+
+                if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemTilde))
+                    IsDebug = !IsDebug;
+
+                _state.PreUpdate();
+                _state.Update();
+                _state.PostUpdate();
+
+                _volumeDisplay.Update();
+
+                _updateTimer -= _timeStep;
+            }
+
+            _updateTimer += _scaleTimeStep;
         }
 
         /// <summary>

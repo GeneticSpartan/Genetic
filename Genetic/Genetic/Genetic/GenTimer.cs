@@ -50,7 +50,7 @@ namespace Genetic
             if (IsRunning)
             {
                 if (UseTimeScale)
-                    ElapsedTime += GenG.PhysicsTimeStep;
+                    ElapsedTime += GenG.ScaleTimeStep;
                 else
                     ElapsedTime += GenG.TimeStep;
 

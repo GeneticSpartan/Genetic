@@ -105,21 +105,25 @@ namespace Genetic
         /// <param name="point">The point to move towards.</param>
         /// <param name="speed">The velocity to move the object at.</param>
         /// <param name="axis">A bit field of flags to determine the allowed movement axis of the object.</param>
-        public static void MoveToPoint(GenBasic objectOrGroup, Vector2 point, float speed, Axis axis = Axis.Both)
+        /// <param name="allowImmovable">A flag used to determine if an object set to immovable will be affected.</param>
+        public static void MoveToPoint(GenBasic objectOrGroup, Vector2 point, float speed, Axis axis = Axis.Both, bool allowImmovable = false)
         {
             if (speed != 0)
             {
                 if (objectOrGroup is GenObject)
                 {
-                    // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                    _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
+                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    {
+                        // Get a normalized distance vector to calculate the horizontal and vertical speeds.
+                        _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
 
-                    ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                        ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                    }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
                     foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
-                        MoveToPoint(basic, point, speed);
+                        MoveToPoint(basic, point, speed, axis, allowImmovable);
                 }
             }
         }
@@ -132,30 +136,34 @@ namespace Genetic
         /// <param name="speed">The acceleration to move the object at.</param>
         /// <param name="radius">The radius extending from the point. An object will need to be within this area to accelerate. A value of 0 will not use a radius.</param>
         /// <param name="axis">The allowed movement axis of the object.</param>
-        public static void AccelerateToPoint(GenBasic objectOrGroup, Vector2 point, float speed, float radius = 0, Axis axis = Axis.Both)
+        /// <param name="allowImmovable">A flag used to determine if an object set to immovable will be affected.</param>
+        public static void AccelerateToPoint(GenBasic objectOrGroup, Vector2 point, float speed, float radius = 0, Axis axis = Axis.Both, bool allowImmovable = false)
         {
             if (speed != 0)
             {
                 if (objectOrGroup is GenObject)
                 {
-                    // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                    _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
-
-                    if (radius <= 0)
-                        ((GenObject)objectOrGroup).Acceleration = _vector * speed;
-                    else
+                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
                     {
-                        // If the object is within the radius from the point, accelerate the object towards the point.
-                        // The closer the object is to the point, the higher its acceleration will be.
-                        float accelerationFactor = MathHelper.Clamp(radius - Vector2.Distance(((GenObject)objectOrGroup).CenterPosition, point), 0, 1);
+                        // Get a normalized distance vector to calculate the horizontal and vertical speeds.
+                        _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
 
-                        ((GenObject)objectOrGroup).Acceleration = _vector * speed * accelerationFactor;
+                        if (radius <= 0)
+                            ((GenObject)objectOrGroup).Velocity += _vector * speed * GenG.TimeStep;
+                        else
+                        {
+                            // If the object is within the radius from the point, accelerate the object towards the point.
+                            // The closer the object is to the point, the higher its acceleration will be.
+                            float accelerationFactor = MathHelper.Clamp(radius - Vector2.Distance(((GenObject)objectOrGroup).CenterPosition, point), 0, 1);
+
+                            ((GenObject)objectOrGroup).Velocity += _vector * speed * accelerationFactor * GenG.TimeStep;
+                        }
                     }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
                     foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
-                        AccelerateToPoint(basic, point, speed, radius);
+                        AccelerateToPoint(basic, point, speed, radius, axis, allowImmovable);
                 }
             }
         }
@@ -165,21 +173,26 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup">The object or group of objects to move.</param>
         /// <param name="angle">The angle direction, in degrees, to move the object in. A value of 0 would be up, and 90 would be to the right.</param>
-        public static void MoveToAngle(GenBasic objectOrGroup, float angle, float speed)
+        /// <param name="speed">The velocity to move the object at.</param>
+        /// <param name="allowImmovable">A flag used to determine if an object set to immovable will be affected.</param>
+        public static void MoveAtAngle(GenBasic objectOrGroup, float angle, float speed, bool allowImmovable = false)
         {
             if (speed != 0)
             {
                 if (objectOrGroup is GenObject)
                 {
-                    // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
-                    _vector = AngleToVector(angle);
+                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    {
+                        // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
+                        _vector = AngleToVector(angle);
 
-                    ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                        ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                    }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
                     foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
-                        MoveToAngle(basic, angle, speed);
+                        MoveAtAngle(basic, angle, speed, allowImmovable);
                 }
             }
         }
@@ -189,21 +202,26 @@ namespace Genetic
         /// </summary>
         /// <param name="objectOrGroup">The object or group of objects to move.</param>
         /// <param name="angle">The angle direction, in degrees, to move the object in. A value of 0 would be up, and 90 would be to the right.</param>
-        public static void AccelerateToAngle(GenBasic objectOrGroup, float angle, float speed)
+        /// <param name="speed">The acceleration to move the object at.</param>
+        /// <param name="allowImmovable">A flag used to determine if an object set to immovable will be affected.</param>
+        public static void AccelerateAtAngle(GenBasic objectOrGroup, float angle, float speed, bool allowImmovable = false)
         {
             if (speed != 0)
             {
                 if (objectOrGroup is GenObject)
                 {
-                    // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
-                    _vector = AngleToVector(angle);
+                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    {
+                        // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
+                        _vector = AngleToVector(angle);
 
-                    ((GenObject)objectOrGroup).Acceleration = _vector * speed;
+                        ((GenObject)objectOrGroup).Acceleration = _vector * speed;
+                    }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
                     foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
-                        AccelerateToAngle(basic, angle, speed);
+                        AccelerateAtAngle(basic, angle, speed, allowImmovable);
                 }
             }
         }
@@ -245,9 +263,9 @@ namespace Genetic
             // Calculate the next position of the object using its current direction.
             // Use the current velocity of the object if speed is 0.
             if (speed == 0)
-                _vector = Vector2.Add(gameObject.Position, gameObject.Velocity * GenG.PhysicsTimeStep);
+                _vector = Vector2.Add(gameObject.Position, gameObject.Velocity * GenG.TimeStep);
             else
-                _vector = Vector2.Add(gameObject.Position, Vector2.Normalize(gameObject.Velocity) * speed * GenG.PhysicsTimeStep);
+                _vector = Vector2.Add(gameObject.Position, Vector2.Normalize(gameObject.Velocity) * speed * GenG.TimeStep);
 
             // Calculate the distance that the object will move.
             float moveDistance = Vector2.Distance(gameObject.Position, _vector);

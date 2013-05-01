@@ -354,14 +354,14 @@ namespace Genetic
         public override void Update()
         {
             if (Acceleration.X != 0)
-                Velocity.X += Acceleration.X * GenG.PhysicsTimeStep;
+                Velocity.X += Acceleration.X * GenG.TimeStep;
             else if (Deceleration.X != 0)
             {
                 if (Velocity.X > 0)
                 {
                     // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
                     if ((_platform == null) || (Velocity.X > _platform.Velocity.X))
-                        Velocity.X -= Deceleration.X * GenG.PhysicsTimeStep;
+                        Velocity.X -= Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X < 0)
                         Velocity.X = 0;
@@ -370,7 +370,7 @@ namespace Genetic
                 {
                     // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
                     if ((_platform == null) || (Velocity.X < _platform.Velocity.X))
-                        Velocity.X += Deceleration.X * GenG.PhysicsTimeStep;
+                        Velocity.X += Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X > 0)
                         Velocity.X = 0;
@@ -378,19 +378,19 @@ namespace Genetic
             }
 
             if (Acceleration.Y != 0)
-                Velocity.Y += Acceleration.Y * GenG.PhysicsTimeStep;
+                Velocity.Y += Acceleration.Y * GenG.TimeStep;
             else if (Deceleration.Y != 0)
             {
                 if (Velocity.Y > 0)
                 {
-                    Velocity.Y -= Deceleration.Y * GenG.PhysicsTimeStep;
+                    Velocity.Y -= Deceleration.Y * GenG.TimeStep;
 
                     if (Velocity.Y < 0)
                         Velocity.Y = 0;
                 }
                 else if (Velocity.Y < 0)
                 {
-                    Velocity.Y += Deceleration.Y * GenG.PhysicsTimeStep;
+                    Velocity.Y += Deceleration.Y * GenG.TimeStep;
 
                     if (Velocity.Y > 0)
                         Velocity.Y = 0;
@@ -408,10 +408,10 @@ namespace Genetic
 
             // Move the object.
             if (Velocity.X != 0)
-                X += Velocity.X * GenG.PhysicsTimeStep;
+                X += Velocity.X * GenG.TimeStep;
 
             if (Velocity.Y != 0)
-                Y += Velocity.Y * GenG.PhysicsTimeStep;
+                Y += Velocity.Y * GenG.TimeStep;
 
             // Update the center position of the object.
             _centerPosition.X = _position.X + _boundingBox.HalfWidth;
@@ -420,7 +420,7 @@ namespace Genetic
             if (Path != null)
                 MoveAlongPath();
 
-            Rotation += RotationSpeed * GenG.PhysicsTimeStep;
+            Rotation += RotationSpeed * GenG.TimeStep;
 
             _platform = null;
         }
@@ -436,7 +436,7 @@ namespace Genetic
                 if (((Velocity.X >= 0) && (Velocity.X <= _platform.Velocity.X)) || ((Velocity.X <= 0) && (Velocity.X >= _platform.Velocity.X)))
                 {
                     if (_platform.Velocity.X != 0)
-                        Velocity.X = _platform.Velocity.X + (_platform.Acceleration.X * GenG.PhysicsTimeStep);
+                        Velocity.X = _platform.Velocity.X + (_platform.Acceleration.X * GenG.TimeStep);
                 }
             }
 
@@ -493,8 +493,8 @@ namespace Genetic
         public GenAABB GetMoveBounds()
         {
             // Get the x and y distances that the object will move relative to its velocity.
-            _moveDistance.X = Velocity.X * GenG.PhysicsTimeStep;
-            _moveDistance.Y = Velocity.Y * GenG.PhysicsTimeStep;
+            _moveDistance.X = Velocity.X * GenG.TimeStep;
+            _moveDistance.Y = Velocity.Y * GenG.TimeStep;
 
             // Calculate the movement bounding box.
             float minLeft = Math.Min(_boundingBox.Left, _boundingBox.Left + _moveDistance.X);
@@ -579,7 +579,7 @@ namespace Genetic
                         // Apply a different collision response against tiles for pixel-perfect accuracy.
                         if (gameObject is GenTile)
                         {
-                            remove = Vector2.Dot(-Velocity, collisionNormal) + Math.Max(distance, 0) / GenG.PhysicsTimeStep;
+                            remove = Vector2.Dot(-Velocity, collisionNormal) + Math.Max(distance, 0) / GenG.TimeStep;
 
                             if (remove < 0)
                             {
@@ -608,9 +608,9 @@ namespace Genetic
                             float relativeNormalVelocity = Vector2.Dot(gameObject.Velocity - Velocity, collisionNormal);
 
                             if (penetrate)
-                                remove = relativeNormalVelocity + distance / GenG.PhysicsTimeStep;
+                                remove = relativeNormalVelocity + distance / GenG.TimeStep;
                             else
-                                remove = relativeNormalVelocity + Math.Max(distance, 0) / GenG.PhysicsTimeStep;
+                                remove = relativeNormalVelocity + Math.Max(distance, 0) / GenG.TimeStep;
 
                             if (remove < 0)
                             {
@@ -862,10 +862,10 @@ namespace Genetic
                     switch (PathMovement)
                     {
                         case GenPath.Movement.Instant:
-                            GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis);
+                            GenMove.MoveToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, PathAxis, true);
                             break;
                         case GenPath.Movement.Accelerates:
-                            GenMove.AccelerateToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, 0, PathAxis);
+                            GenMove.AccelerateToPoint(this, Path.Nodes[PathNodeIndex].Position, PathSpeed, 0, PathAxis, true);
                             break;
                     }
                 }

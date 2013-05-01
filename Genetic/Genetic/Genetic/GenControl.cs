@@ -3,6 +3,8 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
+using Genetic.Input;
+
 namespace Genetic
 {
     public class GenControl : GenBasic
@@ -21,13 +23,13 @@ namespace Genetic
             /// An optional jumping ability is also available.
             /// </summary>
             Platformer
-        };
+        }
 
-        public enum Movement { Instant, Accelerates };
+        public enum Movement { Instant, Accelerates }
 
-        public enum Stopping { Instant, Decelerates };
+        public enum Stopping { Instant, Decelerates }
 
-        protected enum State { Idle, Moving, Jumping, Falling };
+        protected enum State { Idle, Moving, Jumping, Falling }
 
         /// <summary>
         /// The object that is controlled.
@@ -57,12 +59,17 @@ namespace Genetic
         /// <summary>
         /// The keyboard controls for movement direction and jumping.
         /// </summary>
-        protected Keys[] _keyboardControls = new Keys[5];
+        protected Keys[] _keyboardControls;
 
         /// <summary>
         /// The game pad controls for movement direction and jumping.
         /// </summary>
-        protected Buttons[] _gamePadControls = new Buttons[5];
+        protected Buttons[] _gamePadControls;
+
+        /// <summary>
+        /// A special-case control scheme to use the variable values available to gamepad controls to move at variable speeds.
+        /// </summary>
+        public GenGamePad.ButtonsSpecial ButtonsSpecial;
 
         /// <summary>
         /// A flag that determines if user input should be checked.
@@ -98,19 +105,14 @@ namespace Genetic
         protected bool _inAir = true;
 
         /// <summary>
-        /// A flag to determine if the object is being controlled to move along the x-axis.
-        /// </summary>
-        protected bool _movingX = false;
-
-        /// <summary>
-        /// A flag to determine if the object is being controlled to move along the y-axis.
-        /// </summary>
-        protected bool _movingY = false;
-
-        /// <summary>
-        /// The current state of the object, either idle, moving, jumping, or falling.
+        /// The current state of the control object, either idle, moving, jumping, or falling.
         /// </summary>
         protected State _state = State.Idle;
+
+        /// <summary>
+        /// A bit field of flags determining the current movement directions of the control object.
+        /// </summary>
+        protected GenObject.Direction MoveState = GenObject.Direction.None;
 
         /// <summary>
         /// The name associated with the idle animation, and will be used to play it.
@@ -176,6 +178,9 @@ namespace Genetic
             MovementType = movementType;
             StoppingType = stoppingType;
             PlayerIndex = playerIndex;
+            _keyboardControls = new Keys[5];
+            _gamePadControls = new Buttons[5];
+            ButtonsSpecial = GenGamePad.ButtonsSpecial.None;
             UseInput = true;
             UseSpeedAnimation = false;
             MinAnimationFps = 0f;
@@ -195,6 +200,12 @@ namespace Genetic
             SetJumpControl(Buttons.A);
         }
 
+        public override void PreUpdate()
+        {
+            // Reset the bit field for the control object movement directions.
+            MoveState = GenObject.Direction.None;
+        }
+
         public override void Update()
         {
             // Reset the x and y accelerations to 0 to allow new acceleration values to be calculated.
@@ -205,20 +216,62 @@ namespace Genetic
             {
                 if (MovementSpeedX != 0)
                 {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
-                        MoveLeft();
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
-                        MoveRight();
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]))
+                        MoveX(-1f);
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]))
+                        MoveX(1f);
+                    else if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                    {
+                        if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
+                        {
+                            if (GenG.GamePads[PlayerIndex].ThumbStickLeftX != 0)
+                                MoveX(GenG.GamePads[PlayerIndex].ThumbStickLeftX);
+                            else
+                                StopX();
+                        }
+                        else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
+                        {
+                            if (GenG.GamePads[PlayerIndex].ThumbStickRightX != 0)
+                                MoveX(GenG.GamePads[PlayerIndex].ThumbStickRightX);
+                            else
+                                StopX();
+                        }
+                    }
+                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
+                        MoveX(-1f);
+                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
+                        MoveX(1f);
                     else
                         StopX();
                 }
 
                 if (MovementSpeedY != 0)
                 {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
-                        MoveUp();
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]) || GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
-                        MoveDown();
+                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]))
+                        MoveY(-1f);
+                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]))
+                        MoveY(1f);
+                    else if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                    {
+                        if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
+                        {
+                            if (GenG.GamePads[PlayerIndex].ThumbStickLeftY != 0)
+                                MoveY(GenG.GamePads[PlayerIndex].ThumbStickLeftY);
+                            else
+                                StopY();
+                        }
+                        else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
+                        {
+                            if (GenG.GamePads[PlayerIndex].ThumbStickRightY != 0)
+                                MoveY(GenG.GamePads[PlayerIndex].ThumbStickRightY);
+                            else
+                                StopY();
+                        }
+                    }
+                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
+                        MoveY(-1f);
+                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
+                        MoveY(1f);
                     else
                         StopY();
                 }
@@ -238,17 +291,17 @@ namespace Genetic
             {
                 if (MovementSpeedX != 0 && MovementSpeedY != 0)
                 {
-                    if (!_movingX && !_movingY)
+                    if (!IsMovingX() && !IsMovingY())
                         SetState(State.Idle);
                 }
                 else if (MovementSpeedX != 0)
                 {
-                    if (!_movingX)
+                    if (!IsMovingX())
                         SetState(State.Idle);
                 }
                 else if (MovementSpeedY != 0)
                 {
-                    if (!_movingY)
+                    if (!IsMovingY())
                         SetState(State.Idle);
                 }
             }
@@ -261,15 +314,20 @@ namespace Genetic
 
         public override void PostUpdate()
         {
-            if (ControlObject.IsTouching(GenObject.Direction.Down) && _inAir)
+            // Check if the control object just landed on top of another object.
+            // If not, check if the control object moved off of another object.
+            if (ControlMode == ControlType.Platformer)
             {
-                _inAir = false;
+                if (ControlObject.IsTouching(GenObject.Direction.Down) && _inAir)
+                {
+                    _inAir = false;
 
-                if (LandCallback != null)
-                    LandCallback.Invoke();
+                    if (LandCallback != null)
+                        LandCallback.Invoke();
+                }
+                else if (!ControlObject.IsTouching(GenObject.Direction.Down) && !_inAir)
+                    _inAir = true;
             }
-            else if (!ControlObject.IsTouching(GenObject.Direction.Down) && !_inAir)
-                _inAir = true;
         }
 
         /// <summary>
@@ -342,36 +400,26 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Moves the control object to the left on the x-axis.
+        /// Moves the control object along the x-axis.
         /// </summary>
-        public void MoveLeft()
+        /// <param name="speedFactor">The factor determining the amount of the x movement speed to use, a value from -1.0 (left) to 1.0 (right).</param>
+        public void MoveX(float speedFactor)
         {
             if (MovementType == Movement.Instant)
-                ControlObject.Velocity.X = -MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X);
+                ControlObject.Velocity.X = MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X) * speedFactor;
             else if (MovementType == Movement.Accelerates)
-                ControlObject.Acceleration.X = -MovementSpeedX;
+                ControlObject.Acceleration.X = MovementSpeedX * speedFactor;
 
-            ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
-
-            _movingX = true;
-
-            if (!_inAir)
-                SetState(State.Moving);
-        }
-
-        /// <summary>
-        /// Moves the control object to the right on the x-axis.
-        /// </summary>
-        public void MoveRight()
-        {
-            if (MovementType == Movement.Instant)
-                ControlObject.Velocity.X = MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X);
-            else if (MovementType == Movement.Accelerates)
-                ControlObject.Acceleration.X = MovementSpeedX;
-            
-            ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
-
-            _movingX = true;
+            if (speedFactor < 0)
+            {
+                MoveState |= GenObject.Direction.Left;
+                ((GenSprite)ControlObject).Facing = GenObject.Direction.Left;
+            }
+            else if (speedFactor > 0)
+            {
+                MoveState |= GenObject.Direction.Right;
+                ((GenSprite)ControlObject).Facing = GenObject.Direction.Right;
+            }
 
             if (!_inAir)
                 SetState(State.Moving);
@@ -386,35 +434,24 @@ namespace Genetic
                 ControlObject.Velocity.X = 0;
             else if (StoppingType == Stopping.Decelerates)
                 ControlObject.Acceleration.X = 0;
-
-            _movingX = false;
         }
 
         /// <summary>
-        /// Moves the control object up on the y-axis.
+        /// Moves the control object along the y-axis.
         /// </summary>
-        public void MoveUp()
+        /// <param name="speedFactor">The factor determining the amount of the y movement speed to use, a value from -1.0 (up) to 1.0 (down).</param>
+        public void MoveY(float speedFactor)
         {
             if (MovementType == Movement.Instant)
-                ControlObject.Velocity.Y = -MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y);
+                ControlObject.Velocity.Y = -MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y) * speedFactor;
             else if (MovementType == Movement.Accelerates)
-                ControlObject.Acceleration.Y = -MovementSpeedY;
+                ControlObject.Acceleration.Y = -MovementSpeedY * speedFactor;
 
-            _movingY = true;
-            SetState(State.Moving);
-        }
+            if (speedFactor < 0)
+                MoveState |= GenObject.Direction.Up;
+            else if (speedFactor > 0)
+                MoveState |= GenObject.Direction.Down;
 
-        /// <summary>
-        /// Moves the control object down on the y-axis.
-        /// </summary>
-        public void MoveDown()
-        {
-            if (MovementType == Movement.Instant)
-                ControlObject.Velocity.Y = MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y);
-            else if (MovementType == Movement.Accelerates)
-                ControlObject.Acceleration.Y = MovementSpeedY;
-
-            _movingY = true;
             SetState(State.Moving);
         }
 
@@ -427,8 +464,6 @@ namespace Genetic
                 ControlObject.Velocity.Y = 0;
             else if (StoppingType == Stopping.Decelerates)
                 ControlObject.Acceleration.Y = 0;
-
-            _movingY = false;
         }
 
         /// <summary>
@@ -443,6 +478,24 @@ namespace Genetic
                 _inAir = true;
                 SetState(State.Jumping);
             }
+        }
+
+        /// <summary>
+        /// Gets whether or not the control object is being controlled to move along the x-axis.
+        /// </summary>
+        /// <returns>True if the control object is being controlled to move along the x-axis, false if not.</returns>
+        public bool IsMovingX()
+        {
+            return (MoveState & (GenObject.Direction.Left | GenObject.Direction.Right)) > GenObject.Direction.None;
+        }
+
+        /// <summary>
+        /// Gets whether or not the control object is being controlled to move along the y-axis.
+        /// </summary>
+        /// <returns>True if the control object is being controlled to move along the y-axis, false if not.</returns>
+        public bool IsMovingY()
+        {
+            return (MoveState & (GenObject.Direction.Up | GenObject.Direction.Down)) > GenObject.Direction.None;
         }
 
         /// <summary>

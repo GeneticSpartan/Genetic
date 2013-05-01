@@ -13,6 +13,27 @@ namespace Genetic.Physics
         public List<GenLink> Links;
 
         /// <summary>
+        /// Determines if lines are drawn between object points for each link constraint.
+        /// </summary>
+        public bool DrawLines;
+
+        /// <summary>
+        /// The color of the lines drawn between object points for each link constraint.
+        /// </summary>
+        public Color LineColor;
+
+        /// <summary>
+        /// The thickness of the lines drawn between object points for each link constraint, in pixels.
+        /// </summary>
+        public float LineThickness;
+
+        /// <summary>
+        /// The number of physics iterations used to solve the verlet integration in one update.
+        /// More iterations will cause the simulation to become less springy, which can be useful for rope physics.
+        /// </summary>
+        public int Iterations;
+
+        /// <summary>
         /// A group used for managing objects that can be connected together using link constraints.
         /// Each link constraint pushes or pulls the two connected objects to a specified distance from each other.
         /// Useful for simulating ropes, cloth, or other elastic bodies.
@@ -20,29 +41,21 @@ namespace Genetic.Physics
         public GenVerlet()
         {
             Links = new List<GenLink>();
+            DrawLines = true;
+            LineColor = Color.White;
+            LineThickness = 1f;
+            Iterations = 1;
         }
-
-        /// <summary>
-        /// Determines if lines are drawn between object points for each link constraint.
-        /// </summary>
-        public bool DrawLines = true;
-
-        /// <summary>
-        /// The color of the lines drawn between object points for each link constraint.
-        /// </summary>
-        public Color LineColor = Color.White;
-
-        /// <summary>
-        /// The thickness of the lines drawn between object points for each link constraint, in pixels.
-        /// </summary>
-        public float LineThickness = 1f;
 
         public override void Update()
         {
             base.Update();
 
-            foreach (GenLink link in Links)
-                link.Update();
+            for (int i = 0; i < Iterations; i++)
+            {
+                foreach (GenLink link in Links)
+                    link.Update();
+            }
         }
 
         public override void Draw()
@@ -118,8 +131,10 @@ namespace Genetic.Physics
 
         /// <summary>
         /// Sets the stiffness of every link constraint in the links list.
+        /// The higher the stiffness value, the stiffer the constraint.
+        /// Keep the value between 0.0 and 1.0 to retain stability.
         /// </summary>
-        /// <param name="stiffness">The stiffness value to set each link constraint.</param>
+        /// <param name="stiffness">The stiffness value to set each link constraint, a value from 0.0 to 1.0.</param>
         public void SetStiffness(float stiffness)
         {
             foreach (GenLink link in Links)
@@ -129,7 +144,7 @@ namespace Genetic.Physics
         /// <summary>
         /// Sets the x and y acceleration of each object in the verlet group.
         /// </summary>
-        /// <param name="gravityX">The acceleration value along the x-axis.</param>
+        /// <param name="decelerationX">The acceleration value along the x-axis.</param>
         /// <param name="gravityY">The acceleration value along the y-axis.</param>
         public void SetGravity(float gravityX, float gravityY)
         {
@@ -137,6 +152,20 @@ namespace Genetic.Physics
             {
                 member.Acceleration.X = gravityX;
                 member.Acceleration.Y = gravityY;
+            }
+        }
+
+        /// <summary>
+        /// Sets the x and y deceleration of each object in the verlet group.
+        /// </summary>
+        /// <param name="decelerationX">The deceleration value along the x-axis.</param>
+        /// <param name="decelerationY">The deceleration value along the y-axis.</param>
+        public void SetDeceleration(float decelerationX, float decelerationY)
+        {
+            foreach (GenObject member in Members)
+            {
+                member.Deceleration.X = decelerationX;
+                member.Deceleration.Y = decelerationY;
             }
         }
     }
@@ -204,7 +233,7 @@ namespace Genetic.Physics
             float distance = (float)Math.Sqrt(differenceX * differenceX + differenceY * differenceY);
 
             //if ((TearDistance != 0) && (distance > TearDistance))
-                // Remove link.
+            // Remove link.
 
             // Calculate the difference scalar.
             float difference = (RestingDistance - distance) / distance;
@@ -221,14 +250,14 @@ namespace Genetic.Physics
             {
                 PointA.X += differenceX * scalarPointA * difference;
                 PointA.Y += differenceY * scalarPointA * difference;
-                PointA.Velocity = (PointA.Position - PointA.OldPosition) / GenG.PhysicsTimeStep;
+                PointA.Velocity = (PointA.Position - PointA.OldPosition) / GenG.TimeStep;
             }
 
             if (!PointB.Immovable && PointB.Exists && PointB.Active)
             {
                 PointB.X -= differenceX * scalarPointB * difference;
                 PointB.Y -= differenceY * scalarPointB * difference;
-                PointB.Velocity = (PointB.Position - PointB.OldPosition) / GenG.PhysicsTimeStep;
+                PointB.Velocity = (PointB.Position - PointB.OldPosition) / GenG.TimeStep;
             }
         }
     }

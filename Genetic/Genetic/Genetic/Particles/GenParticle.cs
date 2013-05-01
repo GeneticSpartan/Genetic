@@ -89,7 +89,7 @@ namespace Genetic.Particles
                 Scale.X = MathHelper.Lerp(StartScale, EndScale, lerp);
                 Scale.Y = Scale.X;
 
-                _lifeTimer += GenG.PhysicsTimeStep;
+                _lifeTimer += GenG.TimeStep;
             }
             else
                 Kill();
