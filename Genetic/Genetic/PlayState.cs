@@ -147,15 +147,6 @@ namespace Genetic
                 }
             }
 
-            Warthog3 = new GenSprite(500, 300, "warthog", 78, 49);
-            Warthog3.Deceleration.X = 400;
-            Warthog3.Deceleration.Y = 400;
-            Warthog3.MaxVelocity.X = 250;
-            Warthog3.MaxVelocity.Y = 400;
-            Warthog3.Mass = 2f;
-            Warthog3.IsPlatform = true;
-            Add(Warthog3);
-
             Emitter = new GenEmitter(100, 100);
             Emitter.Width = 16;
             Emitter.Height = 16;
@@ -182,11 +173,24 @@ namespace Genetic
             Player.Mass = 1f;
             // Adjust the origin to keep the player's feet from visually penetrating a wall when rotated.
             Player.CenterOrigin(false);
-            Player.Origin.Y += 10;
+            Player.SetOrigin(Player.Origin.X, Player.Origin.Y + 10);
             Player.DrawOffset.Y -= 2;
             Player.RotationSpeed = 45;
             Player.DrawRotated = false;
             Add(Player);
+
+            Warthog3 = new GenSprite(200, 300, "warthog", 78, 49);
+            Warthog3.Deceleration.X = 400;
+            Warthog3.Deceleration.Y = 400;
+            Warthog3.MaxVelocity.X = 250;
+            Warthog3.MaxVelocity.Y = 400;
+            Warthog3.Mass = 2f;
+            //Warthog3.IsPlatform = true;
+            Warthog3.Parent = Player;
+            Warthog3.RotationSpeed = -90;
+            Warthog3.ParentMode = GenObject.ParentType.Origin;
+            Warthog3.ParentOffset = new Vector2(50, 50);
+            Add(Warthog3);
 
             Emitter.Parent = Player;
             Emitter.Start(false);
@@ -194,13 +198,15 @@ namespace Genetic
             PlayerControl = new GenControl(Player, GenControl.ControlType.Platformer, GenControl.Movement.Accelerates, GenControl.Stopping.Decelerates);
             PlayerControl.SetMovementSpeed(700, 0, 150, 400, 1000, 0);
             PlayerControl.Gravity.Y = 700;
-            PlayerControl.JumpSpeed = 400;
+            PlayerControl.JumpSpeed = 300;
             PlayerControl.IdleAnimation = "idle";
             PlayerControl.MoveAnimation = "run";
             PlayerControl.JumpAnimation = "jump";
             PlayerControl.FallAnimation = "fall";
             PlayerControl.UseSpeedAnimation = true;
             PlayerControl.MinAnimationFps = 1f;
+            PlayerControl.JumpCount = 2;
+            //PlayerControl.JumpInheritVelocity = true;
             PlayerControl.ButtonsSpecial = GenGamePad.ButtonsSpecial.ThumbStickLeft;
             //PlayerControl.LandCallback = PlayerLand;
             Add(PlayerControl);
@@ -211,6 +217,7 @@ namespace Genetic
             //Warthog4.Mass = 10f;
             Warthog4.Color = Color.Red;
             Warthog4.Parent = Warthog3;
+            Warthog4.ParentMode = GenObject.ParentType.Origin;
             Warthog4.ParentOffset.X = 75;
             Warthog4.RotationSpeed = 180;
             Add(Warthog4);
@@ -318,8 +325,8 @@ namespace Genetic
             //GenG.Collide(Boxes, Boxes);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
-            GenG.Collide(Cave, Warthog3);
-            GenG.Collide(Player, Warthog3);
+            //GenG.Collide(Cave, Warthog3);
+            //GenG.Collide(Player, Warthog3);
             GenG.Collide(Cave, Emitter);
             //GenG.Collide(Player, Warthog4);
 
@@ -355,8 +362,8 @@ namespace Genetic
             Warthog4.Velocity.X = GenU.SineWave(0, 2, 200);
             Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
 
-            Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
-            GenMove.AccelerateAtAngle(Warthog3, Warthog3.Rotation, 500);
+            //Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
+            //GenMove.AccelerateAtAngle(Warthog3, Warthog3.Rotation, 500);
 
             if (Warthog5.Parent != null)
                 Warthog5.Rotation = Warthog5.Parent.Rotation;

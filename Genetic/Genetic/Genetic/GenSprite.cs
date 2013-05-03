@@ -297,9 +297,9 @@ namespace Genetic
             if (_texture != null)
             {
                 if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color * _alpha, _drawRotation, _origin, Scale, _spriteEffect, 0);
                 else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, Animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, Origin, Scale, _spriteEffect, 0);
+                    GenG.SpriteBatch.Draw(_texture, _drawPosition, Animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, _origin, Scale, _spriteEffect, 0);
             }
         }
 
@@ -312,13 +312,13 @@ namespace Genetic
         {
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                _drawPosition.X = (int)(X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor));
-                _drawPosition.Y = (int)(Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor));
+                _drawPosition.X = (int)(X + _origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor));
+                _drawPosition.Y = (int)(Y + _origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor));
             }
             else if (GenG.DrawMode == GenG.DrawType.Smooth)
             {
-                _drawPosition.X = X + Origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
-                _drawPosition.Y = Y + Origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+                _drawPosition.X = X + _origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
+                _drawPosition.Y = Y + _origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
             }
         }
 
@@ -411,8 +411,8 @@ namespace Genetic
         {
             if (useSprite)
             {
-                Origin.X = (int)(_sourceRect.Width * 0.5f);
-                Origin.Y = (int)(_sourceRect.Height * 0.5f);
+                _origin.X = (int)(_sourceRect.Width * 0.5f);
+                _origin.Y = (int)(_sourceRect.Height * 0.5f);
             }
             else
                 base.CenterOrigin();

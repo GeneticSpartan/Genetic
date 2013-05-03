@@ -9,6 +9,7 @@ namespace Genetic
 {
     public class GenObject : GenBasic
     {
+        // Bit field flags representing up, down, left, and right directions.
         public enum Direction
         {
             None = 0,
@@ -17,6 +18,27 @@ namespace Genetic
             Up = 0x0100,
             Down = 0x1000,
             Any = Direction.Left | Direction.Right | Direction.Up | Direction.Down
+        }
+
+        // A bit field of flags determining the type of transformations that can be connected with a parent object.
+        public enum ParentType
+        {
+            // The object will not be transformed by a parent.
+            None = 0,
+
+            // The object will move relative to its origin and the parent's origin position.
+            Position = 0x001,
+
+            // The object's Rotation value will change relative to a parent's Rotation value.
+            Rotation = 0x010,
+
+            // The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
+            // The object's Rotation value will not change.
+            Origin = 0x100,
+
+            // The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
+            // The object's Rotation value will change relative to the parent's Rotation value.
+            OriginRotation = ParentType.Rotation | ParentType.Origin
         }
 
         /// <summary>
@@ -30,7 +52,7 @@ namespace Genetic
         protected Vector2 _oldPosition;
 
         /// <summary>
-        /// The x and y positon of the center point of the object.
+        /// The x and y positions of the center point of the object.
         /// </summary>
         protected Vector2 _centerPosition;
 
@@ -41,10 +63,15 @@ namespace Genetic
 
         /// <summary>
         /// The origin, relative to the position, used as an anchor point of the object.
-        /// Useful for rotating objects around this point that are parented to this object.
         /// Using decimal values may cause sprites to shift between pixels in the pixel draw mode, giving undesired results.
         /// </summary>
-        public Vector2 Origin;
+        protected Vector2 _origin;
+
+        /// <summary>
+        /// The x and y positions of the origin of the object.
+        /// Useful for rotating objects around this point that are parented to this object.
+        /// </summary>
+        protected Vector2 _originPosition;
 
         /// <summary>
         /// The bounding box of the object relative to the position.
@@ -61,6 +88,12 @@ namespace Genetic
         /// The rotation of the object in radians.
         /// </summary>
         protected float _rotation;
+
+        /// <summary>
+        /// The unmodified rotation value of the object in radians.
+        /// Useful for saving the object's rotation while its Rotation value may be affected by a parent object.
+        /// </summary>
+        protected float _baseRotation;
 
         /// <summary>
         /// The speed of the object's rotation in degrees per second.
@@ -127,17 +160,15 @@ namespace Genetic
         /// <summary>
         /// The object that this object will be parented to.
         /// </summary>
-        public GenObject Parent = null;
+        public GenObject Parent;
+
+        // The type of transformations that are connected with a parent object.
+        public ParentType ParentMode;
 
         /// <summary>
         /// The x and y position offsets relative to the parent object's position.
         /// </summary>
-        public Vector2 ParentOffset = Vector2.Zero;
-
-        /// <summary>
-        /// A flag used to determine if the object should rotate around the parent as the parent object rotates.
-        /// </summary>
-        public bool RotateWithParent;
+        public Vector2 ParentOffset;
 
         /// <summary>
         /// A flag used to allow other colliding objects to inherit the x velocity when sitting on this object.
@@ -215,6 +246,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the x and y positions of the origin of the object relative to the object's position.
+        /// </summary>
+        public Vector2 Origin
+        {
+            get { return _origin; }
+        }
+
+        /// <summary>
+        /// Gets the x and y positions of the origin of the object.
+        /// </summary>
+        public Vector2 OriginPosition
+        {
+            get { return _originPosition; }
+        }
+
+        /// <summary>
         /// Gets or sets the x position of the top-left corner the object.
         /// </summary>
         public float X
@@ -225,6 +272,7 @@ namespace Genetic
             {
                 _position.X = value;
                 _boundingBox.X = value;
+                _originPosition.X = _position.X + _origin.X;
             }
         }
 
@@ -239,6 +287,7 @@ namespace Genetic
             {
                 _position.Y = value;
                 _boundingBox.Y = value;
+                _originPosition.Y = _position.Y + _origin.Y;
             }
         }
 
@@ -291,6 +340,7 @@ namespace Genetic
                     value %= 360;
 
                 _rotation = MathHelper.ToRadians(value);
+                _baseRotation = _rotation;
             }
         }
 
@@ -327,14 +377,16 @@ namespace Genetic
             _debugDrawPosition = Vector2.Zero;
             _boundingBox = new GenAABB(x, y, width, height);
             _centerPosition = new Vector2(x + _boundingBox.HalfWidth, y + _boundingBox.HalfHeight);
-            Origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
+            _origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _rotation = 0f;
             RotationSpeed = 0f;
             _moveBounds = new GenAABB(x, y, width, height);
             Velocity = Vector2.Zero;
             MaxVelocity = Vector2.Zero;
-            RotateWithParent = true;
+            Parent = null;
+            ParentMode = ParentType.None;
+            ParentOffset = Vector2.Zero;
             _platform = null;
         }
 
@@ -440,16 +492,29 @@ namespace Genetic
                 }
             }
 
-            // Set the position of the object relative to the parent.
-            if (Parent != null)
+            // Set the transformations of the object relative to a parent object.
+            if ((Parent != null) && (ParentMode != ParentType.None))
             {
-                if (Parent.Rotation == 0 || !RotateWithParent)
+                if (ParentMode == ParentType.Position)
                 {
-                    X = Parent.Position.X + ParentOffset.X;
-                    Y = Parent.Position.Y + ParentOffset.Y;
+                    X = (Parent.OriginPosition.X - Origin.X) + ParentOffset.X;
+                    Y = (Parent.OriginPosition.Y - Origin.Y) + ParentOffset.Y;
                 }
                 else
-                    GenMove.RotateAroundPoint(this, Parent.Position, GenMove.VectortoAngle(ParentOffset) + Parent.Rotation, ParentOffset.Length());
+                {
+                    if ((ParentMode & ParentType.Rotation) > ParentType.None)
+                        Rotation = Parent.Rotation;
+
+                    // Rotate the object around the parent's origin, using the angle and length of the parent offset vector as a base.
+                    if ((ParentMode & ParentType.Origin) > ParentType.None)
+                    {
+                        GenMove.RotateAroundPoint(this, Parent.OriginPosition, GenMove.VectortoAngle(ParentOffset) + Parent.Rotation, ParentOffset.Length());
+
+                        // Offset the object's position by its origin so that the origin is the point rotating around the parent's origin position.
+                        X -= Origin.X;
+                        Y -= Origin.Y;
+                    }
+                }
             }
         }
 
@@ -478,12 +543,25 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Sets the x and y position of the origin of the object relative to the object's position.
+        /// </summary>
+        /// <param name="x">The x position of the origin relative to the object's position.</param>
+        /// <param name="y">The y position of the origin relative to the object's position.</param>
+        public void SetOrigin(float x, float y)
+        {
+            _origin.X = x;
+            _origin.Y = y;
+
+            _originPosition = _position + _origin;
+        }
+
+        /// <summary>
         /// Places the origin at the center of the bounding box.
         /// </summary>
         public void CenterOrigin()
         {
-            Origin.X = (int)_boundingBox.HalfWidth;
-            Origin.Y = (int)_boundingBox.HalfHeight;
+            _origin.X = (int)_boundingBox.HalfWidth;
+            _origin.Y = (int)_boundingBox.HalfHeight;
         }
 
         /// <summary>

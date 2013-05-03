@@ -81,18 +81,35 @@ namespace Genetic
         /// The speed of the object moving or accelerating horizontally.
         /// The speed determines the object's acceleration or velocity depending on the movement type.
         /// </summary>
-        public uint MovementSpeedX = 0;
+        public uint MovementSpeedX;
 
         /// <summary>
         /// The speed of the object moving or accelerating vertically.
         /// The speed determines the object's acceleration or velocity depending on the movement type.
         /// </summary>
-        public uint MovementSpeedY = 0;
+        public uint MovementSpeedY;
 
         /// <summary>
         /// The vertical speed of the object used during a jump.
         /// </summary>
-        public uint JumpSpeed = 0;
+        public int JumpSpeed;
+
+        /// <summary>
+        /// A flag used to determine if the jump speed will be calculated against the control object's current velocity when jumping.
+        /// </summary>
+        public bool JumpInheritVelocity;
+
+        /// <summary>
+        /// The allowed number of consecutive jumps.
+        /// A value of 0 means unlimited jumps.
+        /// </summary>
+        public int JumpCount;
+
+        /// <summary>
+        /// The number of consecutive jumps that have been made since the object first jumps off of an object.
+        /// Moving off of an object also counts as the first jump.
+        /// </summary>
+        protected int _jumpCounter;
 
         /// <summary>
         /// How much horizontal and vertical gravitational force affects the object.
@@ -182,6 +199,12 @@ namespace Genetic
             _gamePadControls = new Buttons[5];
             ButtonsSpecial = GenGamePad.ButtonsSpecial.None;
             UseInput = true;
+            MovementSpeedX = 0;
+            MovementSpeedY = 0;
+            JumpSpeed = 0;
+            JumpInheritVelocity = false;
+            JumpCount = 1;
+            _jumpCounter = 0;
             UseSpeedAnimation = false;
             MinAnimationFps = 0f;
             MaxAnimationFps = 12f;
@@ -322,11 +345,20 @@ namespace Genetic
                 {
                     _inAir = false;
 
+                    // Reset the jump counter.
+                    _jumpCounter = 0;
+
                     if (LandCallback != null)
                         LandCallback.Invoke();
                 }
                 else if (!ControlObject.IsTouching(GenObject.Direction.Down) && !_inAir)
+                {
                     _inAir = true;
+
+                    // Increment the jump counter if the control object moved off of an object.
+                    if (_jumpCounter == 0)
+                        _jumpCounter++;
+                }
             }
         }
 
@@ -443,9 +475,9 @@ namespace Genetic
         public void MoveY(float speedFactor)
         {
             if (MovementType == Movement.Instant)
-                ControlObject.Velocity.Y = -MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y) * speedFactor;
+                ControlObject.Velocity.Y = MathHelper.Clamp(MovementSpeedY, 0, ControlObject.MaxVelocity.Y) * speedFactor;
             else if (MovementType == Movement.Accelerates)
-                ControlObject.Acceleration.Y = -MovementSpeedY * speedFactor;
+                ControlObject.Acceleration.Y = MovementSpeedY * speedFactor;
 
             if (speedFactor < 0)
                 MoveState |= GenObject.Direction.Up;
@@ -471,9 +503,14 @@ namespace Genetic
         /// </summary>
         public void Jump()
         {
-            if (!_inAir)
+            if (!_inAir || (_jumpCounter < JumpCount) || (JumpCount == 0))
             {
-                ControlObject.Velocity.Y -= JumpSpeed;
+                _jumpCounter++;
+
+                if (JumpInheritVelocity)
+                    ControlObject.Velocity.Y -= JumpSpeed;
+                else
+                    ControlObject.Velocity.Y = -JumpSpeed;
 
                 _inAir = true;
                 SetState(State.Jumping);

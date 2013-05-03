@@ -112,7 +112,7 @@ namespace Genetic.Gui
             UpdateDrawPosition();
 
             if (_texture != null)
-                GenG.SpriteBatch.Draw(_texture, _drawPosition, _progressRect, _color, _rotation, Origin, Scale, _spriteEffect, 0);
+                GenG.SpriteBatch.Draw(_texture, _drawPosition, _progressRect, _color, _rotation, _origin, Scale, _spriteEffect, 0);
         }
     }
 }
