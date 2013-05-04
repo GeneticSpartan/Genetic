@@ -7,8 +7,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\warthog.xnb</Output>
-      <Time>2013-05-01T12:16:15.0856809-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\warthog.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <Item>
       <Source>player.png</Source>
@@ -16,8 +16,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\player.xnb</Output>
-      <Time>2013-05-01T12:16:15.0666798-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\player.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <Item>
       <Source>auto_tiles.png</Source>
@@ -25,8 +25,8 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb</Output>
-      <Time>2013-05-01T12:16:14.9876753-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <Item>
       <Source>beep.mp3</Source>
@@ -34,8 +34,8 @@
       <Importer>Mp3Importer</Importer>
       <Processor>SoundEffectProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\beep.xnb</Output>
-      <Time>2013-05-01T12:16:15.0076765-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\beep.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <Item>
       <Source>Nokia.spritefont</Source>
@@ -43,8 +43,8 @@
       <Importer>FontDescriptionImporter</Importer>
       <Processor>FontDescriptionProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\Nokia.xnb</Output>
-      <Time>2013-05-01T12:16:14.9676742-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\Nokia.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <Item>
       <Source>grayscale.fx</Source>
@@ -52,8 +52,8 @@
       <Importer>EffectImporter</Importer>
       <Processor>EffectProcessor</Processor>
       <Options>None</Options>
-      <Output>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb</Output>
-      <Time>2013-05-01T12:16:15.0266775-07:00</Time>
+      <Output>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb</Output>
+      <Time>2013-05-01T12:16:16-07:00</Time>
     </Item>
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
@@ -62,10 +62,10 @@
       <TargetProfile>HiDef</TargetProfile>
       <BuildConfiguration>Debug</BuildConfiguration>
       <CompressContent>false</CompressContent>
-      <RootDirectory>C:\Users\Tyler\Games\Genetic\Genetic\GeneticContent\</RootDirectory>
-      <LoggerRootDirectory>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\</LoggerRootDirectory>
-      <IntermediateDirectory>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\</IntermediateDirectory>
-      <OutputDirectory>C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\</OutputDirectory>
+      <RootDirectory>D:\Games\Genetic\Genetic\GeneticContent\</RootDirectory>
+      <LoggerRootDirectory>D:\Games\Genetic\Genetic\Genetic\</LoggerRootDirectory>
+      <IntermediateDirectory>D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\</IntermediateDirectory>
+      <OutputDirectory>D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\</OutputDirectory>
     </Settings>
     <Assemblies>
       <Assembly>
@@ -94,7 +94,7 @@
       </Assembly>
       <Assembly>
         <Key>C:\Windows\Microsoft.Net\assembly\GAC_32\Microsoft.Xna.Framework.Content.Pipeline\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Content.Pipeline.dll</Key>
-        <Value>2013-02-27T18:15:17.9610017-08:00</Value>
+        <Value>2013-01-29T04:35:13.4142419-08:00</Value>
       </Assembly>
     </Assemblies>
   </Asset>

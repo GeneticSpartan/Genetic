@@ -102,6 +102,11 @@ namespace Genetic
         public Vector2 Origin;
 
         /// <summary>
+        /// The scale at which to draw the camera render target.
+        /// </summary>
+        public Vector2 Scale;
+
+        /// <summary>
         /// The position used to draw the camera.
         /// Includes the camera position and origin values to place the camera correctly.
         /// </summary>
@@ -365,6 +370,7 @@ namespace Genetic
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
             Origin = new Vector2(width * 0.5f, height * 0.5f);
+            Scale = Vector2.One;
             _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
             Zoom = _initialZoom;

@@ -176,9 +176,23 @@ namespace Genetic
         public float MaxAnimationFps;
 
         /// <summary>
+        /// The method that will be invoked when the control object jumps.
+        /// </summary>
+        public Action JumpCallback;
+
+        /// <summary>
         /// The method that will be invoked when the control object lands on another object.
         /// </summary>
         public Action LandCallback;
+
+        /// <summary>
+        /// Gets the number of consecutive jumps that have been made since the object first jumps off of an object.
+        /// Moving off of an object also counts as the first jump.
+        /// </summary>
+        public int JumpCounter
+        {
+            get { return _jumpCounter; }
+        }
 
         /// <summary>
         /// Sets up a control scheme for moving a given object.
@@ -204,10 +218,14 @@ namespace Genetic
             JumpSpeed = 0;
             JumpInheritVelocity = false;
             JumpCount = 1;
-            _jumpCounter = 0;
+
+            // Start the jump counter at 1, since the control object spawns in the air initially.
+            _jumpCounter = 1;
+
             UseSpeedAnimation = false;
             MinAnimationFps = 0f;
             MaxAnimationFps = 12f;
+            JumpCallback = null;
             LandCallback = null;
 
             // Set the default movement direction keyboard controls.
@@ -514,6 +532,9 @@ namespace Genetic
 
                 _inAir = true;
                 SetState(State.Jumping);
+
+                if (JumpCallback != null)
+                    JumpCallback.Invoke();
             }
         }
 

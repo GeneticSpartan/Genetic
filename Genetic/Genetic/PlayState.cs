@@ -34,7 +34,6 @@ namespace Genetic
 
         public GenSound Beep;
         public GenText Text;
-        //public GenSound Music;
 
         //public GenTimer Timer;
 
@@ -80,7 +79,7 @@ namespace Genetic
             Add(Map);*/
 
             Cave = new GenCave();
-            Cave.MakeCave(160, 320);
+            Cave.MakeCave(160, 360);
             Add(Cave);
 
             GenG.BackgroundColor = Color.CornflowerBlue;
@@ -100,7 +99,7 @@ namespace Genetic
             Chain = new GenVerlet();
             Chain.MakeGrid(300, 200, 5, 15, 1);
             Chain.DrawLines = false;
-            Chain.SetMass(0.2f);
+            Chain.SetMass(1f);
             Chain.SetGravity(0f, 700f);
             Chain.Iterations = 10;
             
@@ -150,7 +149,7 @@ namespace Genetic
             Emitter = new GenEmitter(100, 100);
             Emitter.Width = 16;
             Emitter.Height = 16;
-            Emitter.MakeParticles(GenG.Pixel, 1, 1, 300);
+            Emitter.MakeParticles(GenG.Pixel, 1, 1, 400);
             Emitter.EmitQuantity = 5;
             Emitter.EmitFrequency = .05f;
             Emitter.InheritVelocity = true;
@@ -170,14 +169,16 @@ namespace Genetic
             Player.AddAnimation("run", 16, 18, new int[] { 1, 0, 2, 0 }, 6, true, 1);
             Player.AddAnimation("jump", 16, 18, new int[] { 1 }, 6, false, 1);
             Player.AddAnimation("fall", 16, 18, new int[] { 3 }, 6, false, 1);
-            Player.Mass = 1f;
             // Adjust the origin to keep the player's feet from visually penetrating a wall when rotated.
             Player.CenterOrigin(false);
-            Player.SetOrigin(Player.Origin.X, Player.Origin.Y + 10);
+            Player.SetOrigin(Player.Origin.X, Player.Origin.Y + 8);
             Player.DrawOffset.Y -= 2;
             Player.RotationSpeed = 45;
             Player.DrawRotated = false;
             Add(Player);
+
+            Emitter.Parent = Player;
+            Emitter.Start(false);
 
             Warthog3 = new GenSprite(200, 300, "warthog", 78, 49);
             Warthog3.Deceleration.X = 400;
@@ -186,14 +187,10 @@ namespace Genetic
             Warthog3.MaxVelocity.Y = 400;
             Warthog3.Mass = 2f;
             //Warthog3.IsPlatform = true;
-            Warthog3.Parent = Player;
             Warthog3.RotationSpeed = -90;
-            Warthog3.ParentMode = GenObject.ParentType.Origin;
+            Warthog3.SetParent(Player, GenObject.ParentType.Origin);
             Warthog3.ParentOffset = new Vector2(50, 50);
             Add(Warthog3);
-
-            Emitter.Parent = Player;
-            Emitter.Start(false);
 
             PlayerControl = new GenControl(Player, GenControl.ControlType.Platformer, GenControl.Movement.Accelerates, GenControl.Stopping.Decelerates);
             PlayerControl.SetMovementSpeed(700, 0, 150, 400, 1000, 0);
@@ -209,6 +206,7 @@ namespace Genetic
             //PlayerControl.JumpInheritVelocity = true;
             PlayerControl.ButtonsSpecial = GenGamePad.ButtonsSpecial.ThumbStickLeft;
             //PlayerControl.LandCallback = PlayerLand;
+            PlayerControl.JumpCallback = PlayerJump;
             Add(PlayerControl);
 
             Warthog4 = new GenSprite(300, 350, "warthog", 78, 49);
@@ -216,8 +214,7 @@ namespace Genetic
             //Warthog4.IsPlatform = true;
             //Warthog4.Mass = 10f;
             Warthog4.Color = Color.Red;
-            Warthog4.Parent = Warthog3;
-            Warthog4.ParentMode = GenObject.ParentType.Origin;
+            Warthog4.SetParent(Warthog3, GenObject.ParentType.Origin);
             Warthog4.ParentOffset.X = 75;
             Warthog4.RotationSpeed = 180;
             Add(Warthog4);
@@ -231,7 +228,7 @@ namespace Genetic
             //Chain.MakeLink(Warthog3, (GenObject)Chain.Members[14]);
             //Chain.SetRestingDistance(10f);
 
-            Beep = new GenSound("beep", 1, true);
+            Beep = new GenSound("beep", 1, false);
             //Beep.Play();
             Beep.SetFollow(Player);
             Beep.Volume = 1f;
@@ -253,7 +250,8 @@ namespace Genetic
             ProgressBar.MaxColor = Color.CornflowerBlue;
             //ProgressBar.MinCallback = Shake;
             ProgressBar.Rotation = -90;
-            ProgressBar.Parent = Player;
+            ProgressBar.SetParent(Player, GenObject.ParentType.Position);
+            ProgressBar.ParentOffset.X = 30;
             Add(ProgressBar);
 
             Cloth = new GenVerlet();
@@ -277,9 +275,6 @@ namespace Genetic
             ((GenObject)Cloth.Members[10]).Acceleration.Y = 0f;
 
             Add(Cloth);
-
-            //Music = new GenSound("music", 1, true);
-            //Music.Play();
 
             GenG.TimeScale = 1f;
 
@@ -321,7 +316,7 @@ namespace Genetic
             GenG.Collide(Player, Text);
             GenG.Collide(Cave, Player, HitCave);
             GenG.Collide(Cave, Boxes);
-            GenG.Collide(Player, Boxes, HitBox);
+            //GenG.Collide(Player, Boxes, HitBox, true, GenObject.Direction.Up);
             //GenG.Collide(Boxes, Boxes);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
@@ -337,7 +332,7 @@ namespace Genetic
                 GenG.ResetState();
 
             if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Z) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.LeftTrigger))
-                GenG.TimeScale = 0.5f;
+                GenG.TimeScale = 0.2f;
             else if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.X) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.RightTrigger))
                 GenG.TimeScale = 2f;
             else
@@ -465,6 +460,19 @@ namespace Genetic
             GenG.GamePads[PlayerIndex.One].Vibrate(1f, 0.25f, 0.5f, true);
             GenG.Camera.Shake(5f, 0.5f, true, null, GenCamera.ShakeDirection.Vertical);
             GenG.Camera.Flash(0.15f, 0.2f, Color.Red);
+        }
+
+        public void PlayerJump()
+        {
+            if (PlayerControl.JumpCounter > 1)
+            {
+                GenG.Camera.Shake(2f, 0.2f);
+                Emitter.InheritVelocity = false;
+                Emitter.EmitParticles(100);
+                Emitter.InheritVelocity = true;
+            }
+
+            Beep.Play();
         }
     }
 }

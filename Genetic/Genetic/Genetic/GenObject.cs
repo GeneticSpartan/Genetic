@@ -373,11 +373,16 @@ namespace Genetic
         /// <param name="height">The height of the object.</param>
         public GenObject(float x = 0, float y = 0, float width = 1, float height = 1)
         {
-            _position = new Vector2(x, y);
+            _position = Vector2.Zero;
             _debugDrawPosition = Vector2.Zero;
             _boundingBox = new GenAABB(x, y, width, height);
             _centerPosition = new Vector2(x + _boundingBox.HalfWidth, y + _boundingBox.HalfHeight);
             _origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
+            _originPosition = Vector2.Zero;
+
+            X = x;
+            Y = y;
+
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _rotation = 0f;
             RotationSpeed = 0f;
@@ -515,6 +520,9 @@ namespace Genetic
                         Y -= Origin.Y;
                     }
                 }
+
+                // Calculate the velocity of the object based on its new position affected by the parent object.
+                Velocity = (_position - _oldPosition) / GenG.TimeStep;
             }
         }
 
@@ -562,6 +570,17 @@ namespace Genetic
         {
             _origin.X = (int)_boundingBox.HalfWidth;
             _origin.Y = (int)_boundingBox.HalfHeight;
+        }
+
+        /// <summary>
+        /// Sets a given object as the parent of this object, using the given parenting type.
+        /// </summary>
+        /// <param name="gameObject">The object to set as the parent object.</param>
+        /// <param name="parentMode">The type of transformations to connect with the parent object.</param>
+        public void SetParent(GenObject gameObject, ParentType parentMode)
+        {
+            Parent = gameObject;
+            ParentMode = parentMode;
         }
 
         /// <summary>

@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 
 namespace Genetic
@@ -23,7 +25,7 @@ namespace Genetic
         /// <summary>
         /// The game object the sound will follow.
         /// </summary>
-        protected GenObject _follow = null;
+        protected GenObject _follow;
 
         /// <summary>
         /// The position of the sound relative to the camera.
@@ -33,12 +35,12 @@ namespace Genetic
         /// <summary>
         /// Determines if the sound should fade as it moves out of the camera view.
         /// </summary>
-        public bool DistanceFading = false;
+        public bool DistanceFading;
 
         /// <summary>
         /// The total distance, in pixels, that the sound must be from an edge of the camera to fade completely.
         /// </summary>
-        public float DistanceFadingLength = 400f;
+        public float DistanceFadingLength;
 
         /// <summary>
         /// The x and y distances of the sound from the edges of the camera.
@@ -49,7 +51,32 @@ namespace Genetic
         /// <summary>
         /// A value used to adjust the initial sound volume during fades.
         /// </summary>
-        protected float _volumeAdjust = 1;
+        protected float _volumeAdjust;
+
+        /// <summary>
+        /// Determines if the sound is currently fading.
+        /// </summary>
+        protected bool _fading;
+
+        /// <summary>
+        /// The current duration of the sound fade, in seconds.
+        /// </summary>
+        protected float _fadeDuration;
+
+        /// <summary>
+        /// The amount of time since the sound fade started, in seconds.
+        /// </summary>
+        protected float _fadeTimer;
+
+        /// <summary>
+        /// A flag used to determine if the sound will stop playing after the sound fade has completed.
+        /// </summary>
+        protected bool _fadeStopSound;
+
+        /// <summary>
+        /// The callback function that will invoke after the sound fade has completed.
+        /// </summary>
+        protected Action _fadeCallback;
 
         /// <summary>
         /// Gets whether the sound effect instance is currently playing.
@@ -117,6 +144,14 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the duration of the sound effect.
+        /// </summary>
+        public TimeSpan Duration
+        {
+            get { return _sound.Duration; }
+        }
+
+        /// <summary>
         /// Creates a playable sound.
         /// </summary>
         /// <param name="soundFile">The sound file to load.</param>
@@ -131,6 +166,16 @@ namespace Genetic
                 _sound = null;
                 _soundInstance = null;
             }
+
+            _follow = null;
+            DistanceFading = false;
+            DistanceFadingLength = 400f;
+            _volumeAdjust = 1f;
+            _fading = false;
+            _fadeDuration = 0f;
+            _fadeTimer = 0f;
+            _fadeStopSound = true;
+            _fadeCallback = null;
         }
 
         public override void Update()
@@ -174,6 +219,26 @@ namespace Genetic
                 }
                 else
                     _soundInstance.Volume = _volume * GenG.Volume;
+
+                if (_fading)
+                {
+                    if (_fadeTimer < _fadeDuration)
+                    {
+                        _soundInstance.Volume *= (_fadeDuration - _fadeTimer) / _fadeDuration;
+
+                        _fadeTimer += GenG.TimeStep;
+                    }
+                    else
+                    {
+                        _fading = false;
+
+                        if (_fadeStopSound)
+                            Stop(true);
+
+                        if (_fadeCallback != null)
+                            _fadeCallback.Invoke();
+                    }
+                }
             }
         }
 
@@ -222,6 +287,22 @@ namespace Genetic
         public void Resume()
         {
             _soundInstance.Resume();
+        }
+
+        /// <summary>
+        /// Fades the sound out to a volume of 0 within the given duration.
+        /// </summary>
+        /// <param name="duration">The duration of the sound fade, in seconds.</param>
+        /// <param name="stopSound">A flag used to determine if the sound will stop playing after the sound fade has completed.</param>
+        /// <param name="callback">The callback function that will invoke after the sound fade has completed.</param>
+        public void FadeOut(float duration = 1f, bool stopSound = true, Action callback = null)
+        {
+            _fadeDuration = duration;
+            _fadeCallback = callback;
+            _fadeStopSound = stopSound;
+            _fadeTimer = 0f;
+
+            _fading = true;
         }
 
         /// <summary>

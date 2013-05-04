@@ -71,6 +71,7 @@ namespace Genetic.Physics
 
         /// <summary>
         /// Creates a grid of points, each connected by a link constraint to their adjacent neighboring points.
+        /// Clears the verlet group members list and links list before creating the grid.
         /// </summary>
         /// <param name="startX">The x position of the top-left corner of the grid.</param>
         /// <param name="startY">The y position of the top-left corner of the grid.</param>
@@ -180,12 +181,12 @@ namespace Genetic.Physics
         /// <summary>
         /// The stiffness of the link constraint between the two points.
         /// </summary>
-        public float Stiffness = 1f;
+        public float Stiffness;
 
         /// <summary>
         /// The distance between the two points needed to break the link.
         /// </summary>
-        public float TearDistance = 0f;
+        public float TearDistance;
 
         /// <summary>
         /// The first point in the link.
@@ -198,12 +199,12 @@ namespace Genetic.Physics
         public GenObject PointB;
 
         /// <summary>
-        /// The x and y position of the point to link on the first object relative to its top-left corner position.
+        /// The x and y position of the point to link on the first object relative to its origin position.
         /// </summary>
         public Vector2 OffsetA;
 
         /// <summary>
-        /// The x and y position of the point to link on the second object relative to its top-left corner position.
+        /// The x and y position of the point to link on the second object relative to its origin position.
         /// </summary>
         public Vector2 OffsetB;
 
@@ -215,21 +216,21 @@ namespace Genetic.Physics
         /// <param name="pointB">The second object to use as a connection point.</param>
         public GenLink(GenObject pointA, GenObject pointB)
         {
+            Stiffness = 1f;
+            TearDistance = 0f;
             PointA = pointA;
             PointB = pointB;
+            OffsetA = Vector2.Zero;
+            OffsetB = Vector2.Zero;
 
-            // Set the link point offsets to the center of the connected objects.
-            OffsetA = new Vector2(PointA.Width * 0.5f, PointA.Height * 0.5f);
-            OffsetB = new Vector2(PointB.Width * 0.5f, PointB.Height * 0.5f);
-
-            RestingDistance = Vector2.Distance(PointA.Position, PointB.Position);
+            RestingDistance = Vector2.Distance(PointA.OriginPosition, PointB.OriginPosition);
         }
 
         public void Update()
         {
             // Calculate the distances between the points.
-            float differenceX = (PointA.X + OffsetA.X) - (PointB.X + OffsetB.X);
-            float differenceY = (PointA.Y + OffsetA.Y) - (PointB.Y + OffsetB.Y);
+            float differenceX = (PointA.OriginPosition.X + OffsetA.X) - (PointB.OriginPosition.X + OffsetB.X);
+            float differenceY = (PointA.OriginPosition.Y + OffsetA.Y) - (PointB.OriginPosition.Y + OffsetB.Y);
             float distance = (float)Math.Sqrt(differenceX * differenceX + differenceY * differenceY);
 
             //if ((TearDistance != 0) && (distance > TearDistance))
