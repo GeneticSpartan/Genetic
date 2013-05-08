@@ -82,7 +82,16 @@ namespace Genetic
             TileWidth = tileWidth;
             TileHeight = tileHeight;
 
-            Tiles = new GenTile[width, height];
+            // Create the rows.
+            Tiles = new GenTile[height][];
+
+            // Create the columns.
+            for (int i = 0; i < Tiles.Length; i++)
+                Tiles[i] = new GenTile[width];
+
+            // Get the number of rows and columns of the tilemap.
+            _rows = height;
+            _columns = width;
 
             for (int y = 0; y < height; y++)
             {
@@ -90,24 +99,24 @@ namespace Genetic
                 {
                     if (_cells[x, y] != 0)
                     {
-                        Tiles[x, y] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+                        Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
 
                         // Check for a tile to the left of the current tile, and flag internal edges as closed.
-                        if ((x > 0) && (Tiles[x - 1, y] != null))
+                        if ((x > 0) && (Tiles[y][x - 1] != null))
                         {
-                            Tiles[x, y].OpenEdges &= ~GenObject.Direction.Left;
-                            Tiles[x - 1, y].OpenEdges &= ~GenObject.Direction.Right;
+                            Tiles[y][x].OpenEdges &= ~GenObject.Direction.Left;
+                            Tiles[y][x - 1].OpenEdges &= ~GenObject.Direction.Right;
                         }
 
                         // Check for a tile on top of the current tile, and flag internal edges as closed.
-                        if ((y > 0) && (Tiles[x, y - 1] != null))
+                        if ((y > 0) && (Tiles[y - 1][x] != null))
                         {
-                            Tiles[x, y].OpenEdges &= ~GenObject.Direction.Up;
-                            Tiles[x, y - 1].OpenEdges &= ~GenObject.Direction.Down;
+                            Tiles[y][x].OpenEdges &= ~GenObject.Direction.Up;
+                            Tiles[y - 1][x].OpenEdges &= ~GenObject.Direction.Down;
                         }
                     }
                     else
-                        Tiles[x, y] = null;
+                        Tiles[y][x] = null;
                 }
             }
 

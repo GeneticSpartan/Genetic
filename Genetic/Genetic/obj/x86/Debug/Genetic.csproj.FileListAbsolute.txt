@@ -22,3 +22,11 @@ D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb
 C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\auto_tiles.xnb
 C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Content\grayscale.xnb
 D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.csprojResolveAssemblyReference.cache
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.exe.manifest
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.application
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.exe.manifest
+C:\Users\Tyler\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.application
+D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.exe.manifest
+D:\Games\Genetic\Genetic\Genetic\bin\x86\Debug\Genetic.application
+D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.exe.manifest
+D:\Games\Genetic\Genetic\Genetic\obj\x86\Debug\Genetic.application

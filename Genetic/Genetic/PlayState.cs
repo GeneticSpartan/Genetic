@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
@@ -46,9 +47,15 @@ namespace Genetic
 
         public GenProgressBar ProgressBar;
 
+        public Stopwatch watch;
+
         public override void Create()
         {
             base.Create();
+
+            // Set the world bounds before creating any object groups.
+            // This allows the quadtrees in each group to be sized correctly.
+            GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width, GenG.Game.Height * 4);
 
             /*Map = new GenTilemap();
 
@@ -74,8 +81,8 @@ namespace Genetic
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,2,2,2,2,2,2,2,2,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,1\n" +
                 "1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,2,0,1\n" +
-                "1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
-                , 16, 16, GenTilemap.ImageAuto);
+                "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"
+                , 16, 16, null);
             Add(Map);*/
 
             Cave = new GenCave();
@@ -120,10 +127,10 @@ namespace Genetic
             ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Random, GenMove.Axis.Both, GenPath.Movement.Instant);
             Add(Chain);
             
-            Boxes = new GenGroup();
+            Boxes = new GenGroup(true);
             Add(Boxes);
 
-            for (int i = 0; i < 5; i++)
+            for (int i = 0; i < 10; i++)
             {
                 for (int j = 0; j < 5; j++)
                 {
@@ -286,9 +293,6 @@ namespace Genetic
             //GenG.Camera.AddTarget(Warthog3);
             //GenG.Camera.SetCameraView(0, 0, GenG.Game.Width, GenG.Game.Height / 2);
 
-            GenG.WorldBounds = new Rectangle(-GenG.TitleSafeArea.Left, -GenG.TitleSafeArea.Top, GenG.Game.Width * 4, GenG.Game.Height * 4);
-            GenG.Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
-
             //camera2.Flash(1f, 1f, Color.Black);
             //camera2.FollowStrength = 0.05f;
             //camera2.AddTarget(Player);
@@ -306,24 +310,34 @@ namespace Genetic
 
             //Warthog3.SetPath(Path);
             //Warthog3.PathSpeed = 100;
+
+            watch = new Stopwatch();
         }
 
         public override void Update()
         {
             base.Update();
-            
+
             // Do collision checking first.
             GenG.Collide(Player, Text);
-            GenG.Collide(Cave, Player, HitCave);
+            GenG.Collide(Cave, Player);
             GenG.Collide(Cave, Boxes);
-            //GenG.Collide(Player, Boxes, HitBox, true, GenObject.Direction.Up);
-            //GenG.Collide(Boxes, Boxes);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
             //GenG.Collide(Cave, Warthog3);
             //GenG.Collide(Player, Warthog3);
-            GenG.Collide(Cave, Emitter);
             //GenG.Collide(Player, Warthog4);
+
+            /*watch.Reset();
+            watch.Start();
+
+            GenG.Collide(Cave, Emitter);
+
+            watch.Stop();
+            Debug.WriteLine(watch.ElapsedTicks);*/
+
+            GenG.Collide(Player, Boxes);
+            GenG.Collide(Boxes, Boxes);
 
             if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
@@ -355,7 +369,7 @@ namespace Genetic
             GenMove.AccelerateToPoint(Cloth, Player.CenterPosition, Player.Velocity.Length() * 3, 70);
 
             Warthog4.Velocity.X = GenU.SineWave(0, 2, 200);
-            Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
+            //Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
 
             //Warthog3.Rotation = GenMove.VectortoAngle(Warthog3.CenterPosition, Player.CenterPosition);
             //GenMove.AccelerateAtAngle(Warthog3, Warthog3.Rotation, 500);
@@ -386,7 +400,7 @@ namespace Genetic
 
             ProgressBar.Value = GenU.SineWave(50, 2, 51);
 
-            Cloth.LineColor = new Color(0.5f, (float)MathHelper.Lerp(0, 1, GenU.SineWave(0.5f, 10f, 0.5f)), 0.5f);
+            //Cloth.LineColor = new Color(0.5f, (float)MathHelper.Lerp(0, 1, GenU.SineWave(0.5f, 10f, 0.5f)), 0.5f);
 
             //Player.Alpha = GenU.SineWave(0.5f, 2f, 0.5f);
 
@@ -407,7 +421,7 @@ namespace Genetic
             GenG.Camera.Fade(2, Color.Black, EndGame);
             //camera2.Fade(2, Color.White);
 
-            ((GenSprite)e.Object2).Flicker(40f, 2f, Color.OrangeRed, true);
+            ((GenSprite)e.ObjectB).Flicker(40f, 2f, Color.OrangeRed, true);
         }
 
         public void EndGame()
@@ -438,12 +452,12 @@ namespace Genetic
         public void HitBox(GenCollideEvent e)
         {
             //e.Object1.Velocity.Y = -200;
-            ((GenSprite)e.Object2).Color = GenU.RandomColor();
+            ((GenSprite)e.ObjectB).Color = GenU.RandomColor();
         }
 
         public void HitCave(GenCollideEvent e)
         {
-            ((GenSprite)e.Object2).Color = Color.Red;
+            ((GenSprite)e.ObjectB).Color = Color.Red;
             //e.Object2.Exists = false;
         }
 

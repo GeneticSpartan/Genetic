@@ -14,6 +14,8 @@ namespace Genetic
 {
     public static class GenG
     {
+        private static string fileSize;
+
         public enum DrawType
         {
             // Draws using the point clamp sampler state to achieve sharp texture edges, ideal for pixel art.
@@ -132,6 +134,12 @@ namespace Genetic
         /// </summary>
         private static float _updateTimer = 0f;
 
+        // A counter used to keep track of the number of frames drawn per second.
+        private static int fpsFrameCount = 0;
+
+        // A string used to display the current number of frames drawn per second.
+        private static string currentFps = "";
+
         /// <summary>
         /// A stopwatch used to calculate the game's frame rate.
         /// </summary>
@@ -177,16 +185,6 @@ namespace Genetic
         /// The mouse input used for checking button presses and releases.
         /// </summary>
         private static GenMouse _mouse;
-
-        /// <summary>
-        /// A quadtree data structure used to partition the screen space for faster object-to-object checking.
-        /// </summary>
-        public static GenQuadtree Quadtree;
-
-        /// <summary>
-        /// A list used to contain objects retrieved from the quadtree.
-        /// </summary>
-        private static List<GenBasic> _quadtreeObjects = new List<GenBasic>();
 
         #region Volume Fields
         /// <summary>
@@ -329,7 +327,9 @@ namespace Genetic
             _gamePads.Add(PlayerIndex.Four, new GenGamePad(PlayerIndex.Four));
 
             _mouse = new GenMouse();
-            Quadtree = new GenQuadtree(0, 0, Game.Width, Game.Height);
+
+            // Start the frame rate timer.
+            _stopwatch.Start();
 
             // Create the volume control display.
             _volumeDisplay = new GenGroup();
@@ -467,9 +467,6 @@ namespace Genetic
 
                     _state.Draw();
 
-                    if (IsDebug)
-                        Quadtree.Draw();
-
                     SpriteBatch.End();
 
                     // Draw the camera effects.
@@ -510,10 +507,22 @@ namespace Genetic
 
             SpriteBatch.Begin();
             _volumeDisplay.Draw();
-            _stopwatch.Stop();
-            SpriteBatch.DrawString(Font, ((int)(1000f / (float)_stopwatch.ElapsedMilliseconds)).ToString(), new Vector2(100, 200), Color.White);
-            _stopwatch.Reset();
-            _stopwatch.Start();
+
+            if (_stopwatch.ElapsedMilliseconds >= 1000)
+            {
+                _stopwatch.Reset();
+                _stopwatch.Start();
+                fileSize = GC.GetTotalMemory(false).ToString();
+                currentFps = fpsFrameCount.ToString() + " GC:" + fileSize;
+                fpsFrameCount = 0;
+            }
+            else
+            {
+                fpsFrameCount++;
+            }
+
+            SpriteBatch.DrawString(Font, currentFps, new Vector2(100, 200), Color.White);
+
             SpriteBatch.End();
         }
 
@@ -581,17 +590,6 @@ namespace Genetic
         /// <returns>True if an overlap occurs, false if not.</returns>
         public static bool Overlap(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
-            Quadtree.Clear();
-
-            // Insert the objects into the quadtree for faster overlap checks.
-            Quadtree.Insert(objectOrGroupA);
-
-            // If the second object or group is the same as the first, do not insert it into the quadtree twice.
-            if (!objectOrGroupA.Equals(objectOrGroupB))
-                Quadtree.Insert(objectOrGroupB);
-
-            _quadtreeObjects.Clear();
-
             bool overlap = false;
 
             if (objectOrGroupA is GenObject)
@@ -605,22 +603,13 @@ namespace Genetic
                 }
                 else if (objectOrGroupB is GenGroup)
                 {
-                    // Retrieve the objects from the quadtree that the first object may overlap with.
-                    GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)objectOrGroupA).BoundingBox);
-
-                    for (int i = 0; i < _quadtreeObjects.Count; i++)
+                    if (((GenGroup)objectOrGroupB).Quadtree != null)
                     {
-                        if (separate)
-                        {
-                            if (((GenObject)objectOrGroupA).Collide((GenObject)_quadtreeObjects[i], callback, penetrate, collidableEdges) && !overlap)
-                                overlap = true;
-                        }
-                        else
-                        {
-                            if (((GenObject)objectOrGroupA).Overlap((GenObject)_quadtreeObjects[i], callback) && !overlap)
-                                overlap = true;
-                        }
+                        if (((GenGroup)objectOrGroupB).Quadtree.Overlap((GenObject)objectOrGroupA, callback, separate, penetrate, collidableEdges) && !overlap)
+                            overlap = true;
                     }
+                    else
+                        throw new Exception(String.Format("{0} must have a quadtree containing its members before being used in Overlap or Collide. Set useQuadtree to true in its constructor to fix this.", objectOrGroupB));
                 }
             }
             else if (objectOrGroupA is GenGroup)
@@ -642,23 +631,10 @@ namespace Genetic
                     }
                     else if (objectOrGroupB is GenGroup)
                     {
-                        _quadtreeObjects.Clear();
-
-                        // Retrieve the objects from the quadtree that the current object may overlap with.
-                        GenG.Quadtree.Retrieve(_quadtreeObjects, ((GenObject)((GenGroup)objectOrGroupA).Members[i]).BoundingBox);
-
-                        for (int j = 0; j < _quadtreeObjects.Count; j++)
+                        if (((GenGroup)objectOrGroupB).Quadtree != null)
                         {
-                            if (separate)
-                            {
-                                if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Collide((GenObject)_quadtreeObjects[j], callback, penetrate, collidableEdges) && !overlap)
-                                    overlap = true;
-                            }
-                            else
-                            {
-                                if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Overlap((GenObject)_quadtreeObjects[j], callback) && !overlap)
-                                    overlap = true;
-                            }
+                            if (((GenGroup)objectOrGroupB).Quadtree.Overlap((GenObject)((GenGroup)objectOrGroupA).Members[i], callback, separate, penetrate, collidableEdges) && !overlap)
+                                overlap = true;
                         }
                     }
                 }
@@ -675,7 +651,7 @@ namespace Genetic
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the second object or group of objects are collidable.</param>
-        /// <returns>True is a collision occurs, false if not.</returns>
+        /// <returns>True if a collision occurs, false if not.</returns>
         public static bool Collide(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             if (objectOrGroupA is GenTilemap)

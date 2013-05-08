@@ -22,15 +22,32 @@ namespace Genetic
         protected bool _updateMembers;
 
         /// <summary>
+        /// A quadtree data structure for group member objects.
+        /// Useful for faster collision detection against objects in the quadtree.
+        /// </summary>
+        public GenQuadtree Quadtree;
+
+        /// <summary>
         /// A flag used to determine if the group should be cleared.
         /// </summary>
         protected bool _clear;
 
-        public GenGroup()
+        /// <summary>
+        /// A group used to manage a list of objects inherited from GenBasic.
+        /// </summary>
+        /// <param name="useQuadtree">A flag used to determine if the group will use a quadtree for overlap/collision detection with other objects or groups. Use false when overlapping/colliding with tilemaps.</param>
+        public GenGroup(bool useQuadtree = false)
         {
             Members = new List<GenBasic>();
             _activeMembers = new List<GenBasic>();
             _updateMembers = false;
+
+            // If the group uses a quadtree for collision detection, set its position and size using the world bounding box.
+            if (useQuadtree)
+                Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
+            else
+                Quadtree = null;
+
             _clear = false;
         }
 
@@ -78,6 +95,9 @@ namespace Genetic
                     if (member.Exists && member.Active)
                         member.Update();
                 }
+
+                if (Quadtree != null)
+                    Quadtree.Update();
             }
         }
 
@@ -115,6 +135,9 @@ namespace Genetic
                             member.DrawDebug();
                     }
                 }
+
+                if (GenG.IsDebug && (Quadtree != null))
+                    Quadtree.Draw();
             }
         }
 
@@ -131,6 +154,12 @@ namespace Genetic
 
             Members.Add(basic);
             _updateMembers = true;
+
+            if (Quadtree != null)
+            {
+                if ((basic is GenObject) || (basic is GenGroup))
+                    Quadtree.Insert(basic);
+            }
 
             return basic;
         }
@@ -355,6 +384,7 @@ namespace Genetic
         public void Clear()
         {
             Members.Clear();
+            Quadtree.Clear();
             _clear = true;
         }
     }

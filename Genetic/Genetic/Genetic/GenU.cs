@@ -14,6 +14,12 @@ namespace Genetic
         /// </summary>
         private static Random _random;
 
+        /// <summary>
+        /// A global container used to store vector calculation results.
+        /// Useful for reducing Vector2 allocations.
+        /// </summary>
+        private static Vector2 _vector = Vector2.Zero;
+
         public static void Initialize()
         {
             SetRandomSeed(GenG.GlobalSeed);
@@ -116,12 +122,11 @@ namespace Genetic
 
                 if (Math.Abs(distanceY) < minDistanceY)
                 {
-                    Vector2 intersectDepth = new Vector2();
+                    // Get the intersection depth.
+                    _vector.X = (distanceX > 0) ? minDistanceX - distanceX : -minDistanceX - distanceX;
+                    _vector.Y = (distanceY > 0) ? minDistanceY - distanceY : -minDistanceY - distanceY;
 
-                    intersectDepth.X = (distanceX > 0) ? minDistanceX - distanceX : -minDistanceX - distanceX;
-                    intersectDepth.Y = (distanceY > 0) ? minDistanceY - distanceY : -minDistanceY - distanceY;
-
-                    return intersectDepth;
+                    return _vector;
                 }
             }
 
@@ -136,10 +141,10 @@ namespace Genetic
         /// <returns>A Vector2 containing the positive or negative distances between the edges of two bounding boxes on the x-axis and y-axis.</returns>
         public static Vector2 GetDistanceAABB(GenAABB box1, GenAABB box2)
         {
-            float distanceX = Math.Abs(box1.MidpointX - box2.MidpointX) - (box1.HalfWidth + box2.HalfWidth);
-            float distanceY = Math.Abs(box1.MidpointY - box2.MidpointY) - (box1.HalfHeight + box2.HalfHeight);
+            _vector.X = Math.Abs(box1.MidpointX - box2.MidpointX) - (box1.HalfWidth + box2.HalfWidth);
+            _vector.Y = Math.Abs(box1.MidpointY - box2.MidpointY) - (box1.HalfHeight + box2.HalfHeight);
 
-            return new Vector2(distanceX, distanceY);
+            return _vector;
         }
 
         /// <summary>

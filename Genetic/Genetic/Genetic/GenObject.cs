@@ -181,6 +181,18 @@ namespace Genetic
         /// </summary>
         protected GenObject _platform;
 
+        /// <summary>
+        /// A global container used to store vector calculation results.
+        /// Useful for reducing Vector2 allocations.
+        /// </summary>
+        private static Vector2 _distancesVector = Vector2.Zero;
+
+        /// <summary>
+        /// A global container used to store vector calculation results.
+        /// Useful for reducing Vector2 allocations.
+        /// </summary>
+        private static Vector2 _collisionNormalVector = Vector2.Zero;
+
         #region Path Fields
         /// <summary>
         /// A reference to the current path that the object is following.
@@ -594,15 +606,10 @@ namespace Genetic
             _moveDistance.Y = Velocity.Y * GenG.TimeStep;
 
             // Calculate the movement bounding box.
-            float minLeft = Math.Min(_boundingBox.Left, _boundingBox.Left + _moveDistance.X);
-            float minTop = Math.Min(_boundingBox.Top, _boundingBox.Top + _moveDistance.Y);
-            float maxRight = Math.Max(_boundingBox.Right, _boundingBox.Right + _moveDistance.X);
-            float maxBottom = Math.Max(_boundingBox.Bottom, _boundingBox.Bottom + _moveDistance.Y);
-
-            _moveBounds.X = minLeft;
-            _moveBounds.Y = minTop;
-            _moveBounds.Width = maxRight - minLeft;
-            _moveBounds.Height = maxBottom - minTop;
+            _moveBounds.X = Math.Min(_boundingBox.Left, _boundingBox.Left + _moveDistance.X);
+            _moveBounds.Y = Math.Min(_boundingBox.Top, _boundingBox.Top + _moveDistance.Y);
+            _moveBounds.Width = Math.Max(_boundingBox.Right, _boundingBox.Right + _moveDistance.X) - _moveBounds.X;
+            _moveBounds.Height = Math.Max(_boundingBox.Bottom, _boundingBox.Bottom + _moveDistance.Y) - _moveBounds.Y;
 
             return _moveBounds;
         }
@@ -644,7 +651,7 @@ namespace Genetic
         /// Applys collision detection and response against another object that may overlap this object.
         /// </summary>
         /// <param name="gameObject">The object to check for a collision.</param>
-        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
+        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
         /// <returns>True if a collision occurs, false if not.</returns>
@@ -657,32 +664,53 @@ namespace Genetic
 
                 if (Overlap(gameObject))
                 {
-                    Vector2 distances = GenU.GetDistanceAABB(_boundingBox, gameObject.BoundingBox);
-                    Vector2 collisionNormal;
+                    _distancesVector = GenU.GetDistanceAABB(_boundingBox, gameObject.BoundingBox);
 
-                    if (distances.X > distances.Y)
-                        collisionNormal = (_boundingBox.MidpointX > gameObject.BoundingBox.MidpointX) ? new Vector2(-1, 0) : new Vector2(1, 0);
-                    else
-                        collisionNormal = (_boundingBox.MidpointY > gameObject.BoundingBox.MidpointY) ? new Vector2(0, -1) : new Vector2(0, 1);
-
-                    if (((collisionNormal.X == 1) && ((collidableEdges & GenObject.Direction.Left) == GenObject.Direction.Left)) ||
-                        ((collisionNormal.X == -1) && ((collidableEdges & GenObject.Direction.Right) == GenObject.Direction.Right)) ||
-                        ((collisionNormal.Y == 1) && ((collidableEdges & GenObject.Direction.Up) == GenObject.Direction.Up)) ||
-                        ((collisionNormal.Y == -1) && ((collidableEdges & GenObject.Direction.Down) == GenObject.Direction.Down)))
+                    if (_distancesVector.X > _distancesVector.Y)
                     {
-                        float distance = Math.Max(distances.X, distances.Y);
-                        float remove;
+                        if (_boundingBox.MidpointX > gameObject.BoundingBox.MidpointX)
+                        {
+                            _collisionNormalVector.X = -1;
+                            _collisionNormalVector.Y = 0;
+                        }
+                        else
+                        {
+                            _collisionNormalVector.X = 1;
+                            _collisionNormalVector.Y = 0;
+                        }
+                    }
+                    else
+                    {
+                        if (_boundingBox.MidpointY > gameObject.BoundingBox.MidpointY)
+                        {
+                            _collisionNormalVector.X = 0;
+                            _collisionNormalVector.Y = -1;
+                        }
+                        else
+                        {
+                            _collisionNormalVector.X = 0;
+                            _collisionNormalVector.Y = 1;
+                        }
+                    }
+
+                    if (((_collisionNormalVector.X == 1) && ((collidableEdges & GenObject.Direction.Left) == GenObject.Direction.Left)) ||
+                        ((_collisionNormalVector.X == -1) && ((collidableEdges & GenObject.Direction.Right) == GenObject.Direction.Right)) ||
+                        ((_collisionNormalVector.Y == 1) && ((collidableEdges & GenObject.Direction.Up) == GenObject.Direction.Up)) ||
+                        ((_collisionNormalVector.Y == -1) && ((collidableEdges & GenObject.Direction.Down) == GenObject.Direction.Down)))
+                    {
+                        float distance = Math.Max(_distancesVector.X, _distancesVector.Y);
+                        float remove = 0f;
 
                         // Apply a different collision response against tiles for pixel-perfect accuracy.
                         if (gameObject is GenTile)
                         {
-                            remove = Vector2.Dot(-Velocity, collisionNormal) + Math.Max(distance, 0) / GenG.TimeStep;
+                            remove = Vector2.Dot(-Velocity, _collisionNormalVector) + Math.Max(distance, 0) / GenG.TimeStep;
 
                             if (remove < 0)
                             {
-                                if (collisionNormal.X != 0)
+                                if (_collisionNormalVector.X != 0)
                                 {
-                                    if (collisionNormal.X == -1)
+                                    if (_collisionNormalVector.X == -1)
                                         X = gameObject.BoundingBox.Right;
                                     else
                                         X = gameObject.X - _boundingBox.Width;
@@ -691,7 +719,7 @@ namespace Genetic
                                 }
                                 else
                                 {
-                                    if (collisionNormal.Y == -1)
+                                    if (_collisionNormalVector.Y == -1)
                                         Y = gameObject.BoundingBox.Bottom;
                                     else
                                         Y = gameObject.Y - _boundingBox.Height;
@@ -702,7 +730,7 @@ namespace Genetic
                         }
                         else
                         {
-                            float relativeNormalVelocity = Vector2.Dot(gameObject.Velocity - Velocity, collisionNormal);
+                            float relativeNormalVelocity = Vector2.Dot(gameObject.Velocity - Velocity, _collisionNormalVector);
 
                             if (penetrate)
                                 remove = relativeNormalVelocity + distance / GenG.TimeStep;
@@ -715,31 +743,31 @@ namespace Genetic
 
                                 if (!Immovable)
                                 {
-                                    Velocity += impulse * collisionNormal * gameObject.Mass;
+                                    Velocity += impulse * _collisionNormalVector * gameObject.Mass;
 
                                     if (!penetrate)
                                     {
                                         float penetration = Math.Min(distance, 0);
 
-                                        if (collisionNormal.X != 0)
-                                            X += penetration * collisionNormal.X;
+                                        if (_collisionNormalVector.X != 0)
+                                            X += penetration * _collisionNormalVector.X;
                                         else
-                                            Y += penetration * collisionNormal.Y;
+                                            Y += penetration * _collisionNormalVector.Y;
                                     }
                                 }
 
                                 if (!gameObject.Immovable)
                                 {
-                                    gameObject.Velocity -= impulse * collisionNormal * Mass;
+                                    gameObject.Velocity -= impulse * _collisionNormalVector * Mass;
 
                                     if (!penetrate)
                                     {
                                         float penetration = Math.Min(distance, 0);
 
-                                        if (collisionNormal.X != 0)
-                                            gameObject.X -= penetration * collisionNormal.X;
+                                        if (_collisionNormalVector.X != 0)
+                                            gameObject.X -= penetration * _collisionNormalVector.X;
                                         else
-                                            gameObject.Y -= penetration * collisionNormal.Y;
+                                            gameObject.Y -= penetration * _collisionNormalVector.Y;
                                     }
                                 }
                             }
@@ -747,9 +775,9 @@ namespace Genetic
 
                         if (remove < 0)
                         {
-                            if (collisionNormal.X != 0)
+                            if (_collisionNormalVector.X != 0)
                             {
-                                if (collisionNormal.X == 1)
+                                if (_collisionNormalVector.X == 1)
                                 {
                                     Touching |= Direction.Right;
                                     gameObject.Touching |= Direction.Left;
@@ -762,7 +790,7 @@ namespace Genetic
                             }
                             else
                             {
-                                if (collisionNormal.Y == 1)
+                                if (_collisionNormalVector.Y == 1)
                                 {
                                     Touching |= Direction.Down;
                                     gameObject.Touching |= Direction.Up;

@@ -6,29 +6,29 @@ namespace Genetic
 
     public class GenCollideEvent : EventArgs
     {
-        private GenObject _object1;
-        private GenObject _object2;
+        private GenObject _objectA;
+        private GenObject _objectB;
 
         /// <summary>
         /// Gets the first object involved in the overlap.
         /// </summary>
-        public GenObject Object1
+        public GenObject ObjectA
         {
-            get { return _object1; }
+            get { return _objectA; }
         }
 
         /// <summary>
         /// Gets the second object involved in the overlap.
         /// </summary>
-        public GenObject Object2
+        public GenObject ObjectB
         {
-            get { return _object2; }
+            get { return _objectB; }
         }
 
-        public GenCollideEvent(GenObject object1, GenObject object2)
+        public GenCollideEvent(GenObject objectA, GenObject objectB)
         {
-            _object1 = object1;
-            _object2 = object2;
+            _objectA = objectA;
+            _objectB = objectB;
         }
     }
 }

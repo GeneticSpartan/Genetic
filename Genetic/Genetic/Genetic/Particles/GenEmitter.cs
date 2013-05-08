@@ -209,8 +209,10 @@ namespace Genetic.Particles
 
             if (_currentParticle != null)
             {
-                _currentParticle.X = GenU.Random((int)_boundingBox.Left, (int)(_boundingBox.Right + 1));
-                _currentParticle.Y = GenU.Random((int)_boundingBox.Top, (int)(_boundingBox.Bottom + 1));
+                // Give the particle a random x and y position, keeping the center of the particle's bounding box within the bounding box of the emitter.
+                _currentParticle.X = GenU.Random((int)(_boundingBox.Left - _currentParticle.BoundingBox.HalfWidth), (int)(_boundingBox.Right + _currentParticle.BoundingBox.HalfWidth + 1));
+                _currentParticle.Y = GenU.Random((int)(_boundingBox.Top - _currentParticle.BoundingBox.HalfHeight), (int)(_boundingBox.Bottom + _currentParticle.BoundingBox.HalfHeight + 1));
+
                 _currentParticle.Velocity.X = GenU.Random(MinParticleSpeedX, MaxParticleSpeedX + 1);
                 _currentParticle.Velocity.Y = GenU.Random(MinParticleSpeedY, MaxParticleSpeedY + 1);
 
@@ -261,11 +263,7 @@ namespace Genetic.Particles
         public void MakeParticles(Texture2D texture, int width, int height, int count = 1)
         {
             for (int i = 0; i < count; i++)
-            {
-                GenParticle particle = new GenParticle(0, 0, null, width, height);
-                particle.LoadTexture(texture);
-                Add(particle);
-            }
+                Add(new GenParticle(0, 0, null, width, height)).LoadTexture(texture);
         }
 
         /// <summary>
