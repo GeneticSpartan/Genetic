@@ -88,6 +88,7 @@
     <Compile Include="Genetic\GenAnimation.cs" />
     <Compile Include="Genetic\GenCave.cs" />
     <Compile Include="Genetic\GenControl.cs" />
+    <Compile Include="Genetic\GenScreenEffect.cs" />
     <Compile Include="Genetic\Gui\GenProgressBar.cs" />
     <Compile Include="Genetic\Particles\GenEmitter.cs" />
     <Compile Include="Genetic\GenEvent.cs" />
@@ -95,7 +96,6 @@
     <Compile Include="Genetic\Input\GenKeyboard.cs" />
     <Compile Include="Genetic\Input\GenMouse.cs" />
     <Compile Include="Genetic\GenQuadtree.cs" />
-    <Compile Include="Genetic\GenSound.cs" />
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
@@ -105,6 +105,8 @@
     <Compile Include="Genetic\GenMove.cs" />
     <Compile Include="Genetic\Path\GenPathNode.cs" />
     <Compile Include="Genetic\Physics\GenVerlet.cs" />
+    <Compile Include="Genetic\Sound\GenSound.cs" />
+    <Compile Include="Genetic\Sound\GenSoundInstance.cs" />
     <Compile Include="MenuState.cs" />
     <Compile Include="Genetic\GenBasic.cs" />
     <Compile Include="Genetic\GenCamera.cs" />

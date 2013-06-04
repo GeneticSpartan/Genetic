@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 
 using Genetic.Input;
+using Genetic.Sound;
 
 namespace Genetic
 {
@@ -76,6 +77,16 @@ namespace Genetic
         /// Useful for creating an AI-controlled object.
         /// </summary>
         public bool UseInput;
+
+        /// <summary>
+        /// A flag used to determine if keyboard input should be checked.
+        /// </summary>
+        public bool UseKeyboard;
+
+        /// <summary>
+        /// A flag used to determine if game pad input should be checked.
+        /// </summary>
+        public bool UseGamePad;
 
         /// <summary>
         /// The speed of the object moving or accelerating horizontally.
@@ -213,6 +224,8 @@ namespace Genetic
             _gamePadControls = new Buttons[5];
             ButtonsSpecial = GenGamePad.ButtonsSpecial.None;
             UseInput = true;
+            UseKeyboard = true;
+            UseGamePad = true;
             MovementSpeedX = 0;
             MovementSpeedY = 0;
             JumpSpeed = 0;
@@ -257,69 +270,77 @@ namespace Genetic
             {
                 if (MovementSpeedX != 0)
                 {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]))
-                        MoveX(-1f);
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]))
-                        MoveX(1f);
-                    else if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                    if (UseKeyboard)
                     {
-                        if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
-                        {
-                            if (GenG.GamePads[PlayerIndex].ThumbStickLeftX != 0)
-                                MoveX(GenG.GamePads[PlayerIndex].ThumbStickLeftX);
-                            else
-                                StopX();
-                        }
-                        else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
-                        {
-                            if (GenG.GamePads[PlayerIndex].ThumbStickRightX != 0)
-                                MoveX(GenG.GamePads[PlayerIndex].ThumbStickRightX);
-                            else
-                                StopX();
-                        }
+                        if (UseKeyboard && GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[0]))
+                            MoveX(-1f);
+                        else if (UseKeyboard && GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[1]))
+                            MoveX(1f);
                     }
-                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
-                        MoveX(-1f);
-                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
-                        MoveX(1f);
-                    else
-                        StopX();
+                    
+                    if (UseGamePad)
+                    {
+                        if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                        {
+                            if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
+                            {
+                                if (GenG.GamePads[PlayerIndex].ThumbStickLeftX != 0)
+                                    MoveX(GenG.GamePads[PlayerIndex].ThumbStickLeftX);
+                            }
+                            else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
+                            {
+                                if (GenG.GamePads[PlayerIndex].ThumbStickRightX != 0)
+                                    MoveX(GenG.GamePads[PlayerIndex].ThumbStickRightX);
+                            }
+                        }
+                        else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[0]))
+                            MoveX(-1f);
+                        else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[1]))
+                            MoveX(1f);
+                    }
                 }
 
                 if (MovementSpeedY != 0)
                 {
-                    if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]))
-                        MoveY(-1f);
-                    else if (GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]))
-                        MoveY(1f);
-                    else if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                    if (UseKeyboard)
                     {
-                        if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
-                        {
-                            if (GenG.GamePads[PlayerIndex].ThumbStickLeftY != 0)
-                                MoveY(GenG.GamePads[PlayerIndex].ThumbStickLeftY);
-                            else
-                                StopY();
-                        }
-                        else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
-                        {
-                            if (GenG.GamePads[PlayerIndex].ThumbStickRightY != 0)
-                                MoveY(GenG.GamePads[PlayerIndex].ThumbStickRightY);
-                            else
-                                StopY();
-                        }
+                        if (UseKeyboard && GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[2]))
+                            MoveY(-1f);
+                        else if (UseKeyboard && GenG.Keyboards[PlayerIndex].IsPressed(_keyboardControls[3]))
+                            MoveY(1f);
                     }
-                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
-                        MoveY(-1f);
-                    else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
-                        MoveY(1f);
-                    else
-                        StopY();
+
+                    if (UseGamePad)
+                    {
+                        if (ButtonsSpecial != GenGamePad.ButtonsSpecial.None)
+                        {
+                            if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickLeft)
+                            {
+                                if (GenG.GamePads[PlayerIndex].ThumbStickLeftY != 0)
+                                    MoveY(GenG.GamePads[PlayerIndex].ThumbStickLeftY);
+                            }
+                            else if (ButtonsSpecial == GenGamePad.ButtonsSpecial.ThumbStickRight)
+                            {
+                                if (GenG.GamePads[PlayerIndex].ThumbStickRightY != 0)
+                                    MoveY(GenG.GamePads[PlayerIndex].ThumbStickRightY);
+                            }
+                        }
+                        else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[2]))
+                            MoveY(-1f);
+                        else if (GenG.GamePads[PlayerIndex].IsPressed(_gamePadControls[3]))
+                            MoveY(1f);
+                    }
                 }
 
-                if (GenG.Keyboards[PlayerIndex].JustPressed(_keyboardControls[4]) || GenG.GamePads[PlayerIndex].JustPressed(_gamePadControls[4]))
+                if ((UseKeyboard && GenG.Keyboards[PlayerIndex].JustPressed(_keyboardControls[4])) || (UseGamePad && GenG.GamePads[PlayerIndex].JustPressed(_gamePadControls[4])))
                     Jump();
             }
+
+            if (!IsMovingX())
+                StopX();
+
+            if (!IsMovingY())
+                StopY();
 
             if (ControlMode == ControlType.Platformer)
             {
@@ -458,7 +479,13 @@ namespace Genetic
             if (MovementType == Movement.Instant)
                 ControlObject.Velocity.X = MathHelper.Clamp(MovementSpeedX, 0, ControlObject.MaxVelocity.X) * speedFactor;
             else if (MovementType == Movement.Accelerates)
+            {
+                // If the control object is being moved in the opposite direction it is currently moving, set its x velocity to 0 to prevent delayed movement from acceleration.
+                if (((ControlObject.Velocity.X < 0) && (speedFactor > 0)) || ((ControlObject.Velocity.X > 0) && (speedFactor < 0)))
+                    ControlObject.Velocity.X = 0;
+
                 ControlObject.Acceleration.X = MovementSpeedX * speedFactor;
+            }
 
             if (speedFactor < 0)
             {
@@ -532,6 +559,11 @@ namespace Genetic
 
                 _inAir = true;
                 SetState(State.Jumping);
+
+                // Unset the touching down bit field of the control object after jumping.
+                // Prevents the control object's animation from being set back to the move animation during a touching down check in Post Update.
+                if (ControlObject.IsTouching(GenObject.Direction.Down))
+                    ControlObject.Touching ^= GenObject.Direction.Down;
 
                 if (JumpCallback != null)
                     JumpCallback.Invoke();

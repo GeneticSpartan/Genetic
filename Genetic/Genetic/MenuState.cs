@@ -18,7 +18,7 @@ namespace Genetic
             GenG.Camera.BgColor = Color.IndianRed;
 
             startGame = new GenText("Press Start", GenG.Camera.CameraView.Width / 2, GenG.Camera.CameraView.Height / 2, 0, 20);
-            startGame.TextAlignment = GenText.TextAlign.CENTER;
+            startGame.TextAlignment = GenText.TextAlign.Center;
             startGame.HasShadow = true;
             startGame.ShadowColor = Color.DarkRed;
             startGame.Deceleration.Y = 700;

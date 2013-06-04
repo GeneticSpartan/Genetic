@@ -1,6 +1,7 @@
 ﻿using System;
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic.Gui
 {
@@ -66,8 +67,8 @@ namespace Genetic.Gui
             }
         }
 
-        public GenProgressBar(float x = 0, float y = 0, string textureFile = null, int width = 100, int height = 10)
-            : base(x, y, textureFile, width, height)
+        public GenProgressBar(float x = 0, float y = 0, Texture2D texture = null, int width = 100, int height = 10)
+            : base(x, y, texture, width, height)
         {
             _progressRect = new Rectangle(0, 0, width, height);
             MinValue = 0;

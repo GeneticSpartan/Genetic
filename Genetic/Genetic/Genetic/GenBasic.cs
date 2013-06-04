@@ -55,6 +55,14 @@
         }
 
         /// <summary>
+        /// Override this method to add draw overlay logic.
+        /// </summary>
+        public virtual void DrawOverlay()
+        {
+
+        }
+
+        /// <summary>
         /// Override this method to add debug drawing logic.
         /// </summary>
         public virtual void DrawDebug()

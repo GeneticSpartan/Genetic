@@ -3,15 +3,10 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 
-namespace Genetic
+namespace Genetic.Sound
 {
-    public class GenSound : GenBasic
+    public class GenSoundInstance : GenSound
     {
-        /// <summary>
-        /// The sound effect that is loaded from a sound file.
-        /// </summary>
-        protected SoundEffect _sound;
-
         /// <summary>
         /// A playable sound effect instance that is created from the loaded sound effect.
         /// </summary>
@@ -152,20 +147,15 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Creates a playable sound.
+        /// Creates a playable sound instance.
         /// </summary>
         /// <param name="soundFile">The sound file to load.</param>
         /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
         /// <param name="looping">Determines if the sound is played on a loop.</param>
-        public GenSound(string soundFile = null, float volume = 1, bool looping = false)
+        public GenSoundInstance(string soundFile, float volume = 1, bool looping = false)
+            : base(soundFile)
         {
-            if (soundFile != null)
-                LoadSound(soundFile, volume, looping);
-            else
-            {
-                _sound = null;
-                _soundInstance = null;
-            }
+            LoadSound(soundFile, volume, looping);
 
             _follow = null;
             DistanceFading = false;
@@ -250,7 +240,7 @@ namespace Genetic
         /// <param name="looping">Determines if the sound is played on a loop.</param>
         public void LoadSound(string soundFile, float volume = 1, bool looping = false)
         {
-            _sound = GenG.Content.Load<SoundEffect>(soundFile);
+            //_sound = GenG.Content.Load<SoundEffect>(soundFile);
             _soundInstance = _sound.CreateInstance();
             Volume = volume;
             IsLooped = looping;
@@ -259,8 +249,12 @@ namespace Genetic
         /// <summary>
         /// Plays the sound.
         /// </summary>
-        public void Play()
+        /// <param name="forceReset">A flag used to determine if the sound should be reset before playing.</param>
+        public void Play(bool forceReset = true)
         {
+            if (forceReset)
+                Stop();
+
             _soundInstance.Play();
         }
 

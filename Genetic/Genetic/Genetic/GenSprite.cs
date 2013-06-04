@@ -82,8 +82,9 @@ namespace Genetic
         protected SpriteEffects _spriteEffect = SpriteEffects.None;
 
         /// <summary>
-        /// The factor by which the camera scroll values effect the sprite's position.
-        /// A default value of 1 means that the sprite will move with the camera scroll values exactly.
+        /// The factor by which the camera scroll values affect the sprite's draw position within a camera.
+        /// A value of 1 will move the sprite with the camera scroll values exactly.
+        /// A value of 0 will prevent the sprite from scrolling with the camera, and is useful for HUD elements.
         /// </summary>
         public float ScrollFactor = 1f;
 
@@ -221,16 +222,16 @@ namespace Genetic
 
         /// <param name="x">The x position of the sprite.</param>
         /// <param name="y">The y position of the sprite.</param>
-        /// <param name="textureFile">The sprite texture file to load.</param>
+        /// <param name="texture">The sprite texture.</param>
         /// <param name="width">The width of the object.</param>
         /// <param name="height">The height of the object.</param>
-        public GenSprite(float x = 0, float y = 0, string textureFile = null, int width = 1, int height = 1)
+        public GenSprite(float x = 0, float y = 0, Texture2D texture = null, int width = 1, int height = 1)
             : base(x, y, width, height)
         {
             _sourceRect = new Rectangle(0, 0, width, height);
 
-            if (textureFile != null)
-                LoadTexture(textureFile, true);
+            if (texture != null)
+                LoadTexture(texture, true);
             else
                 _texture = null;
 
@@ -411,8 +412,8 @@ namespace Genetic
         {
             if (useSprite)
             {
-                _origin.X = (int)(_sourceRect.Width * 0.5f);
-                _origin.Y = (int)(_sourceRect.Height * 0.5f);
+                _origin.X = _sourceRect.Width * 0.5f;
+                _origin.Y = _sourceRect.Height * 0.5f;
             }
             else
                 base.CenterOrigin();

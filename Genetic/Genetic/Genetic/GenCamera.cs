@@ -67,9 +67,9 @@ namespace Genetic
         public RenderTarget2D RenderTarget;
 
         /// <summary>
-        /// The texture used to draw camera effects such as background color, flash, and fade.
+        /// The texture used to draw the camera's background color.
         /// </summary>
-        protected Texture2D _fxTexture;
+        protected Texture2D _backgroundTexture;
 
         /// <summary>
         /// The alpha used when drawing a camera effect.
@@ -135,7 +135,7 @@ namespace Genetic
         /// <summary>
         /// The x and y positions of the point that the camera will follow, determined by the follow targets.
         /// </summary>
-        protected Vector2 _followPosition = Vector2.Zero;
+        public Vector2 FollowPosition = Vector2.Zero;
 
         /// <summary>
         /// The x and y distances from the follow target used in the leading follow style.
@@ -151,7 +151,7 @@ namespace Genetic
         /// <summary>
         /// The minimum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float MinZoom = 1f;
+        public float MinZoom;
 
         /// <summary>
         /// The maximum amount of camera zoom possible when following multiple targets.
@@ -199,59 +199,17 @@ namespace Genetic
         protected ShakeDirection _shakeDirection;
 
         /// <summary>
-        /// Determines if the camera is currently flashing.
+        /// The camera effect manager.
         /// </summary>
-        protected bool _flashing = false;
+        protected GenScreenEffect _cameraEffect;
 
         /// <summary>
-        /// The current intensity, or starting opacity, of the camera flash.
+        /// Gets the bounding rectangle of the camera.
         /// </summary>
-        protected float _flashIntensity = 0f;
-
-        /// <summary>
-        /// The current color of the camera flash.
-        /// </summary>
-        protected Color _flashColor;
-
-        /// <summary>
-        /// The current duration of the camera flash.
-        /// </summary>
-        protected float _flashDuration = 0f;
-
-        /// <summary>
-        /// The amount of time since the camera flash started, in seconds.
-        /// </summary>
-        protected float _flashTimer = 0f;
-
-        /// <summary>
-        /// The callback function that will invoke after the camera flash has finished.
-        /// </summary>
-        protected Action _flashCallback;
-
-        /// <summary>
-        /// Determines if the camera is currently fading.
-        /// </summary>
-        protected bool _fading = false;
-
-        /// <summary>
-        /// The current color of the camera fade.
-        /// </summary>
-        protected Color _fadeColor;
-
-        /// <summary>
-        /// The current duration of the camera fade.
-        /// </summary>
-        protected float _fadeDuration = 0f;
-
-        /// <summary>
-        /// The amount of time since the camera fade started, in seconds.
-        /// </summary>
-        protected float _fadeTimer = 0f;
-
-        /// <summary>
-        /// The callback function that will invoke after the camera fade has finished.
-        /// </summary>
-        protected Action _fadeCallback;
+        public Rectangle CameraRect
+        {
+            get { return _cameraRect; }
+        }
 
         /// <summary>
         /// Gets the bounding camera view according to the camera bounding rectangle, scroll positions, and zoom level.
@@ -367,13 +325,14 @@ namespace Genetic
             _cameraRect = new Rectangle(0, 0, width, height);
             _position = new Vector2(x, y);
             RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
-            _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
-            _fxTexture.SetData<Color>(new[] { Color.White });
+            _backgroundTexture = GenU.MakeTexture(Color.White, 1, 1);
+            _cameraEffect = new GenScreenEffect(_cameraRect);
             Origin = new Vector2(width * 0.5f, height * 0.5f);
             Scale = Vector2.One;
             _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
             Zoom = _initialZoom;
+            MinZoom = _initialZoom;
             Transform = Matrix.Identity;
         }
 
@@ -406,8 +365,8 @@ namespace Genetic
                     }
 
                     // Set the follow target to the center point between the minimum and maximum x and y values of all combined follow targets.
-                    _followPosition.X += ((followXMin + followXMax) * 0.5f - _followPosition.X) * _followStrength;
-                    _followPosition.Y += ((followYMin + followYMax) * 0.5f - _followPosition.Y) * _followStrength;
+                    FollowPosition.X += ((followXMin + followXMax) * 0.5f - FollowPosition.X) * _followStrength;
+                    FollowPosition.Y += ((followYMin + followYMax) * 0.5f - FollowPosition.Y) * _followStrength;
 
                     float distanceX = Math.Abs(followXMax - followXMin) * 2;
                     float distanceY = Math.Abs(followYMax - followYMin) * 2;
@@ -432,34 +391,34 @@ namespace Genetic
                     }
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnHorizontal))
-                        _followPosition.X += (followTargetX + _followTargets[0].BoundingBox.HalfWidth - _followPosition.X) * _followStrength;
+                        FollowPosition.X += (followTargetX + _followTargets[0].BoundingBox.HalfWidth - FollowPosition.X) * _followStrength;
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnVertical))
-                        _followPosition.Y += (followTargetY + _followTargets[0].BoundingBox.HalfHeight - _followPosition.Y) * _followStrength;
+                        FollowPosition.Y += (followTargetY + _followTargets[0].BoundingBox.HalfHeight - FollowPosition.Y) * _followStrength;
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingHorizontal))
                     {
                         if (_followTargets[0].Facing == GenObject.Direction.Left)
-                            _followPosition.X += (followTargetX - FollowLeading.X - _followPosition.X) * _followStrength;
+                            FollowPosition.X += (followTargetX - FollowLeading.X - FollowPosition.X) * _followStrength;
                         else if (_followTargets[0].Facing == GenObject.Direction.Right)
-                            _followPosition.X += (followTargetX + FollowLeading.X - _followPosition.X) * _followStrength;
+                            FollowPosition.X += (followTargetX + FollowLeading.X - FollowPosition.X) * _followStrength;
                         else
-                            _followPosition.X += (followTargetX - _followPosition.X) * _followStrength;
+                            FollowPosition.X += (followTargetX - FollowPosition.X) * _followStrength;
                     }
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingVertical))
                     {
                         if (_followTargets[0].Facing == GenObject.Direction.Up)
-                            _followPosition.Y += (followTargetY - FollowLeading.Y - _followPosition.Y) * _followStrength;
+                            FollowPosition.Y += (followTargetY - FollowLeading.Y - FollowPosition.Y) * _followStrength;
                         else if (_followTargets[0].Facing == GenObject.Direction.Down)
-                            _followPosition.Y += (followTargetY + FollowLeading.Y - _followPosition.Y) * _followStrength;
+                            FollowPosition.Y += (followTargetY + FollowLeading.Y - FollowPosition.Y) * _followStrength;
                         else
-                            _followPosition.Y += (followTargetY - _followPosition.Y) * _followStrength;
+                            FollowPosition.Y += (followTargetY - FollowPosition.Y) * _followStrength;
                     }
                 }
 
-                ScrollX = -_followPosition.X + _cameraView.Width * 0.5f;
-                ScrollY = -_followPosition.Y + _cameraView.Height * 0.5f;
+                ScrollX = -FollowPosition.X + _cameraView.Width * 0.5f;
+                ScrollY = -FollowPosition.Y + _cameraView.Height * 0.5f;
 
                 // Prevent the camera view from moving outside of the world bounds.
                 if (_scroll.X > -GenG.WorldBounds.Left)
@@ -520,59 +479,19 @@ namespace Genetic
         public void DrawBg()
         {
             if (_bgColor != null)
-                GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, BgColor);
+                GenG.SpriteBatch.Draw(_backgroundTexture, _cameraRect, BgColor);
         }
 
         /// <summary>
-        /// Draws the camera flash and fade effects.
+        /// Draws the camera effects.
         /// </summary>
         public void DrawFx()
         {
-            if (_flashing)
-            {
-                if (_flashTimer < _flashDuration)
-                {
-                    _fxAlpha = ((_flashDuration - _flashTimer) / _flashDuration) * _flashIntensity;
-
-                    GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _flashColor * _fxAlpha);
-
-                    if (!GenG.Paused)
-                        _flashTimer += GenG.ScaleTimeStep;
-                }
-                else
-                {
-                    _flashing = false;
-
-                    if (_flashCallback != null)
-                        _flashCallback.Invoke();
-                }
-            }
-
-            if (_fading)
-            {
-                if (_fadeTimer < _fadeDuration)
-                {
-                    _fxAlpha = (_fadeTimer / _fadeDuration);
-
-                    GenG.SpriteBatch.Draw(_fxTexture, _cameraRect, _fadeColor * _fxAlpha);
-
-                    if (!GenG.Paused)
-                        _fadeTimer += GenG.ScaleTimeStep;
-
-                    if (_fadeTimer >= _fadeDuration)
-                    {
-                        _fading = false;
-
-                        if (_fadeCallback != null)
-                            _fadeCallback.Invoke();
-                    }
-                }
-            }
+            _cameraEffect.Draw();
         }
 
         /// <summary>
         /// Sets the essential components that function together as the camera view area.
-        /// The camera view area must not extend outside the bounds of the game window.
         /// Do not set the camera view often, since a new render target object must be created.
         /// </summary>
         /// <param name="x">The x position of the top-left corner of the camera view.</param>
@@ -583,6 +502,8 @@ namespace Genetic
         {
             _cameraRect.Width = width;
             _cameraRect.Height = height;
+
+            _cameraEffect.EffectRectangle = _cameraRect;
 
             _position.X = x;
             _position.Y = y;
@@ -601,22 +522,45 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Adds a game object as a target that the camera will follow.
+        /// Adds an object or group of objects as targets that the camera will follow.
         /// Adding multiple targets will cause the camera to follow a point within the center of all targets.
+        /// Adding the same object twice is useful for zooming in on the target.
         /// </summary>
-        /// <param name="gameObject">The game object to set as a target.</param>
-        public void AddTarget(GenObject gameObject = null)
+        /// <param name="objectOrGroup">The object or group of objects to set as a target.</param>
+        public void AddTarget(GenBasic objectOrGroup = null)
         {
-            _followTargets.Add(gameObject);
+            if (objectOrGroup is GenObject)
+                _followTargets.Add((GenObject)objectOrGroup);
+            else if (objectOrGroup is GenGroup)
+            {
+                foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    AddTarget(basic);
+            }
         }
 
         /// <summary>
-        /// Removes a game object from the follow targets list.
+        /// Removes an object or group of objects from the follow targets list.
         /// </summary>
-        /// <param name="gameObject">The game object to remove from the follow targets list.</param>
-        public void RemoveTarget(GenObject gameObject)
+        /// <param name="objectOrGroup">The object or group of objects to remove from the follow targets list.</param>
+        public void RemoveTarget(GenBasic objectOrGroup)
         {
-            _followTargets.Remove(gameObject);
+            if (objectOrGroup is GenObject)
+            {
+                _followTargets.Remove((GenObject)objectOrGroup);
+            }
+            else if (objectOrGroup is GenGroup)
+            {
+                foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    RemoveTarget(basic);
+            }
+        }
+
+        /// <summary>
+        /// Clears the follow targets list of all objects.
+        /// </summary>
+        public void ClearTargets()
+        {
+            _followTargets.Clear();
         }
 
         /// <summary>
@@ -625,12 +569,13 @@ namespace Genetic
         /// <param name="intensity">The amount of camera shake.</param>
         /// <param name="duration">The duration of the camera shake, in seconds.</param>
         /// <param name="decreasing">Whether the shake intensity will decrease over time or not.</param>
+        /// <param name="forceReset">A flag used to determine if the shake will reset any current camera shake.</param>
         /// <param name="callback">The method that will be invoked after the camera shake has finished.</param>
         /// <param name="direction">The direction of the camera shake.</param>
-        public void Shake(float intensity = 5f, float duration = 1f, bool decreasing = false, Action callback = null, ShakeDirection direction = ShakeDirection.Both)
+        public void Shake(float intensity = 5f, float duration = 1f, bool decreasing = false, bool forceReset = false, Action callback = null, ShakeDirection direction = ShakeDirection.Both)
         {
-            // Apply the shake if the camera is not already shaking.
-            if (!_shaking)
+            // Apply the shake if the camera is not already shaking, unless force reset is true.
+            if (forceReset || !_shaking)
             {
                 _shakeIntensity = intensity;
                 _shakeDuration = duration;
@@ -649,23 +594,11 @@ namespace Genetic
         /// <param name="intensity">The intensity, or starting opacity, of the camera flash.</param>
         /// <param name="duration">The duration of the camera flash, in seconds.</param>
         /// <param name="color">The color of the camera flash. Use null to default to white.</param>
+        /// <param name="forceReset">A flag used to determine if the flash will reset any current camera flash.</param>
         /// <param name="callback">The method that will be invoked after the camera flash has finished.</param>
-        public void Flash(float intensity = 1f, float duration = 1f, Color? color = null, Action callback = null)
+        public void Flash(float intensity = 1f, float duration = 1f, Color? color = null, bool forceReset = false, Action callback = null)
         {
-            // Give the camera flash a default color of white if no other color was passed.
-            color = color.HasValue ? color.Value : Color.White;
-
-            // Apply the flash if the camera is not already flashing.
-            if (!_flashing)
-            {
-                _flashIntensity = intensity;
-                _flashDuration = duration;
-                _flashColor = color.Value;
-                _flashCallback = callback;
-                _flashTimer = 0f;
-
-                _flashing = true;
-            }
+            _cameraEffect.Flash(intensity, duration, color, forceReset, callback);
         }
 
         /// <summary>
@@ -676,19 +609,7 @@ namespace Genetic
         /// <param name="callback">The method that will be invoked after the camera fade has finished.</param>
         public void Fade(float duration = 1f, Color? color = null, Action callback = null)
         {
-            // Give the camera flash a default color of white if no other color was passed.
-            color = color.HasValue ? color.Value : Color.Black;
-
-            // Apply the flash if the camera is not already flashing.
-            if (!_fading)
-            {
-                _fadeDuration = duration;
-                _fadeColor = color.Value;
-                _fadeCallback = callback;
-                _fadeTimer = 0f;
-
-                _fading = true;
-            }
+            _cameraEffect.Fade(duration, color, callback);
         }
 
         /// <summary>
@@ -726,16 +647,14 @@ namespace Genetic
             _scroll = Vector2.Zero;
             Rotation = 0f;
             _zoom = _initialZoom;
-            _followPosition = Vector2.Zero;
+            FollowPosition = Vector2.Zero;
             _followTargets.Clear();
 
             // Reset the camera effects.
+            _shakeOffset = Vector2.Zero;
             _shaking = false;
             _shakeCallback = null;
-            _flashing = false;
-            _flashCallback = null;
-            _fading = false;
-            _fadeCallback = null;
+            _cameraEffect.Reset();
         }
     }
 

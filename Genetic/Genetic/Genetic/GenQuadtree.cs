@@ -82,9 +82,18 @@ namespace Genetic
             _rootNode.Insert(objectOrGroup);
         }
 
-        public void Remove(GenBasic objectOrGroup)
+        /// <summary>
+        /// Removes a given object from the quadtree by removing the object from its containing node.
+        /// </summary>
+        /// <param name="gameObject">The game object to remove from the quadtree.</param>
+        public void Remove(GenObject gameObject)
         {
-            // ALLOW OBJECTS OR GROUPS TO BE REMOVED FROM THE QUADTREE
+            // Remove the object from its containing node.
+            _objectLocations[gameObject].Remove(gameObject);
+
+            // Remove node location references to the object.
+            _objectLocations.Remove(gameObject);
+            _objectLocationKeys.Remove(gameObject);
         }
 
         /// <summary>
@@ -328,7 +337,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Iterates through each node that entirely contains the given object's bounding box, and checks for an overlap with every object in each node.
+        /// Iterates through each node that entirely contains the given object's bounding box, and checks for overlaps or collisions against every object in each node.
         /// </summary>
         /// <param name="gameObject">The object to check for an overlap.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
@@ -379,7 +388,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Iterates through remaining leaf nodes that intersect the given object's bounding box, and checks for an overlap with every object in the leaf node.
+        /// Iterates through remaining leaf nodes that intersect the given object's bounding box, and checks for overlaps or collisions against every object in the leaf node.
         /// </summary>
         /// <param name="gameObject">The object to check for an overlap.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
@@ -396,13 +405,13 @@ namespace Genetic
             {
                 if (gameObject.BoundingBox.Top <= _midpointX)
                 {
-                    if (_nodes[1].Overlap(gameObject, callback, separate, penetrate, collidableEdges))
+                    if (OverlapLeafNode(1, gameObject, callback, separate, penetrate, collidableEdges))
                         overlap = true;
                 }
 
                 if (gameObject.BoundingBox.Bottom >= _midpointX)
                 {
-                    if (_nodes[2].Overlap(gameObject, callback, separate, penetrate, collidableEdges))
+                    if (OverlapLeafNode(2, gameObject, callback, separate, penetrate, collidableEdges))
                         overlap = true;
                 }
             }
@@ -411,14 +420,49 @@ namespace Genetic
             {
                 if (gameObject.BoundingBox.Top <= _midpointX)
                 {
-                    if (_nodes[0].Overlap(gameObject, callback, separate, penetrate, collidableEdges))
+                    if (OverlapLeafNode(0, gameObject, callback, separate, penetrate, collidableEdges))
                         overlap = true;
                 }
 
                 if (gameObject.BoundingBox.Bottom >= _midpointX)
                 {
-                    if (_nodes[3].Overlap(gameObject, callback, separate, penetrate, collidableEdges))
+                    if (OverlapLeafNode(3, gameObject, callback, separate, penetrate, collidableEdges))
                         overlap = true;
+                }
+            }
+
+            return overlap;
+        }
+
+        /// <summary>
+        /// Iterates through each object in a leaf node, and checks for overlaps or collisions against a given object.
+        /// </summary>
+        /// <param name="nodeIndex">The index number of the leaf node to check.</param>
+        /// <param name="gameObject">The object to check for an overlap.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
+        /// <param name="separate">Determines if objects should collide with each other.</param>
+        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
+        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        protected bool OverlapLeafNode(int nodeIndex, GenObject gameObject, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        {
+            bool overlap = false;
+
+            // Check for overlaps or collisions against objects within a leaf node.
+            foreach (GenBasic basic in _nodes[nodeIndex]._objects)
+            {
+                if (basic is GenObject)
+                {
+                    if (separate)
+                    {
+                        if (gameObject.Collide((GenObject)basic, callback, penetrate, collidableEdges) && !overlap)
+                            overlap = true;
+                    }
+                    else
+                    {
+                        if (gameObject.Overlap((GenObject)basic, callback) && !overlap)
+                            overlap = true;
+                    }
                 }
             }
 
@@ -457,7 +501,7 @@ namespace Genetic
 
                     if (node._nodes != null)
                     {
-                        GenG.SpriteBatch.DrawString(GenG.Font, node._objects.Count.ToString(), new Vector2(node._left, node._top), Color.White);
+                        //GenG.SpriteBatch.DrawString(GenG.Font, node._objects.Count.ToString(), new Vector2(node._left, node._top), Color.White);
                         Draw(node._nodes);
                     }
                 }

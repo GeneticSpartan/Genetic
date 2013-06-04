@@ -113,9 +113,14 @@ namespace Genetic
         protected GenAABB _moveBounds;
 
         /// <summary>
-        /// Determines if the object is affected by collisions.
+        /// A flag used to determine if the object is affected by collisions.
         /// </summary>
-        public bool Immovable = false;
+        public bool Immovable;
+
+        /// <summary>
+        /// A flag used to determine if the object can collide.
+        /// </summary>
+        public bool Solid;
 
         /// <summary>
         /// The mass of the object used when calculating collision response against another object.
@@ -123,9 +128,14 @@ namespace Genetic
         public float Mass = 1f;
 
         /// <summary>
-        /// The x and y velocity of the object.
+        /// The x and y velocities of the object.
         /// </summary>
         public Vector2 Velocity;
+
+        /// <summary>
+        /// The x and y velocities of the object during the previous update.
+        /// </summary>
+        public Vector2 OldVelocity;
 
         /// <summary>
         /// The x and y acceleration of the object.
@@ -179,7 +189,12 @@ namespace Genetic
         /// <summary>
         /// The current platform object that the object is interacting with.
         /// </summary>
-        protected GenObject _platform;
+        public GenObject Platform;
+
+        /// <summary>
+        /// The platform object that the object is interacting with during the previous update.
+        /// </summary>
+        public GenObject OldPlatform;
 
         /// <summary>
         /// A global container used to store vector calculation results.
@@ -399,12 +414,16 @@ namespace Genetic
             _rotation = 0f;
             RotationSpeed = 0f;
             _moveBounds = new GenAABB(x, y, width, height);
+            Immovable = false;
+            Solid = true;
             Velocity = Vector2.Zero;
+            OldVelocity = Vector2.Zero;
             MaxVelocity = Vector2.Zero;
             Parent = null;
             ParentMode = ParentType.None;
             ParentOffset = Vector2.Zero;
-            _platform = null;
+            Platform = null;
+            OldPlatform = null;
         }
 
         /// <summary>
@@ -412,9 +431,14 @@ namespace Genetic
         /// </summary>
         public override void PreUpdate()
         {
+            OldVelocity = Velocity;
+
             // Reset the bit fields for collision flags.
             WasTouching = Touching;
             Touching = Direction.None;
+
+            OldPlatform = Platform;
+            Platform = null;
         }
 
         /// <summary>
@@ -429,7 +453,7 @@ namespace Genetic
                 if (Velocity.X > 0)
                 {
                     // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
-                    if ((_platform == null) || (Velocity.X > _platform.Velocity.X))
+                    if ((OldPlatform == null) || (Velocity.X > OldPlatform.Velocity.X))
                         Velocity.X -= Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X < 0)
@@ -438,7 +462,7 @@ namespace Genetic
                 else if (Velocity.X < 0)
                 {
                     // In case the object is moving faster than the platform, which may happen when the platform collides, decelerate the object.
-                    if ((_platform == null) || (Velocity.X < _platform.Velocity.X))
+                    if ((OldPlatform == null) || (Velocity.X < OldPlatform.Velocity.X))
                         Velocity.X += Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X > 0)
@@ -490,8 +514,6 @@ namespace Genetic
                 MoveAlongPath();
 
             Rotation += RotationSpeed * GenG.TimeStep;
-
-            _platform = null;
         }
 
         /// <summary>
@@ -499,13 +521,13 @@ namespace Genetic
         /// </summary>
         public override void PostUpdate()
         {
-            if (_platform != null)
+            if (Platform != null)
             {
                 // Do not change the object's velocity if its velocity is already greater than the platform's velocity.
-                if (((Velocity.X >= 0) && (Velocity.X <= _platform.Velocity.X)) || ((Velocity.X <= 0) && (Velocity.X >= _platform.Velocity.X)))
+                if (((Velocity.X >= 0) && (Velocity.X <= Platform.Velocity.X)) || ((Velocity.X <= 0) && (Velocity.X >= Platform.Velocity.X)))
                 {
-                    if (_platform.Velocity.X != 0)
-                        Velocity.X = _platform.Velocity.X + (_platform.Acceleration.X * GenG.TimeStep);
+                    if (Platform.Velocity.X != 0)
+                        Velocity.X = Platform.Velocity.X + (Platform.Acceleration.X * GenG.TimeStep);
                 }
             }
 
@@ -580,8 +602,8 @@ namespace Genetic
         /// </summary>
         public void CenterOrigin()
         {
-            _origin.X = (int)_boundingBox.HalfWidth;
-            _origin.Y = (int)_boundingBox.HalfHeight;
+            _origin.X = _boundingBox.HalfWidth;
+            _origin.Y = _boundingBox.HalfHeight;
         }
 
         /// <summary>
@@ -638,7 +660,7 @@ namespace Genetic
                 if (gameObject.Exists && gameObject.Active && GetMoveBounds().Intersects(gameObject.GetMoveBounds()))
                 {
                     if (callback != null)
-                        callback(new GenCollideEvent(this, gameObject));
+                        callback(new GenCollideEvent(this, gameObject, GenObject.Direction.None, GenObject.Direction.None));
 
                     return true;
                 }
@@ -659,8 +681,13 @@ namespace Genetic
         {
             if (!this.Equals(gameObject))
             {
-                if (Immovable && gameObject.Immovable)
+                // Do not check for collisions if either object is not solid, or if both objects are immovable.
+                if ((!Solid || !gameObject.Solid) || (Immovable && gameObject.Immovable))
                     return false;
+
+                // If either object is a parent of the other, do not check for a collision.
+                //if ((Parent == gameObject) || (gameObject.Parent == this))
+                //    return false;
 
                 if (Overlap(gameObject))
                 {
@@ -775,17 +802,27 @@ namespace Genetic
 
                         if (remove < 0)
                         {
+                            // Use a bit field of flags to provide the direction that each object is colliding in during the current collision.
+                            Direction touchingA = Direction.None;
+                            Direction touchingB = Direction.None;
+
                             if (_collisionNormalVector.X != 0)
                             {
                                 if (_collisionNormalVector.X == 1)
                                 {
                                     Touching |= Direction.Right;
                                     gameObject.Touching |= Direction.Left;
+
+                                    touchingA |= Direction.Right;
+                                    touchingB |= Direction.Left;
                                 }
                                 else
                                 {
                                     Touching |= Direction.Left;
                                     gameObject.Touching |= Direction.Right;
+
+                                    touchingA |= Direction.Left;
+                                    touchingB |= Direction.Right;
                                 }
                             }
                             else
@@ -795,21 +832,33 @@ namespace Genetic
                                     Touching |= Direction.Down;
                                     gameObject.Touching |= Direction.Up;
 
+                                    touchingA |= Direction.Down;
+                                    touchingB |= Direction.Up;
+
                                     if (gameObject.IsPlatform)
                                     {
                                         if (Acceleration.X == 0)
-                                            _platform = gameObject;
+                                            Platform = gameObject;
                                     }
                                 }
                                 else
                                 {
                                     Touching |= Direction.Up;
                                     gameObject.Touching |= Direction.Down;
+
+                                    touchingA |= Direction.Up;
+                                    touchingB |= Direction.Down;
+
+                                    if (IsPlatform)
+                                    {
+                                        if (gameObject.Acceleration.X == 0)
+                                            gameObject.Platform = this;
+                                    }
                                 }
                             }
 
                             if (callback != null)
-                                callback(new GenCollideEvent(this, gameObject));
+                                callback(new GenCollideEvent(this, gameObject, touchingA, touchingB));
 
                             return true;
                         }

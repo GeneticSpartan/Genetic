@@ -53,6 +53,11 @@ namespace Genetic.Particles
         public bool Explode;
 
         /// <summary>
+        /// A flag used to determine if the emitter is currently emitting particles.
+        /// </summary>
+        public bool Emitting;
+
+        /// <summary>
         /// The amount of particles to emit at one time.
         /// A value of 0 will emit all of the particles at once.
         /// </summary>
@@ -156,28 +161,30 @@ namespace Genetic.Particles
             MinRotationSpeed = 0;
             MaxRotationSpeed = 0;
             Explode = true;
+            Emitting = false;
             EmitQuantity = 0;
             EmitFrequency = 0.1f;
             _emitTimer = 0f;
             InheritVelocity = false;
             Parent = null;
-
-            Active = false;
         }
 
         public override void Update()
         {
-            if (_emitTimer >= EmitFrequency)
+            if (Emitting)
             {
-                if (Explode)
-                    EmitParticles(Members.Count);
-                else
-                    EmitParticles(EmitQuantity);
+                if (_emitTimer >= EmitFrequency)
+                {
+                    if (Explode)
+                        EmitParticles(Members.Count);
+                    else
+                        EmitParticles(EmitQuantity);
 
-                _emitTimer -= EmitFrequency;
+                    _emitTimer -= EmitFrequency;
+                }
+                else
+                    _emitTimer += GenG.TimeStep;
             }
-            else
-                _emitTimer += GenG.TimeStep;
 
             base.Update();
         }
@@ -194,8 +201,8 @@ namespace Genetic.Particles
         {
             if (Parent != null)
             {
-                X = Parent.Position.X;
-                Y = Parent.Position.Y;
+                X = Parent.OriginPosition.X;
+                Y = Parent.OriginPosition.Y;
             }
         }
 
@@ -384,12 +391,22 @@ namespace Genetic.Particles
         }
 
         /// <summary>
+        /// Sets the camera scroll factor of each particle in the emitter group.
+        /// </summary>
+        /// <param name="scrollFactor">The factor by which the camera scroll values affect each particle's draw position within a camera.</param>
+        public void SetScrollFactor(float scrollFactor)
+        {
+            foreach (GenParticle particle in Members)
+                particle.ScrollFactor = scrollFactor;
+        }
+
+        /// <summary>
         /// Starts the emitter.
         /// </summary>
         /// <param name="explode">A flag used to emit every available particle, ignoring the emit quantity.</param>
         public void Start(bool explode = false)
         {
-            Active = true;
+            Emitting = true;
 
             // Move the emitter relative to its parent before emitting particles.
             MoveToParent();
@@ -400,6 +417,14 @@ namespace Genetic.Particles
                 EmitParticles(Members.Count);
             else
                 EmitParticles(EmitQuantity);
+        }
+
+        /// <summary>
+        /// Stops the emitter from emitting more particles.
+        /// </summary>
+        public void Stop()
+        {
+            Emitting = false;
         }
     }
 }

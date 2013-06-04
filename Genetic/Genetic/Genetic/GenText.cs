@@ -7,7 +7,7 @@ namespace Genetic
 {
     public class GenText : GenSprite
     {
-        public enum TextAlign { LEFT, RIGHT, CENTER };
+        public enum TextAlign { Left, Right, Center };
 
         /// <summary>
         /// The text that is displayed.
@@ -27,7 +27,7 @@ namespace Genetic
         /// <summary>
         /// The horizontal alignment of the text relative to the bounding rectangle.
         /// </summary>
-        public TextAlign TextAlignment = TextAlign.LEFT;
+        public TextAlign TextAlignment = TextAlign.Left;
 
         /// <summary>
         /// The origin of the text in relation to the origin of the game object.
@@ -84,6 +84,14 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the width and height of the current text string, using the font size of the current sprite font.
+        /// </summary>
+        public Vector2 MeasureString
+        {
+            get { return _font.MeasureString(_text); }
+        }
+
+        /// <summary>
         /// Creates a displayable text game object.
         /// </summary>
         /// <param name="text">The text that is displayed.</param>
@@ -105,9 +113,9 @@ namespace Genetic
             base.Update();
 
             // Calculate the text origin relative to the game object origin to adjust for alignment settings.
-            if (TextAlignment == TextAlign.RIGHT)
+            if (TextAlignment == TextAlign.Right)
                 _textOrigin.X = (_origin.X - Width) * (1 / _fontScale) + _textMeasure.X;
-            else if (TextAlignment == TextAlign.CENTER)
+            else if (TextAlignment == TextAlign.Center)
                 _textOrigin.X = _origin.X - ((Width * 0.5f) - (_textMeasure.X * 0.5f));
             else
                 _textOrigin.X = _origin.X * (1 / _fontScale);
@@ -124,9 +132,9 @@ namespace Genetic
 
             // Draw the text shadow.
             if (HasShadow)
-                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + ShadowPosition, ShadowColor, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+                GenG.SpriteBatch.DrawString(_font, _text, _drawPosition + ShadowPosition, ShadowColor * _alpha, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
 
-            GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, Color, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
+            GenG.SpriteBatch.DrawString(_font, _text, _drawPosition, _color * _alpha, _drawRotation, _textOrigin, _fontScale, SpriteEffects.None, 0);
         }
     }
 }

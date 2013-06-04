@@ -7,8 +7,9 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-using Genetic.Input;
 using Genetic.Geometry;
+using Genetic.Input;
+using Genetic.Sound;
 
 namespace Genetic
 {
@@ -132,23 +133,28 @@ namespace Genetic
         /// The amount of time, in seconds, since the last update call.
         /// Used to call Update the correct amount of times relative to the time step and time scale.
         /// </summary>
-        private static float _updateTimer = 0f;
+        private static float _updateTimer;
+
+        /// <summary>
+        /// A flag used to determine if the current frame rate whould be drawn to the screen.
+        /// </summary>
+        public static bool ShowFps;
 
         // A counter used to keep track of the number of frames drawn per second.
-        private static int fpsFrameCount = 0;
+        private static int fpsCounter;
 
         // A string used to display the current number of frames drawn per second.
-        private static string currentFps = "";
+        private static string currentFps;
 
         /// <summary>
         /// A stopwatch used to calculate the game's frame rate.
         /// </summary>
-        private static Stopwatch _stopwatch = new Stopwatch();
+        private static Stopwatch _fpsStopwatch;
 
         /// <summary>
         /// A flag used to pause the game.
         /// </summary>
-        public static bool Paused = false;
+        public static bool Paused;
 
         /// <summary>
         /// Represents the bounding rectangle of the world space.
@@ -172,6 +178,11 @@ namespace Genetic
         public static GenCamera CurrentCamera;
 
         /// <summary>
+        /// The screen effect manager.
+        /// </summary>
+        private static GenScreenEffect _screenEffect;
+
+        /// <summary>
         /// A dictionary containing multiple keyboard inputs used for checking key presses and releases.
         /// </summary>
         private static Dictionary<PlayerIndex, GenKeyboard> _keyboards;
@@ -190,7 +201,7 @@ namespace Genetic
         /// <summary>
         /// The global volume for all sounds, a value from 0.0 to 1.0.
         /// </summary>
-        private static float _volume = 0.5f;
+        private static float _volume = 1f;
 
         /// <summary>
         /// A group that controls the volume control display components.
@@ -313,6 +324,14 @@ namespace Genetic
             TimeScale = 1.0f;
             WorldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
             Cameras = new List<GenCamera>();
+            _screenEffect = new GenScreenEffect(GraphicsDevice.Viewport.Bounds);
+            _updateTimer = 0f;
+            ShowFps = false;
+            fpsCounter = 0;
+            currentFps = "";
+            _fpsStopwatch = new Stopwatch();
+            _fpsStopwatch.Start();
+            Paused = false;
 
             _keyboards = new Dictionary<PlayerIndex, GenKeyboard>();
             _keyboards.Add(PlayerIndex.One, new GenKeyboard(PlayerIndex.One));
@@ -328,13 +347,10 @@ namespace Genetic
 
             _mouse = new GenMouse();
 
-            // Start the frame rate timer.
-            _stopwatch.Start();
-
             // Create the volume control display.
             _volumeDisplay = new GenGroup();
 
-            _volumeBox = new GenSprite();
+            _volumeBox = new GenSprite((Game.Width / 2) - 46, 0);
             _volumeBox.MakeTexture(Color.Black * 0.5f, 92, 56);
             _volumeDisplay.Add(_volumeBox);
 
@@ -343,11 +359,11 @@ namespace Genetic
 
             for (int i = 0; i < 10; i++)
             {
-                _volumeBars.Add(new GenSprite(i * 8 + 8, 20 - i * 2 + 8, null, 4, i * 2 + 2));
+                _volumeBars.Add(new GenSprite(_volumeBox.X + (i * 8 + 8), 20 - i * 2 + 8, null, 4, i * 2 + 2));
                 ((GenSprite)_volumeBars.Members[i]).MakeTexture(Color.White);
             }
 
-            _volumeText = new GenText("VOLUME", 8, 32, 0, 0);
+            _volumeText = new GenText("VOLUME", _volumeBox.X + 8, 32, 0, 0);
             _volumeDisplay.Add(_volumeText);
 
             _volumeBeep = new GenSound("beep");
@@ -505,25 +521,63 @@ namespace Genetic
                 }
             }
 
+            // Call Draw on any overlay objects after the cameras have been drawn.
+            if (DrawMode == DrawType.Pixel)
+                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.Identity);
+            else if (DrawMode == DrawType.Smooth)
+                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+
+            _state.DrawOverlay();
+            _screenEffect.Draw();
+
+            SpriteBatch.End();
+
+            if (ShowFps || IsDebug)
+            {
+                if (_fpsStopwatch.ElapsedMilliseconds >= 1000)
+                {
+                    _fpsStopwatch.Reset();
+                    _fpsStopwatch.Start();
+                    fileSize = GC.GetTotalMemory(false).ToString();
+                    currentFps = fpsCounter.ToString() + " - GC:" + fileSize + " bytes";
+                    fpsCounter = 0;
+                }
+                else
+                    fpsCounter++;
+            }
+
             SpriteBatch.Begin();
             _volumeDisplay.Draw();
 
-            if (_stopwatch.ElapsedMilliseconds >= 1000)
-            {
-                _stopwatch.Reset();
-                _stopwatch.Start();
-                fileSize = GC.GetTotalMemory(false).ToString();
-                currentFps = fpsFrameCount.ToString() + " GC:" + fileSize;
-                fpsFrameCount = 0;
-            }
-            else
-            {
-                fpsFrameCount++;
-            }
-
-            SpriteBatch.DrawString(Font, currentFps, new Vector2(100, 200), Color.White);
+            // Draw the frame rate.
+            if (ShowFps || IsDebug)
+                SpriteBatch.DrawString(Font, currentFps, new Vector2(16, 16), Color.White);
 
             SpriteBatch.End();
+        }
+
+        /// <summary>
+        /// Adds an object to the members list of the current state.
+        /// Useful for adding objects to the current state within other object classes.
+        /// </summary>
+        /// <param name="basic">The object to add.</param>
+        /// <param name="overlay">A flag used to determine if the object should be drawn to the screen directly, ignoring cameras.</param>
+        /// <returns>The object added to the members list of the current state.</returns>
+        public static GenBasic Add(GenBasic basic, bool overlay = false)
+        {
+            return _state.Add(basic, overlay);
+        }
+
+        /// <summary>
+        /// Removes an object from the members list of the current state.
+        /// Useful for removing objects from the current state within other object classes.
+        /// </summary>
+        /// <param name="basic">The object to remove.</param>
+        /// <param name="overlay">A flag used to determine if the object being removed is an overlay object.</param>
+        /// <returns>The object removed from the members list of the current state.</returns>
+        public static GenBasic Remove(GenBasic basic, bool overlay = false)
+        {
+            return _state.Remove(basic, overlay);
         }
 
         /// <summary>
@@ -660,6 +714,30 @@ namespace Genetic
                 return ((GenTilemap)objectOrGroupB).Collide(objectOrGroupA, callback);
 
             return Overlap(objectOrGroupA, objectOrGroupB, callback, true, penetrate, collidableEdges);
+        }
+
+        /// <summary>
+        /// Give the screen a flash effect.
+        /// </summary>
+        /// <param name="intensity">The intensity, or starting opacity, of the screen flash.</param>
+        /// <param name="duration">The duration of the screen flash, in seconds.</param>
+        /// <param name="color">The color of the screen flash. Use null to default to white.</param>
+        /// <param name="forceReset">A flag used to determine if the flash will reset any current screen flash.</param>
+        /// <param name="callback">The method that will be invoked after the screen flash has finished.</param>
+        public static void Flash(float intensity = 1f, float duration = 1f, Color? color = null, bool forceReset = false, Action callback = null)
+        {
+            _screenEffect.Flash(intensity, duration, color, forceReset, callback);
+        }
+
+        /// <summary>
+        /// Give the screen a fade effect.
+        /// </summary>
+        /// <param name="duration">The duration of the screen fade, in seconds.</param>
+        /// <param name="color">The color of the screen fade. Use null to default to black.</param>
+        /// <param name="callback">The method that will be invoked after the screen fade has finished.</param>
+        public static void Fade(float duration = 1f, Color? color = null, Action callback = null)
+        {
+            _screenEffect.Fade(duration, color, callback);
         }
 
         /// <summary>

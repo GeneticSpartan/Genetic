@@ -56,11 +56,8 @@ namespace Genetic.Particles
         /// <param name="height">The height of the particle.</param>
         /// <param name="lifetime">The amount of time, in seconds, that the particle will last after being emitted.</param>
         public GenParticle(float x = 0, float y = 0, Texture2D texture = null, int width = 1, int height = 1, float lifetime = 3f)
-            : base(x, y, null, width, height)
+            : base(x, y, texture, width, height)
         {
-            if (texture != null)
-                LoadTexture(texture);
-
             Lifetime = lifetime;
             _lifeTimer = 0f;
             StartColor = Color.White;

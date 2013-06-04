@@ -1,4 +1,6 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+
+using Microsoft.Xna.Framework;
 
 namespace Genetic
 {
@@ -56,6 +58,16 @@ namespace Genetic
         public bool IsLooped;
 
         /// <summary>
+        /// The animation frames that will invoke the callback function when displayed.
+        /// </summary>
+        protected bool[] _callbackFrames;
+
+        /// <summary>
+        /// The function that will be invoked when the animation callback frames are displayed.
+        /// </summary>
+        public Action Callback;
+
+        /// <summary>
         /// Gets or sets the speed, in frames per second, of the animation.
         /// </summary>
         public float Fps
@@ -76,6 +88,7 @@ namespace Genetic
             set
             {
                 _frames = value;
+                _callbackFrames = new bool[_frames.Length];
 
                 RefreshFrameCount();
             }
@@ -107,6 +120,7 @@ namespace Genetic
             Frames = (frames == null) ? new int[0] : frames;
             Fps = fps;
             IsLooped = isLooped;
+            Callback = null;
         }
 
         /// <summary>
@@ -139,6 +153,12 @@ namespace Genetic
                 {
                     _currentFrame += (int)(_timer / _frameTime);
                     _timer %= _frameTime;
+
+                    if (Callback != null)
+                    {
+                        if ((_currentFrame < _callbackFrames.Length) && _callbackFrames[_currentFrame])
+                            Callback.Invoke();
+                    }
                 }
             }
         }
@@ -152,6 +172,25 @@ namespace Genetic
                 _frameCount = _sprite.Texture.Width / ((_frameRect.Width + FrameBuffer) + FrameBuffer + FrameBuffer);
             else
                 _frameCount = _frames.Length;
+        }
+
+        /// <summary>
+        /// Sets a callback function that will invoke when the given animation frames are displayed.
+        /// Useful for playing sounds at specific frames in an animation, like foot steps.
+        /// </summary>
+        /// <param name="frames">An array of animation frame numbers used to invoke the callback function. All animations start from frame 0.</param>
+        /// <param name="callback">The function to invoke at each animation frame.</param>
+        public void SetCallback(int[] callbackFrames, Action callback)
+        {
+            _callbackFrames = new bool[_frames.Length];
+
+            for (int i = 0; i < callbackFrames.Length; i++)
+            {
+                if (i < _callbackFrames.Length)
+                    _callbackFrames[callbackFrames[i]] = true;
+            }
+
+            Callback = callback;
         }
 
         /// <summary>

@@ -73,7 +73,7 @@
     <Compile Include="Genetic\GenQuadTree.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Genetic\GenSound.cs" />
+    <Compile Include="Genetic\GenScreenEffect.cs" />
     <Compile Include="Genetic\GenText.cs" />
     <Compile Include="Genetic\GenTile.cs" />
     <Compile Include="Genetic\GenTilemap.cs" />
@@ -96,6 +96,8 @@
     <Compile Include="Genetic\Path\GenPath.cs" />
     <Compile Include="Genetic\Path\GenPathNode.cs" />
     <Compile Include="Genetic\Physics\GenVerlet.cs" />
+    <Compile Include="Genetic\Sound\GenSound.cs" />
+    <Compile Include="Genetic\Sound\GenSoundInstance.cs" />
     <Compile Include="MenuState.cs" />
     <Compile Include="PlayState.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
