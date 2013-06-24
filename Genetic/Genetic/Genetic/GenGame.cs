@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
@@ -9,10 +10,16 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+using Genetic.Sound;
+
 namespace Genetic
 {
     /// <summary>
-    /// This is the main type for your game
+    /// This is the main type for your game.
+    /// Manages the initialization of required game resources.
+    /// <c>GenGame</c> will be used to initialize the game in the main entry point of the program.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
     /// </summary>
     public class GenGame : Microsoft.Xna.Framework.Game
     {
@@ -30,9 +37,9 @@ namespace Genetic
         protected int _height;
 
         /// <summary>
-        /// The initial scale at which to draw objects in the camera.
+        /// The initial scale at which to draw objects in a camera.
         /// </summary>
-        protected float _zoom;
+        public float Zoom;
 
         /// <summary>
         /// Gets the width of the game window.
@@ -52,18 +59,20 @@ namespace Genetic
 
         /// <param name="width">The width of the game window.</param>
         /// <param name="height">The height of the game window.</param>
+        /// <param name="initialState">The initial state of the game.</param>
+        /// <param name="drawMode">The mode that determines how game objects should be drawn to the screen.</param>
         /// <param name="zoom">The scale of the initial camera. The value must be 1.0 or greater.</param>
-        /// <param name="fps">The amount of frames that the game will run each second.</param>
         /// <param name="fullScreen">A flag used to set the game to fullscreen.</param>
-        public GenGame(int width, int height, GenState initialState, GenG.DrawType drawMode = GenG.DrawType.Pixel, float zoom = 1f, bool fullScreen = false)
+        public GenGame(int width, int height, GenState initialState, GenG.DrawType drawMode = GenG.DrawType.Smooth, float zoom = 1f, bool fullScreen = false)
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
             graphics.IsFullScreen = fullScreen;
-
+            //graphics.PreferMultiSampling = false;
             //IsFixedTimeStep = false;
             //graphics.SynchronizeWithVerticalRetrace = false;
+            //TargetElapsedTime = new TimeSpan(10000000L / 30L);
             
             // Set the width and height of the game window.
             _width = width;
@@ -73,7 +82,7 @@ namespace Genetic
 
             GenG.DrawMode = drawMode;
 
-            _zoom = zoom;
+            Zoom = zoom;
 
             GenG.SwitchState(initialState);
         }
@@ -98,10 +107,10 @@ namespace Genetic
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            // Initialize necessary game resources.
             GenG.Initialize(this, GraphicsDevice, Content, spriteBatch);
             GenU.Initialize();
-
-            GenG.Camera = GenG.AddCamera(new GenCamera(0, 0, _width, _height, _zoom));
+            GenMusic.Initialize();
         }
 
         /// <summary>
@@ -110,7 +119,7 @@ namespace Genetic
         /// </summary>
         protected override void UnloadContent()
         {
-            // TODO: Unload any non ContentManager content here
+            
         }
 
         /// <summary>

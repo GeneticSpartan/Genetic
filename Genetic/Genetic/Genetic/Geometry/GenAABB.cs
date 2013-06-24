@@ -1,29 +1,16 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System;
+
+using Microsoft.Xna.Framework;
 
 namespace Genetic.Geometry
 {
-    public class GenAABB
+    /// <summary>
+    /// Represents an axis-aligned bounding box.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
+    public class GenAABB : GenAABBBasic
     {
-        /// <summary>
-        /// The x position of the top left corner of the bounding box.
-        /// </summary>
-        protected float _x;
-
-        /// <summary>
-        /// The y position of the top left corner of the bounding box.
-        /// </summary>
-        protected float _y;
-
-        /// <summary>
-        /// The width of the bounding box.
-        /// </summary>
-        protected float _width;
-
-        /// <summary>
-        /// The height of the bounding box.
-        /// </summary>
-        protected float _height;
-
         /// <summary>
         /// Half of the width value of the bounding box.
         /// </summary>
@@ -45,86 +32,60 @@ namespace Genetic.Geometry
         protected float _midpointY;
 
         /// <summary>
-        /// The position of the left edge of the bounding box along the x-axis.
-        /// </summary>
-        protected float _left;
-
-        /// <summary>
-        /// The position of the right edge of the bounding box along the x-axis.
-        /// </summary>
-        protected float _right;
-
-        /// <summary>
-        /// The position of the top edge of the bounding box along the y-axis.
-        /// </summary>
-        protected float _top;
-
-        /// <summary>
-        /// The position of the bottom edge of the bounding box along the y-axis.
-        /// </summary>
-        protected float _bottom;
-
-        /// <summary>
         /// Gets or sets the x position of the top left corner of the bounding box.
         /// </summary>
-        public float X
+        new public float X
         {
-            get { return _x; }
+            get { return _min.X; }
 
             set
             {
-                _x = value;
-                _midpointX = _x + _halfWidth;
-                _left = _x;
-                _right = _x + _width;
+                base.X = value;
+                _midpointX = _min.X + _halfWidth;
             }
         }
 
         /// <summary>
         /// Gets or sets the y position of the top left corner of the bounding box.
         /// </summary>
-        public float Y
+        new public float Y
         {
-            get { return _y; }
+            get { return _min.Y; }
 
             set
             {
-                _y = value;
-                _midpointY = value + _halfHeight;
-                _top = _y;
-                _bottom = _y + _height;
+                base.Y = value;
+                _midpointY = _min.Y + _halfHeight;
             }
         }
 
         /// <summary>
         /// Gets or sets the width of the bounding box.
         /// </summary>
-        public float Width
+        new public float Width
         {
             get { return _width; }
 
             set
             {
-                _width = value;
+                base.Width = value;
                 _halfWidth = _width * 0.5f;
-                _midpointX = _x + _halfWidth;
-                _right = _x + _width;
+                _midpointX = _min.X + _halfWidth;
             }
         }
 
         /// <summary>
         /// Gets or sets the height of the bounding box.
         /// </summary>
-        public float Height
+        new public float Height
         {
             get { return _height; }
 
             set
             {
-                _height = value;
+                base.Height = value;
                 _halfHeight = _height * 0.5f;
-                _midpointY = _y + _halfHeight;
-                _bottom = _y + _height;
+                _midpointY = _min.Y + _halfHeight;
             }
         }
 
@@ -161,65 +122,66 @@ namespace Genetic.Geometry
         }
 
         /// <summary>
-        /// Gets the position of the left edge of the bounding box along the x-axis.
+        /// Creates an axis-aligned bounding box.
         /// </summary>
-        public float Left
-        {
-            get { return _left; }
-        }
-
-        /// <summary>
-        /// Gets the position of the right edge of the bounding box along the x-axis.
-        /// </summary>
-        public float Right
-        {
-            get { return _right; }
-        }
-
-        /// <summary>
-        /// Gets the position of the top edge of the bounding box along the y-axis.
-        /// </summary>
-        public float Top
-        {
-            get { return _top; }
-        }
-
-        /// <summary>
-        /// Gets the position of the bottom edge of the bounding box along the y-axis.
-        /// </summary>
-        public float Bottom
-        {
-            get { return _bottom; }
-        }
-
+        /// <param name="x">The x position of the top-left corner of the bounding box.</param>
+        /// <param name="y">The y position of the top-left corner of the bounding box.</param>
+        /// <param name="width">The width of the bounding box.</param>
+        /// <param name="height">The height of the bounding box.</param>
         public GenAABB(float x, float y, float width, float height)
+            : base(x, y, width, height)
         {
-            // Set the width and height values first to get the half-width and half-height values.
             Width = width;
             Height = height;
-
-            X = x;
-            Y = y;
         }
 
         /// <summary>
-        /// Checks if the bounding box intersects with a given point.
+        /// Gets the x and y intersection depths of two bounding boxes.
         /// </summary>
-        /// <param name="point">The point to check for an intersection.</param>
-        /// <returns>True if an intersection occurs, false if not.</returns>
-        public bool Intersects(Vector2 point)
+        /// <param name="box">The bounding box to check against for an intersection.</param>
+        /// <returns>A <c>Vector2</c> containing the x and y intersection depths, or a zero vector if no intersection occurs.</returns>
+        public Vector2 GetIntersectDepthAABB(GenAABB box)
         {
-            return ((_left < point.X) && (_right > point.X) && (_top < point.Y) && (_bottom > point.Y));
+            // Check for intersection along the x-axis first.
+            float distanceX = _midpointX - box.MidpointX;
+            float minDistanceX = _halfWidth + box.HalfWidth;
+
+            // If the horizontal distance between the midpoints is less than the sum of the widths, continue on the y-axis.
+            if (Math.Abs(distanceX) < minDistanceX)
+            {
+                float distanceY = _midpointY - box.MidpointY;
+                float minDistanceY = _halfHeight + box.HalfHeight;
+
+                // If the vertical distance between the midpoints is less than the sum of the heights, there is an intersection. 
+                if (Math.Abs(distanceY) < minDistanceY)
+                {
+                    Vector2 intersection;
+
+                    // Get the intersection depths.
+                    intersection.X = (distanceX > 0) ? minDistanceX - distanceX : -minDistanceX - distanceX;
+                    intersection.Y = (distanceY > 0) ? minDistanceY - distanceY : -minDistanceY - distanceY;
+
+                    return intersection;
+                }
+            }
+
+            // Return a zero vector if there is no intersection.
+            return Vector2.Zero;
         }
 
         /// <summary>
-        /// Checks if the bounding box intersects with another bounding box.
+        /// Gets the positive or negative distances between the edges of two bounding boxes along the x-axis and y-axis.
         /// </summary>
-        /// <param name="box">The bounding box to check for an intersection.</param>
-        /// <returns>True if an intersection occurs, false if not.</returns>
-        public bool Intersects(GenAABB box)
+        /// <param name="box">The bounding box to get the distance from.</param>
+        /// <returns>A <c>Vector2</c> containing the positive or negative distances between the edges of two bounding boxes along the x-axis and y-axis.</returns>
+        public Vector2 GetDistanceAABB(GenAABB box)
         {
-            return ((_left < box.Right) && (_right > box.Left) && (_top < box.Bottom) && (_bottom > box.Top));
+            Vector2 distance;
+
+            distance.X = Math.Abs(_midpointX - box.MidpointX) - (_halfWidth + box.HalfWidth);
+            distance.Y = Math.Abs(_midpointY - box.MidpointY) - (_halfHeight + box.HalfHeight);
+
+            return distance;
         }
     }
 }

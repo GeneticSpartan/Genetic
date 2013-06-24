@@ -5,6 +5,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A screen effect manager used for flashes and fades.
+    /// A <c>Texture2D</c> is used to draw the screen effect.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenScreenEffect
     {
         /// <summary>
@@ -22,10 +28,7 @@ namespace Genetic
         /// </summary>
         protected float _fxAlpha;
 
-        /// <summary>
-        /// Determines if the screen is currently flashing.
-        /// </summary>
-        protected bool _flashing;
+        protected GenTimer _flashTimer;
 
         /// <summary>
         /// The current intensity, or starting opacity, of the screen flash.
@@ -37,45 +40,12 @@ namespace Genetic
         /// </summary>
         protected Color _flashColor;
 
-        /// <summary>
-        /// The current duration of the screen flash.
-        /// </summary>
-        protected float _flashDuration;
-
-        /// <summary>
-        /// The amount of time since the screen flash started, in seconds.
-        /// </summary>
-        protected float _flashTimer;
-
-        /// <summary>
-        /// The callback function that will invoke after the screen flash has finished.
-        /// </summary>
-        protected Action _flashCallback;
-
-        /// <summary>
-        /// Determines if the screen is currently fading.
-        /// </summary>
-        protected bool _fading;
+        protected GenTimer _fadeTimer;
 
         /// <summary>
         /// The current color of the screen fade.
         /// </summary>
         protected Color _fadeColor;
-
-        /// <summary>
-        /// The current duration of the screen fade.
-        /// </summary>
-        protected float _fadeDuration;
-
-        /// <summary>
-        /// The amount of time since the screen fade started, in seconds.
-        /// </summary>
-        protected float _fadeTimer;
-
-        /// <summary>
-        /// The callback function that will invoke after the screen fade has finished.
-        /// </summary>
-        protected Action _fadeCallback;
 
         /// <summary>
         /// A screen effect manager for creating effects such as screen flashes and fades.
@@ -86,15 +56,9 @@ namespace Genetic
             EffectRectangle = effectRectangle;
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
-            _flashing = false;
+            _flashTimer = new GenTimer(0f, null, true);
             _flashIntensity = 0f;
-            _flashDuration = 0f;
-            _flashTimer = 0f;
-            _flashCallback = null;
-            _fading = false;
-            _fadeDuration = 0f;
-            _fadeTimer = 0f;
-            _fadeCallback = null;
+            _fadeTimer = new GenTimer(0f, null, true);
         }
 
         /// <summary>
@@ -102,45 +66,24 @@ namespace Genetic
         /// </summary>
         public void Draw()
         {
-            if (_flashing)
+            if (_flashTimer.IsRunning)
             {
-                if (_flashTimer < _flashDuration)
-                {
-                    _fxAlpha = ((_flashDuration - _flashTimer) / _flashDuration) * _flashIntensity;
+                _fxAlpha = (_flashTimer.Remaining / _flashTimer.Duration) * _flashIntensity;
 
-                    GenG.SpriteBatch.Draw(_fxTexture, EffectRectangle, _flashColor * _fxAlpha);
-
-                    if (!GenG.Paused)
-                        _flashTimer += GenG.ScaleTimeStep;
-                }
-                else
-                {
-                    _flashing = false;
-
-                    if (_flashCallback != null)
-                        _flashCallback.Invoke();
-                }
+                GenG.SpriteBatch.Draw(_fxTexture, EffectRectangle, _flashColor * _fxAlpha);
             }
 
-            if (_fading)
+            if (_fadeTimer.IsRunning)
             {
-                if (_fadeTimer < _fadeDuration)
-                {
-                    _fxAlpha = (_fadeTimer / _fadeDuration);
+                _fxAlpha = (_fadeTimer.Elapsed / _fadeTimer.Duration);
 
-                    GenG.SpriteBatch.Draw(_fxTexture, EffectRectangle, _fadeColor * _fxAlpha);
+                GenG.SpriteBatch.Draw(_fxTexture, EffectRectangle, _fadeColor * _fxAlpha);
+            }
 
-                    if (!GenG.Paused)
-                        _fadeTimer += GenG.ScaleTimeStep;
-
-                    if (_fadeTimer >= _fadeDuration)
-                    {
-                        _fading = false;
-
-                        if (_fadeCallback != null)
-                            _fadeCallback.Invoke();
-                    }
-                }
+            if (!GenG.Paused)
+            {
+                _flashTimer.Update();
+                _fadeTimer.Update();
             }
         }
 
@@ -154,19 +97,17 @@ namespace Genetic
         /// <param name="callback">The method that will be invoked after the screen flash has finished.</param>
         public void Flash(float intensity = 1f, float duration = 1f, Color? color = null, bool forceReset = false, Action callback = null)
         {
-            // Give the screen flash a default color of white if no other color was passed.
-            color = color.HasValue ? color.Value : Color.White;
-
             // Apply the flash if the screen is not already flashing, unless force reset is true.
-            if (forceReset || !_flashing)
+            if (!_flashTimer.IsRunning || forceReset)
             {
                 _flashIntensity = intensity;
-                _flashDuration = duration;
-                _flashColor = color.Value;
-                _flashCallback = callback;
-                _flashTimer = 0f;
 
-                _flashing = true;
+                // Give the screen flash a default color of white if no other color was passed.
+                _flashColor = color.HasValue ? color.Value : Color.White;
+
+                _flashTimer.Duration = duration;
+                _flashTimer.Callback = callback;
+                _flashTimer.Start();
             }
         }
 
@@ -178,18 +119,15 @@ namespace Genetic
         /// <param name="callback">The method that will be invoked after the screen fade has finished.</param>
         public void Fade(float duration = 1f, Color? color = null, Action callback = null)
         {
-            // Give the screen flash a default color of white if no other color was passed.
-            color = color.HasValue ? color.Value : Color.Black;
-
             // Apply the flash if the screen is not already flashing.
-            if (!_fading)
+            if (!_fadeTimer.IsRunning)
             {
-                _fadeDuration = duration;
-                _fadeColor = color.Value;
-                _fadeCallback = callback;
-                _fadeTimer = 0f;
+                // Give the screen flash a default color of white if no other color was passed.
+                _fadeColor = color.HasValue ? color.Value : Color.Black;
 
-                _fading = true;
+                _fadeTimer.Duration = duration;
+                _fadeTimer.Callback = callback;
+                _fadeTimer.Start(true);
             }
         }
 
@@ -198,10 +136,8 @@ namespace Genetic
         /// </summary>
         public void Reset()
         {
-            _flashing = false;
-            _flashCallback = null;
-            _fading = false;
-            _fadeCallback = null;
+            _flashTimer.Reset();
+            _fadeTimer.Reset();
         }
     }
 }

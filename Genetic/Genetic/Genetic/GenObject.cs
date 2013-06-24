@@ -4,40 +4,85 @@ using Microsoft.Xna.Framework;
 
 using Genetic.Geometry;
 using Genetic.Path;
+using Genetic.Physics;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A base game object.
+    /// Provides a size, origin, rotation, and basic physics movement.
+    /// A <c>GenObject</c> can be parented to another <c>GenObject</c> to inherit its position or rotation.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenObject : GenBasic
     {
-        // Bit field flags representing up, down, left, and right directions.
+        /// <summary>
+        /// A bit field flags representing up, down, left, and right directions.
+        /// </summary>
         public enum Direction
         {
+            /// <summary>
+            /// a bit field representing no direction.
+            /// </summary>
             None = 0,
+
+            /// <summary>
+            /// a bit field representing the left direction.
+            /// </summary>
             Left = 0x0001,
+
+            /// <summary>
+            /// a bit field representing the right direction.
+            /// </summary>
             Right = 0x0010,
+
+            /// <summary>
+            /// a bit field representing the up direction.
+            /// </summary>
             Up = 0x0100,
+
+            /// <summary>
+            /// a bit field representing the down direction.
+            /// </summary>
             Down = 0x1000,
+
+            /// <summary>
+            /// a bit field representing every direction.
+            /// </summary>
             Any = Direction.Left | Direction.Right | Direction.Up | Direction.Down
         }
 
-        // A bit field of flags determining the type of transformations that can be connected with a parent object.
+        /// <summary>
+        /// A bit field of flags determining the type of transformations that can be connected with a parent object.
+        /// </summary>
         public enum ParentType
         {
-            // The object will not be transformed by a parent.
+            /// <summary>
+            /// The object's transformations will not be affected by a parent.
+            /// </summary>
             None = 0,
 
-            // The object will move relative to its origin and the parent's origin position.
+            /// <summary>
+            /// The object will move relative to its origin and the parent's origin position.
+            /// </summary>
             Position = 0x001,
 
-            // The object's Rotation value will change relative to a parent's Rotation value.
+            /// <summary>
+            /// The object's rotation will change relative to a parent's rotation.
+            /// </summary>
             Rotation = 0x010,
 
-            // The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
-            // The object's Rotation value will not change.
+            /// <summary>
+            /// The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
+            /// The object's rotation will not change.
+            /// </summary>
             Origin = 0x100,
 
-            // The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
-            // The object's Rotation value will change relative to the parent's Rotation value.
+            /// <summary>
+            /// The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
+            /// The object's rotation will change relative to the parent's rotation.
+            /// </summary>
             OriginRotation = ParentType.Rotation | ParentType.Origin
         }
 
@@ -50,6 +95,11 @@ namespace Genetic
         /// The x and y positions of the object during the previous update.
         /// </summary>
         protected Vector2 _oldPosition;
+
+        /// <summary>
+        /// A flag used to determine if the object has moved since the last update by comparing its current and previous positions.
+        /// </summary>
+        protected bool _hasMoved;
 
         /// <summary>
         /// The x and y positions of the center point of the object.
@@ -76,7 +126,7 @@ namespace Genetic
         /// <summary>
         /// The bounding box of the object relative to the position.
         /// </summary>
-        protected GenAABB _boundingBox;
+        protected GenAABB _bounds;
 
         /// <summary>
         /// The bounding rectangle of the object.
@@ -102,15 +152,14 @@ namespace Genetic
 
         /// <summary>
         /// The x and y distances the object has moved between the current and previous updates relative to its velocity.
-        /// Used by GetMoveBounds() to calculate the movement bounding box of the object.
-        /// Call GetMoveBounds() to refresh the movement distance.
+        /// Useful for calculating the movement bounding box of the object.
         /// </summary>
-        protected Vector2 _moveDistance = Vector2.Zero;
+        protected Vector2 _moveDistance;
 
         /// <summary>
-        /// The bounding box containing the object at its current and predicted positions relative to its velocity.
+        /// A basic bounding box containing the object at its current and predicted positions relative to its velocity.
         /// </summary>
-        protected GenAABB _moveBounds;
+        protected GenAABBBasic _moveBounds;
 
         /// <summary>
         /// A flag used to determine if the object is affected by collisions.
@@ -123,9 +172,14 @@ namespace Genetic
         public bool Solid;
 
         /// <summary>
-        /// The mass of the object used when calculating collision response against another object.
+        /// The mass of the object.
         /// </summary>
-        public float Mass = 1f;
+        protected float _mass;
+
+        /// <summary>
+        /// The inverse of the object's mass used when calculating collision response against another object.
+        /// </summary>
+        protected float _inverseMass;
 
         /// <summary>
         /// The x and y velocities of the object.
@@ -140,12 +194,12 @@ namespace Genetic
         /// <summary>
         /// The x and y acceleration of the object.
         /// </summary>
-        public Vector2 Acceleration = Vector2.Zero;
+        public Vector2 Acceleration;
 
         /// <summary>
         /// The x and y deceleration of the object.
         /// </summary>
-        public Vector2 Deceleration = Vector2.Zero;
+        public Vector2 Deceleration;
 
         /// <summary>
         /// The maximum x and y velocities of the object.
@@ -155,28 +209,30 @@ namespace Genetic
         /// <summary>
         /// The direction that the object is facing.
         /// </summary>
-        protected Direction _facing = Direction.None;
+        protected Direction _facing;
 
         /// <summary>
         /// A bit field of flags giving the directions that the object is colliding in during the previous update.
         /// </summary>
-        public Direction WasTouching = Direction.None;
+        public Direction OldTouching;
 
         /// <summary>
         /// A bit field of flags giving the current directions that the object is colliding in.
         /// </summary>
-        public Direction Touching = Direction.None;
+        public Direction Touching;
 
         /// <summary>
-        /// The object that this object will be parented to.
+        /// The <c>GenObject</c> that this <c>GenObject</c> will be parented to.
         /// </summary>
         public GenObject Parent;
 
-        // The type of transformations that are connected with a parent object.
+        /// <summary>
+        /// The type of transformations that are connected with a parent object.
+        /// </summary>
         public ParentType ParentMode;
 
         /// <summary>
-        /// The x and y position offsets relative to the parent object's position.
+        /// The x and y position offsets relative to the parent object's origin position.
         /// </summary>
         public Vector2 ParentOffset;
 
@@ -184,7 +240,7 @@ namespace Genetic
         /// A flag used to allow other colliding objects to inherit the x velocity when sitting on this object.
         /// The colliding object will move horizontally along with this object.
         /// </summary>
-        public bool IsPlatform = false;
+        public bool IsPlatform;
 
         /// <summary>
         /// The current platform object that the object is interacting with.
@@ -195,18 +251,6 @@ namespace Genetic
         /// The platform object that the object is interacting with during the previous update.
         /// </summary>
         public GenObject OldPlatform;
-
-        /// <summary>
-        /// A global container used to store vector calculation results.
-        /// Useful for reducing Vector2 allocations.
-        /// </summary>
-        private static Vector2 _distancesVector = Vector2.Zero;
-
-        /// <summary>
-        /// A global container used to store vector calculation results.
-        /// Useful for reducing Vector2 allocations.
-        /// </summary>
-        private static Vector2 _collisionNormalVector = Vector2.Zero;
 
         #region Path Fields
         /// <summary>
@@ -265,6 +309,14 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets if the object has moved since the last update by comparing its current and previous positions.
+        /// </summary>
+        public bool HasMoved
+        {
+            get { return _hasMoved; }
+        }
+
+        /// <summary>
         /// Gets the x and y positions of the center point of the object.
         /// </summary>
         public Vector2 CenterPosition
@@ -298,7 +350,8 @@ namespace Genetic
             set
             {
                 _position.X = value;
-                _boundingBox.X = value;
+                _bounds.X = value;
+                _centerPosition.X = _position.X + _bounds.HalfWidth;
                 _originPosition.X = _position.X + _origin.X;
             }
         }
@@ -313,7 +366,8 @@ namespace Genetic
             set
             {
                 _position.Y = value;
-                _boundingBox.Y = value;
+                _bounds.Y = value;
+                _centerPosition.Y = _position.Y + _bounds.HalfHeight;
                 _originPosition.Y = _position.Y + _origin.Y;
             }
         }
@@ -321,9 +375,9 @@ namespace Genetic
         /// <summary>
         /// Gets the bounding box of the object relative to the position.
         /// </summary>
-        public GenAABB BoundingBox
+        public GenAABB Bounds
         {
-            get { return _boundingBox; }
+            get { return _bounds; }
         }
 
         /// <summary>
@@ -331,11 +385,11 @@ namespace Genetic
         /// </summary>
         public float Width
         {
-            get { return _boundingBox.Width; }
+            get { return _bounds.Width; }
 
             set
             {
-                _boundingBox.Width = value;
+                _bounds.Width = value;
                 _boundingRect.Width = (int)value;
             }
         }
@@ -345,11 +399,11 @@ namespace Genetic
         /// </summary>
         public float Height
         {
-            get { return _boundingBox.Height; }
+            get { return _bounds.Height; }
 
             set
             {
-                _boundingBox.Height = value;
+                _bounds.Height = value;
                 _boundingRect.Height = (int)value;
             }
         }
@@ -372,13 +426,36 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the bounding box containing the object at its current and predicted positions relative to its velocity.
+        /// Gets the bounding box surrounding the object at its current and predicted positions relative to its velocity.
         /// Useful for checking if the object may collide with another object during the next update.
-        /// Call GetMoveBounds() first to refresh the movement bounding box.
         /// </summary>
-        public GenAABB MoveBounds
+        public GenAABBBasic MoveBounds
         {
             get { return _moveBounds; }
+        }
+
+        /// <summary>
+        /// Gets or sets the mass of the object.
+        /// Setting this property will also set the inverse mass value used when calculating collision response against another object.
+        /// </summary>
+        public float Mass
+        {
+            get { return _mass; }
+
+            set
+            {
+                _mass = Math.Max(0f, value);
+                _inverseMass = (_mass == 0f) ? 0f : 1f / _mass;
+            }
+        }
+
+        /// <summary>
+        /// Gets the inverse of the object's mass used when calculating collision response against another object.
+        /// Set the object's <c>Mass</c> property to set the inverse mass.
+        /// </summary>
+        public float InverseMass
+        {
+            get { return _inverseMass; }
         }
 
         /// <summary>
@@ -400,12 +477,9 @@ namespace Genetic
         /// <param name="height">The height of the object.</param>
         public GenObject(float x = 0, float y = 0, float width = 1, float height = 1)
         {
-            _position = Vector2.Zero;
-            _debugDrawPosition = Vector2.Zero;
-            _boundingBox = new GenAABB(x, y, width, height);
-            _centerPosition = new Vector2(x + _boundingBox.HalfWidth, y + _boundingBox.HalfHeight);
-            _origin = new Vector2(_boundingBox.HalfWidth, _boundingBox.HalfHeight);
-            _originPosition = Vector2.Zero;
+            _bounds = new GenAABB(x, y, width, height);
+            _centerPosition = new Vector2(x + _bounds.HalfWidth, y + _bounds.HalfHeight);
+            _origin = new Vector2(_bounds.HalfWidth, _bounds.HalfHeight);
 
             X = x;
             Y = y;
@@ -413,15 +487,16 @@ namespace Genetic
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _rotation = 0f;
             RotationSpeed = 0f;
-            _moveBounds = new GenAABB(x, y, width, height);
+            _moveBounds = new GenAABBBasic(x, y, width, height);
             Immovable = false;
             Solid = true;
-            Velocity = Vector2.Zero;
-            OldVelocity = Vector2.Zero;
-            MaxVelocity = Vector2.Zero;
+            Mass = 1f;
+            _facing = Direction.None;
+            OldTouching = Direction.None;
+            Touching = Direction.None;
             Parent = null;
             ParentMode = ParentType.None;
-            ParentOffset = Vector2.Zero;
+            IsPlatform = false;
             Platform = null;
             OldPlatform = null;
         }
@@ -434,7 +509,7 @@ namespace Genetic
             OldVelocity = Velocity;
 
             // Reset the bit fields for collision flags.
-            WasTouching = Touching;
+            OldTouching = Touching;
             Touching = Direction.None;
 
             OldPlatform = Platform;
@@ -475,19 +550,9 @@ namespace Genetic
             else if (Deceleration.Y != 0)
             {
                 if (Velocity.Y > 0)
-                {
-                    Velocity.Y -= Deceleration.Y * GenG.TimeStep;
-
-                    if (Velocity.Y < 0)
-                        Velocity.Y = 0;
-                }
+                    Velocity.Y = Math.Max(Velocity.Y - (Deceleration.Y * GenG.TimeStep), 0f);
                 else if (Velocity.Y < 0)
-                {
-                    Velocity.Y += Deceleration.Y * GenG.TimeStep;
-
-                    if (Velocity.Y > 0)
-                        Velocity.Y = 0;
-                }
+                    Velocity.Y = Math.Min(Velocity.Y + (Deceleration.Y * GenG.TimeStep), 0f);
             }
 
             // Limit the object's velocity to the maximum velocity.
@@ -497,21 +562,39 @@ namespace Genetic
             if (MaxVelocity.Y != 0)
                 Velocity.Y = MathHelper.Clamp(Velocity.Y, -MaxVelocity.Y, MaxVelocity.Y);
 
+            // Assign the position of the object during the previous update before moving the object based on its current velocity.
             _oldPosition = _position;
 
-            // Move the object.
+            // Get the x and y distances that the object will move relative to its velocity.
+            // Update the x and y positions of the object relative to the move distances.
             if (Velocity.X != 0)
-                X += Velocity.X * GenG.TimeStep;
+                X += _moveDistance.X = Velocity.X * GenG.TimeStep;
 
             if (Velocity.Y != 0)
-                Y += Velocity.Y * GenG.TimeStep;
+                Y += _moveDistance.Y = Velocity.Y * GenG.TimeStep;
 
-            // Update the center position of the object.
-            _centerPosition.X = _position.X + _boundingBox.HalfWidth;
-            _centerPosition.Y = _position.Y + _boundingBox.HalfHeight;
+            // Check if the object has moved since the last update.
+            _hasMoved = (_position == _oldPosition) ? false : true;
 
             if (Path != null)
                 MoveAlongPath();
+
+            // Calculate the movement bounding box if the object has moved.
+            // Otherwise set the movement bounds to the object's current bounding box.
+            if (_hasMoved)
+            {
+                _moveBounds.X = Math.Min(_bounds.Left, _bounds.Left + _moveDistance.X);
+                _moveBounds.Y = Math.Min(_bounds.Top, _bounds.Top + _moveDistance.Y);
+                _moveBounds.Width = Math.Max(_bounds.Right, _bounds.Right + _moveDistance.X) - _moveBounds.X;
+                _moveBounds.Height = Math.Max(_bounds.Bottom, _bounds.Bottom + _moveDistance.Y) - _moveBounds.Y;
+            }
+            else
+            {
+                _moveBounds.X = _bounds.Left;
+                _moveBounds.Y = _bounds.Top;
+                _moveBounds.Width = _bounds.Right;
+                _moveBounds.Height = _bounds.Bottom;
+            }
 
             Rotation += RotationSpeed * GenG.TimeStep;
         }
@@ -541,11 +624,11 @@ namespace Genetic
                 }
                 else
                 {
-                    if ((ParentMode & ParentType.Rotation) > ParentType.None)
+                    if ((ParentMode & ParentType.Rotation) == ParentType.Rotation)
                         Rotation = Parent.Rotation;
 
                     // Rotate the object around the parent's origin, using the angle and length of the parent offset vector as a base.
-                    if ((ParentMode & ParentType.Origin) > ParentType.None)
+                    if ((ParentMode & ParentType.Origin) == ParentType.Origin)
                     {
                         GenMove.RotateAroundPoint(this, Parent.OriginPosition, GenMove.VectortoAngle(ParentOffset) + Parent.Rotation, ParentOffset.Length());
 
@@ -556,7 +639,7 @@ namespace Genetic
                 }
 
                 // Calculate the velocity of the object based on its new position affected by the parent object.
-                Velocity = (_position - _oldPosition) / GenG.TimeStep;
+                Velocity = (_position - _oldPosition) * GenG.InverseTimeStep;
             }
         }
 
@@ -565,27 +648,23 @@ namespace Genetic
         /// </summary>
         public override void DrawDebug()
         {
+            // If the bounding box does not intersect with the camera's view, do not draw the debug object.
+            if (!_bounds.Intersects(GenG.CurrentCamera.CameraView))
+                return;
+
+            _debugDrawPosition = _position;
+
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                _debugDrawPosition.X = (int)_position.X;
-                _debugDrawPosition.Y = (int)_position.Y;
-            }
-            else if (GenG.DrawMode == GenG.DrawType.Smooth)
-            {
-                _debugDrawPosition.X = _position.X;
-                _debugDrawPosition.Y = _position.Y;
+                _debugDrawPosition.X = (int)_debugDrawPosition.X;
+                _debugDrawPosition.Y = (int)_debugDrawPosition.Y;
             }
 
             GenG.SpriteBatch.Draw(GenG.Pixel, _debugDrawPosition, _boundingRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
-
-            //GenG.DrawLine(_positionRect.Left, _positionRect.Top, _positionRect.Right, _positionRect.Top, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
-            //GenG.DrawLine(_positionRect.Right, _positionRect.Top, _positionRect.Right, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
-            //GenG.DrawLine(_positionRect.Left, _positionRect.Bottom - 1, _positionRect.Right, _positionRect.Bottom - 1, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
-            //GenG.DrawLine(_positionRect.Left + 1, _positionRect.Top, _positionRect.Left + 1, _positionRect.Bottom, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
         }
 
         /// <summary>
-        /// Sets the x and y position of the origin of the object relative to the object's position.
+        /// Sets the x and y positions of the origin of the object relative to the object's position.
         /// </summary>
         /// <param name="x">The x position of the origin relative to the object's position.</param>
         /// <param name="y">The y position of the origin relative to the object's position.</param>
@@ -594,20 +673,20 @@ namespace Genetic
             _origin.X = x;
             _origin.Y = y;
 
+            // Update the origin position relative to the object's position.
             _originPosition = _position + _origin;
         }
 
         /// <summary>
-        /// Places the origin at the center of the bounding box.
+        /// Places the origin at the center of the object's bounding box.
         /// </summary>
         public void CenterOrigin()
         {
-            _origin.X = _boundingBox.HalfWidth;
-            _origin.Y = _boundingBox.HalfHeight;
+            SetOrigin(_bounds.HalfWidth, _bounds.HalfHeight);
         }
 
         /// <summary>
-        /// Sets a given object as the parent of this object, using the given parenting type.
+        /// Sets a given object as the parent of this object, using the specified parenting type.
         /// </summary>
         /// <param name="gameObject">The object to set as the parent object.</param>
         /// <param name="parentMode">The type of transformations to connect with the parent object.</param>
@@ -618,265 +697,13 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets a bounding box containing the object at its current and predicted positions relative to its velocity.
-        /// </summary>
-        /// <returns>The bounding box containing the object at its current and predicted positions relative to its velocity.</returns>
-        public GenAABB GetMoveBounds()
-        {
-            // Get the x and y distances that the object will move relative to its velocity.
-            _moveDistance.X = Velocity.X * GenG.TimeStep;
-            _moveDistance.Y = Velocity.Y * GenG.TimeStep;
-
-            // Calculate the movement bounding box.
-            _moveBounds.X = Math.Min(_boundingBox.Left, _boundingBox.Left + _moveDistance.X);
-            _moveBounds.Y = Math.Min(_boundingBox.Top, _boundingBox.Top + _moveDistance.Y);
-            _moveBounds.Width = Math.Max(_boundingBox.Right, _boundingBox.Right + _moveDistance.X) - _moveBounds.X;
-            _moveBounds.Height = Math.Max(_boundingBox.Bottom, _boundingBox.Bottom + _moveDistance.Y) - _moveBounds.Y;
-
-            return _moveBounds;
-        }
-
-        /// <summary>
-        /// Checks if the object overlaps the given camera's view area.
-        /// </summary>
-        /// <param name="camera">The camera to check.</param>
-        /// <returns>True if the object overlaps the camera's view area, false if not.</returns>
-        public bool IsOnScreen(GenCamera camera)
-        {
-            return ((_boundingBox.Left < camera.CameraView.Right) && (_boundingBox.Right > camera.CameraView.Left) && (_boundingBox.Top < camera.CameraView.Bottom) && (_boundingBox.Bottom > camera.CameraView.Top));
-        }
-
-        /// <summary>
-        /// Checks for overlap between the movements bounds of this object and a given object.
-        /// </summary>
-        /// <param name="gameObject">The object to check for an overlap.</param>
-        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <returns>True if an overlap occurs, false if not.</returns>
-        public bool Overlap(GenObject gameObject, CollideEvent callback = null)
-        {
-            // Check if this object is alive to avoid unwanted overlap checks that may be called by a quadtree.
-            if (Exists && Active)
-            {
-                if (gameObject.Exists && gameObject.Active && GetMoveBounds().Intersects(gameObject.GetMoveBounds()))
-                {
-                    if (callback != null)
-                        callback(new GenCollideEvent(this, gameObject, GenObject.Direction.None, GenObject.Direction.None));
-
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Applys collision detection and response against another object that may overlap this object.
-        /// </summary>
-        /// <param name="gameObject">The object to check for a collision.</param>
-        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True if a collision occurs, false if not.</returns>
-        public bool Collide(GenObject gameObject, CollideEvent callback = null, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
-        {
-            if (!this.Equals(gameObject))
-            {
-                // Do not check for collisions if either object is not solid, or if both objects are immovable.
-                if ((!Solid || !gameObject.Solid) || (Immovable && gameObject.Immovable))
-                    return false;
-
-                // If either object is a parent of the other, do not check for a collision.
-                //if ((Parent == gameObject) || (gameObject.Parent == this))
-                //    return false;
-
-                if (Overlap(gameObject))
-                {
-                    _distancesVector = GenU.GetDistanceAABB(_boundingBox, gameObject.BoundingBox);
-
-                    if (_distancesVector.X > _distancesVector.Y)
-                    {
-                        if (_boundingBox.MidpointX > gameObject.BoundingBox.MidpointX)
-                        {
-                            _collisionNormalVector.X = -1;
-                            _collisionNormalVector.Y = 0;
-                        }
-                        else
-                        {
-                            _collisionNormalVector.X = 1;
-                            _collisionNormalVector.Y = 0;
-                        }
-                    }
-                    else
-                    {
-                        if (_boundingBox.MidpointY > gameObject.BoundingBox.MidpointY)
-                        {
-                            _collisionNormalVector.X = 0;
-                            _collisionNormalVector.Y = -1;
-                        }
-                        else
-                        {
-                            _collisionNormalVector.X = 0;
-                            _collisionNormalVector.Y = 1;
-                        }
-                    }
-
-                    if (((_collisionNormalVector.X == 1) && ((collidableEdges & GenObject.Direction.Left) == GenObject.Direction.Left)) ||
-                        ((_collisionNormalVector.X == -1) && ((collidableEdges & GenObject.Direction.Right) == GenObject.Direction.Right)) ||
-                        ((_collisionNormalVector.Y == 1) && ((collidableEdges & GenObject.Direction.Up) == GenObject.Direction.Up)) ||
-                        ((_collisionNormalVector.Y == -1) && ((collidableEdges & GenObject.Direction.Down) == GenObject.Direction.Down)))
-                    {
-                        float distance = Math.Max(_distancesVector.X, _distancesVector.Y);
-                        float remove = 0f;
-
-                        // Apply a different collision response against tiles for pixel-perfect accuracy.
-                        if (gameObject is GenTile)
-                        {
-                            remove = Vector2.Dot(-Velocity, _collisionNormalVector) + Math.Max(distance, 0) / GenG.TimeStep;
-
-                            if (remove < 0)
-                            {
-                                if (_collisionNormalVector.X != 0)
-                                {
-                                    if (_collisionNormalVector.X == -1)
-                                        X = gameObject.BoundingBox.Right;
-                                    else
-                                        X = gameObject.X - _boundingBox.Width;
-
-                                    Velocity.X = 0;
-                                }
-                                else
-                                {
-                                    if (_collisionNormalVector.Y == -1)
-                                        Y = gameObject.BoundingBox.Bottom;
-                                    else
-                                        Y = gameObject.Y - _boundingBox.Height;
-
-                                    Velocity.Y = 0;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            float relativeNormalVelocity = Vector2.Dot(gameObject.Velocity - Velocity, _collisionNormalVector);
-
-                            if (penetrate)
-                                remove = relativeNormalVelocity + distance / GenG.TimeStep;
-                            else
-                                remove = relativeNormalVelocity + Math.Max(distance, 0) / GenG.TimeStep;
-
-                            if (remove < 0)
-                            {
-                                float impulse = remove / (Mass + gameObject.Mass);
-
-                                if (!Immovable)
-                                {
-                                    Velocity += impulse * _collisionNormalVector * gameObject.Mass;
-
-                                    if (!penetrate)
-                                    {
-                                        float penetration = Math.Min(distance, 0);
-
-                                        if (_collisionNormalVector.X != 0)
-                                            X += penetration * _collisionNormalVector.X;
-                                        else
-                                            Y += penetration * _collisionNormalVector.Y;
-                                    }
-                                }
-
-                                if (!gameObject.Immovable)
-                                {
-                                    gameObject.Velocity -= impulse * _collisionNormalVector * Mass;
-
-                                    if (!penetrate)
-                                    {
-                                        float penetration = Math.Min(distance, 0);
-
-                                        if (_collisionNormalVector.X != 0)
-                                            gameObject.X -= penetration * _collisionNormalVector.X;
-                                        else
-                                            gameObject.Y -= penetration * _collisionNormalVector.Y;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (remove < 0)
-                        {
-                            // Use a bit field of flags to provide the direction that each object is colliding in during the current collision.
-                            Direction touchingA = Direction.None;
-                            Direction touchingB = Direction.None;
-
-                            if (_collisionNormalVector.X != 0)
-                            {
-                                if (_collisionNormalVector.X == 1)
-                                {
-                                    Touching |= Direction.Right;
-                                    gameObject.Touching |= Direction.Left;
-
-                                    touchingA |= Direction.Right;
-                                    touchingB |= Direction.Left;
-                                }
-                                else
-                                {
-                                    Touching |= Direction.Left;
-                                    gameObject.Touching |= Direction.Right;
-
-                                    touchingA |= Direction.Left;
-                                    touchingB |= Direction.Right;
-                                }
-                            }
-                            else
-                            {
-                                if (_collisionNormalVector.Y == 1)
-                                {
-                                    Touching |= Direction.Down;
-                                    gameObject.Touching |= Direction.Up;
-
-                                    touchingA |= Direction.Down;
-                                    touchingB |= Direction.Up;
-
-                                    if (gameObject.IsPlatform)
-                                    {
-                                        if (Acceleration.X == 0)
-                                            Platform = gameObject;
-                                    }
-                                }
-                                else
-                                {
-                                    Touching |= Direction.Up;
-                                    gameObject.Touching |= Direction.Down;
-
-                                    touchingA |= Direction.Up;
-                                    touchingB |= Direction.Down;
-
-                                    if (IsPlatform)
-                                    {
-                                        if (gameObject.Acceleration.X == 0)
-                                            gameObject.Platform = this;
-                                    }
-                                }
-                            }
-
-                            if (callback != null)
-                                callback(new GenCollideEvent(this, gameObject, touchingA, touchingB));
-
-                            return true;
-                        }
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
         /// Checks if the object is colliding in the given direction.
         /// </summary>
         /// <param name="direction">The direction to check for collision.</param>
         /// <returns>True if there is a collision in the given direction, false if not.</returns>
-        public bool IsTouching(Direction direction)
+        public bool IsTouched(Direction direction)
         {
-            return (Touching & direction) > Direction.None;
+            return (Touching & direction) == direction;
         }
 
         /// <summary>
@@ -886,7 +713,7 @@ namespace Genetic
         /// <returns>True if there was a collision in the given direction, false if not.</returns>
         public bool WasTouched(Direction direction)
         {
-            return (WasTouching & direction) > Direction.None;
+            return (OldTouching & direction) == direction;
         }
 
         /// <summary>
@@ -896,7 +723,7 @@ namespace Genetic
         /// <returns>True if there is a collision in the given direction, false if not.</returns>
         public bool JustTouched(Direction direction)
         {
-            return (((WasTouching & direction) == Direction.None) && ((Touching & direction) > Direction.None));
+            return (WasTouched(Direction.None) && IsTouched(direction));
         }
 
         /// <summary>
@@ -922,7 +749,7 @@ namespace Genetic
         /// <param name="speed">The velocity or acceleration of the object as it moves along the path.</param>
         /// <param name="type">The path movement type.</param>
         /// <param name="axis">The allowed movement axis of the object.</param>
-        /// <param name="accelerates">A flag used to set the object's acceleration or velocity as it moves along the path.</param>
+        /// <param name="movement">Determines whether to set the object's velocity or acceleration as it moves along the path.</param>
         /// <returns>The path that was set.</returns>
         public GenPath SetPath(
             GenPath path,
@@ -955,7 +782,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Moves the object along a path relative to the path movement type.
+        /// Moves the object along a path according to the path movement type.
         /// </summary>
         public void MoveAlongPath()
         {
@@ -967,7 +794,7 @@ namespace Genetic
                     if (Path.Nodes[PathNodeIndex].Callback != null)
                         Path.Nodes[PathNodeIndex].Callback.Invoke();
 
-                    // Check if the path is null in case the callback function set the path to null.
+                    // Check if the path is null in case the callback method set the path to null.
                     if (Path != null)
                     {
                         switch (PathType)
@@ -1029,7 +856,7 @@ namespace Genetic
                     }
                 }
 
-                // Check if the path is null in case the callback function set the path to null.
+                // Check if the path is null in case the callback method set the path to null.
                 if (Path != null)
                 {
                     // Move the object to the next node.
@@ -1044,6 +871,19 @@ namespace Genetic
                     }
                 }
             }
+        }
+
+        public void RefreshMoveBounds()
+        {
+            // Get the x and y distances that the object will move relative to its velocity.
+            _moveDistance.X = Velocity.X * GenG.TimeStep;
+            _moveDistance.Y = Velocity.Y * GenG.TimeStep;
+
+            // Calculate the movement bounding box.
+            _moveBounds.X = Math.Min(_bounds.Left, _bounds.Left + _moveDistance.X);
+            _moveBounds.Y = Math.Min(_bounds.Top, _bounds.Top + _moveDistance.Y);
+            _moveBounds.Width = Math.Max(_bounds.Right, _bounds.Right + _moveDistance.X) - _moveBounds.X;
+            _moveBounds.Height = Math.Max(_bounds.Bottom, _bounds.Bottom + _moveDistance.Y) - _moveBounds.Y;
         }
     }
 }

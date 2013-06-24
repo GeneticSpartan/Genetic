@@ -2,6 +2,11 @@
 
 namespace Genetic
 {
+    /// <summary>
+    /// Uses cellular automata to generate cave-like tilemaps.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenCave : GenTilemap
     {
         /// <summary>
@@ -23,11 +28,6 @@ namespace Genetic
         /// The current number of individual cells, horizontally and vertically, that make one cell.
         /// </summary>
         protected int _cellSize;
-
-        public GenCave()
-        {
-
-        }
 
         /// <summary>
         /// Generates a cave using cellular automaton, given the specified settings.
@@ -151,7 +151,12 @@ namespace Genetic
                             {
                                 int neighborCount = CountNeighbors(x, y);
 
-                                alive = (((_cells[x + _cellSize, y + _cellSize] == 0) && (Array.IndexOf(born, neighborCount) > -1)) || (_cells[x + _cellSize, y + _cellSize] == 1) && (Array.IndexOf(survive, neighborCount) > -1));
+                                if ((_cells[x + _cellSize, y + _cellSize] == 0) && (Array.IndexOf(born, neighborCount) > -1))
+                                    alive = true;
+                                else if ((_cells[x + _cellSize, y + _cellSize] == 1) && (Array.IndexOf(survive, neighborCount) > -1))
+                                    alive = true;
+                                else
+                                    alive = false;
                             }
 
                             for (int i = 0; i < _cellSize; i++)

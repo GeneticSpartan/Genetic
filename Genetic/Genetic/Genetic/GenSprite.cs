@@ -6,6 +6,12 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A drawable game sprite extended from <c>GenObject</c>.
+    /// Static and animated textures are supported, and several animations can be stored for future playback.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenSprite : GenObject
     {
         /// <summary>
@@ -35,7 +41,7 @@ namespace Genetic
         protected Color _baseColor;
 
         /// <summary>
-        /// The color alpha value of the sprite when drawn, a value from 0.0 to 1.0.
+        /// The color alpha value of the sprite, a value from 0.0 to 1.0.
         /// </summary>
         protected float _alpha;
 
@@ -46,9 +52,14 @@ namespace Genetic
         protected float _baseAlpha;
 
         /// <summary>
+        /// The combination of the color and alpha values of the sprite used when drawn.
+        /// </summary>
+        protected Color _drawColor;
+
+        /// <summary>
         /// The amount of pixels in the x-axis and y-axis to offset the sprite texture when drawing.
         /// </summary>
-        public Vector2 DrawOffset = Vector2.Zero;
+        public Vector2 DrawOffset;
 
         /// <summary>
         /// The horizontal and vertical scales at which the sprite texture will be drawn.
@@ -57,12 +68,7 @@ namespace Genetic
         public Vector2 Scale;
 
         /// <summary>
-        /// The rotation of the sprite image when it is drawn.
-        /// </summary>
-        protected float _drawRotation;
-
-        /// <summary>
-        /// A flag used to determine if the sprite wil be drawn rotated when the object is rotated.
+        /// A flag used to determine if the sprite will be drawn rotated when the object is rotated.
         /// </summary>
         public bool DrawRotated;
 
@@ -74,54 +80,49 @@ namespace Genetic
         /// <summary>
         /// The name of the animation that is currently playing.
         /// </summary>
-        protected string _currentAnimation = null;
+        protected string _currentAnimation;
 
         /// <summary>
         /// The sprite effect used to draw the sprite flipped horizontally or vertically.
         /// </summary>
-        protected SpriteEffects _spriteEffect = SpriteEffects.None;
+        protected SpriteEffects _spriteEffect;
 
         /// <summary>
-        /// The factor by which the camera scroll values affect the sprite's draw position within a camera.
-        /// A value of 1 will move the sprite with the camera scroll values exactly.
+        /// The x and y factors by which the camera scroll values affect the sprite's draw position within a camera.
+        /// A value of 1 will move the sprite with the camera scroll value exactly.
         /// A value of 0 will prevent the sprite from scrolling with the camera, and is useful for HUD elements.
         /// </summary>
-        public float ScrollFactor = 1f;
-
-        /// <summary>
-        /// Determines if the sprite is currently flickering.
-        /// </summary>
-        protected bool _flickering = false;
+        public Vector2 ScrollFactor;
 
         /// <summary>
         /// The speed of the sprite flicker.
         /// </summary>
-        protected float _flickerIntensity = 0f;
-
-        /// <summary>
-        /// The current duration of the sprite flicker.
-        /// </summary>
-        protected float _flickerDuration = 0f;
-
-        /// <summary>
-        /// The amount of time since the sprite flicker started, in seconds.
-        /// </summary>
-        protected float _flickerTimer = 0f;
+        protected float _flickerIntensity;
 
         /// <summary>
         /// The color to tint the sprite during a flicker.
         /// </summary>
-        protected Color _flickerColor = Color.White;
+        protected Color _flickerColor;
 
         /// <summary>
         /// Determines if the sprite flicker will use a pulsing effect.
         /// </summary>
-        protected bool _flickerPulsing = false;
+        protected bool _flickerPulsing;
 
         /// <summary>
-        /// The callback function that will invoke after the sprite flicker has finished.
+        /// The timer used to manage a sprite flicker.
         /// </summary>
-        protected Action _flickerCallback = null;
+        protected GenTimer _flickerTimer;
+
+        /// <summary>
+        /// The timer used to manage a sprite fade.
+        /// </summary>
+        protected GenTimer _fadeTimer;
+
+        /// <summary>
+        /// The direction of the sprite fade. 1 = fade-in, -1 = fade-out.
+        /// </summary>
+        protected int _fadeDirection;
 
         /// <summary>
         /// Gets the texture used when drawing the sprite.
@@ -176,6 +177,14 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets the name of the animation that is currently playing.
+        /// </summary>
+        public string CurrentAnimation
+        {
+            get { return _currentAnimation; }
+        }
+
+        /// <summary>
         /// Gets the sprite effect used to draw the sprite flipped horizontally or vertically.
         /// </summary>
         public SpriteEffects SpriteEffect
@@ -203,21 +212,29 @@ namespace Genetic
                         _spriteEffect = SpriteEffects.None;
                         break;
                     case Direction.Up:
-                        _spriteEffect = SpriteEffects.FlipVertically;
+                        _spriteEffect = SpriteEffects.None;
                         break;
                     case Direction.Down:
-                        _spriteEffect = SpriteEffects.None;
+                        _spriteEffect = SpriteEffects.FlipVertically;
                         break;
                 }
             }
         }
 
         /// <summary>
-        /// Returns true if the sprite is currently flickering, false if not.
+        /// Gets if the sprite is currently flickering.
         /// </summary>
         public bool Flickering
         {
-            get { return _flickering; }
+            get { return _flickerTimer.IsRunning; }
+        }
+
+        /// <summary>
+        /// Gets if the sprite is currently fading in/out.
+        /// </summary>
+        public bool Fading
+        {
+            get { return _fadeTimer.IsRunning; }
         }
 
         /// <param name="x">The x position of the sprite.</param>
@@ -229,22 +246,32 @@ namespace Genetic
             : base(x, y, width, height)
         {
             _sourceRect = new Rectangle(0, 0, width, height);
-
-            if (texture != null)
-                LoadTexture(texture, true);
-            else
-                _texture = null;
-
-            _baseColor = Color.White;
-            _color = _baseColor;
-            _baseAlpha = 1f;
-            _alpha = _baseAlpha;
+            _texture = (texture != null) ? LoadTexture(texture, true) : null;
+            Color = Color.White;
+            Alpha = 1f;
+            _drawColor = _color * _alpha;
             Scale = Vector2.One;
-            _drawRotation = 0f;
             DrawRotated = true;
             Animations = new Dictionary<string, GenAnimation>();
+            _currentAnimation = null;
+            _spriteEffect = SpriteEffects.None;
+            ScrollFactor = Vector2.One;
+            _flickerIntensity = 0f;
+            _flickerColor = Color.White;
+            _flickerPulsing = false;
+            _flickerIntensity = 0f;
+            _flickerTimer = new GenTimer(0f, null, true);
+            _flickerColor = Color.White;
+            _flickerPulsing = false;
+            _fadeTimer = new GenTimer(0f, null, true);
+            _fadeDirection = 1;
         }
 
+        /// <summary>
+        /// Calls <c>Update</c> on this sprite's object.
+        /// Calls <c>Update</c> on the current animation, and manages sprite flicker.
+        /// Override this method to add additional update logic.
+        /// </summary>
         public override void Update()
         {
             base.Update();
@@ -253,54 +280,75 @@ namespace Genetic
             if (_currentAnimation != null)
                 Animations[_currentAnimation].Update();
 
-            if (_flickering)
-            {
-                if (_flickerTimer < _flickerDuration)
-                {
-                    if (_flickerPulsing)
-                    {
-                        _alpha = _baseAlpha * GenU.SineWave(0.5f, _flickerIntensity, 0.5f);
-                        _color = _flickerColor * _alpha;
-                    }
-                    else
-                    {
-                        _alpha = _baseAlpha * (float)Math.Round(GenU.SineWave(0.5f, _flickerIntensity, 0.5f));
-                        _color = _flickerColor * _alpha;
-                    }
+            _alpha = _baseAlpha;
 
-                    _flickerTimer += GenG.TimeStep;
+            // Manage the sprite flicker effect.
+            if (_flickerTimer.IsRunning)
+            {
+                _flickerTimer.Update();
+
+                if (!_flickerTimer.IsRunning)
+                {
+                    // Set the color and alpha back to their original values if the sprite flicker is no longer running.
+                    _color = _baseColor;
+                    _alpha = _baseAlpha;
                 }
                 else
                 {
-                    _flickering = false;
-                    _color = _baseColor;
+                    _alpha *= GenU.SineWave(0.5f, _flickerIntensity, 0.5f);
 
-                    if (_flickerCallback != null)
-                        _flickerCallback.Invoke();
+                    // If the sprite flicker is not pulsing, round the alpha value to 0 or 1 for a solid flicker effect.
+                    if (!_flickerPulsing)
+                        _alpha = (float)Math.Round(_alpha);
+
+                    _color = _flickerColor;
                 }
             }
-            else
-                _alpha = _baseAlpha;
+            
+            // Manage the sprite fade in/out effect.
+            if (_fadeTimer.IsRunning)
+            {
+                _fadeTimer.Update();
+
+                // If the sprite fade is no longer running, Keep the alpha color value within 0 and the base alpha.
+                // Otherwise, fade the alpha color value in or out.
+                if (!_fadeTimer.IsRunning)
+                    _alpha = (_fadeDirection == 1) ? _baseAlpha : 0f;
+                else
+                    _alpha *= (_fadeDirection == 1) ? (_fadeTimer.Elapsed / _fadeTimer.Duration) : (_fadeTimer.Remaining / _fadeTimer.Duration);                
+            }
         }
 
         /// <summary>
-        /// Draws the sprite to the camera.
+        /// Handles post-update logic for the sprite.
+        /// </summary>
+        public override void PostUpdate()
+        {
+            base.PostUpdate();
+
+            // Update the draw color using the current color and alpha values.
+            _drawColor = _color * _alpha;
+        }
+
+        /// <summary>
+        /// Updates the draw position and rotation, and draws the sprite to the camera.
         /// </summary>
         public override void Draw()
         {
             UpdateDrawPosition();
 
-            if (DrawRotated)
-                _drawRotation = _rotation;
-            else
-                _drawRotation = 0;
-
             if (_texture != null)
             {
-                if (_currentAnimation == null)
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, _sourceRect, _color * _alpha, _drawRotation, _origin, Scale, _spriteEffect, 0);
-                else
-                    GenG.SpriteBatch.Draw(_texture, _drawPosition, Animations[_currentAnimation].FrameRect, _color * _alpha, _drawRotation, _origin, Scale, _spriteEffect, 0);
+                GenG.SpriteBatch.Draw(
+                    _texture,
+                    _drawPosition,
+                    (_currentAnimation == null) ? _sourceRect : Animations[_currentAnimation].FrameRect,
+                    _drawColor,
+                    (DrawRotated) ? _rotation : 0f,
+                    _origin,
+                    Scale,
+                    _spriteEffect,
+                    0f);
             }
         }
 
@@ -311,39 +359,21 @@ namespace Genetic
         /// <returns></returns>
         protected void UpdateDrawPosition()
         {
+            _drawPosition.X = _originPosition.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor.X);
+            _drawPosition.Y = _originPosition.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor.Y);
+
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                _drawPosition.X = (int)(X + _origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor));
-                _drawPosition.Y = (int)(Y + _origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor));
-            }
-            else if (GenG.DrawMode == GenG.DrawType.Smooth)
-            {
-                _drawPosition.X = X + _origin.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor);
-                _drawPosition.Y = Y + _origin.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor);
+                _drawPosition.X = (int)_drawPosition.X;
+                _drawPosition.Y = (int)_drawPosition.Y;
             }
         }
 
         /// <summary>
-        /// Loads a texture file to use as the sprite's image.
-        /// Sets the source bounding rectangle according to the new texture.
+        /// Sets the sprite's image to a loaded texture.
+        /// Sets the source bounding rectangle according to the texture's dimensions.
         /// </summary>
-        /// <param name="textureFile">The sprite texture file to load.</param>
-        /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
-        /// <returns>The Texture2D created from loading the texture file.</returns>
-        public Texture2D LoadTexture(string textureFile, bool centerOrigin = true)
-        {
-            _texture = GenG.Content.Load<Texture2D>(textureFile);
-
-            SetSourceRect(0, 0, _texture.Width, _texture.Height, centerOrigin);
-
-            return _texture;
-        }
-
-        /// <summary>
-        /// Sets the sprite's image to an existing texture.
-        /// Sets the source bounding rectangle according to the texture.
-        /// </summary>
-        /// <param name="textureFile">The sprite texture.</param>
+        /// <param name="texture">The sprite texture.</param>
         /// <param name="centerOrigin">Determines if the sprite origin should be re-centered to the new source rectangle.</param>
         /// <returns>The Texture2D that was given.</returns>
         public Texture2D LoadTexture(Texture2D texture, bool centerOrigin = true)
@@ -367,20 +397,16 @@ namespace Genetic
         /// <returns>The newly created Texture2D.</returns>
         public Texture2D MakeTexture(Color? color = null, int width = 0, int height = 0, bool centerOrigin = true)
         {
-            color = color.HasValue ? color.Value : Color.White;
-
-            // Make sure neither the width or height values are 0.
-            width = (width != 0) ? width : (int)Width;
-            height = (height != 0) ? height : (int)Height;
-
-            _texture = GenU.MakeTexture(color.Value, width, height);
+            _texture = GenU.MakeTexture(color, width, height);
 
             // Set the source rectangle to the existing dimensions if the given width and height values are 0.
             // This allows the source rectangle to keep the width and height values given when the sprite was created.
-            if ((width == 0) || (height == 0))
-                SetSourceRect(0, 0, _sourceRect.Width, _sourceRect.Height, centerOrigin);
-            else
-                SetSourceRect(0, 0, width, height, centerOrigin);
+            SetSourceRect(
+                0, 
+                0, 
+                (width == 0) ? _sourceRect.Width : width, 
+                (height == 0) ? _sourceRect.Height : height, 
+                centerOrigin);
 
             return _texture;
         }
@@ -411,10 +437,7 @@ namespace Genetic
         public void CenterOrigin(bool useSprite = true)
         {
             if (useSprite)
-            {
-                _origin.X = _sourceRect.Width * 0.5f;
-                _origin.Y = _sourceRect.Height * 0.5f;
-            }
+                SetOrigin(_sourceRect.Width * 0.5f, _sourceRect.Height * 0.5f);
             else
                 base.CenterOrigin();
         }
@@ -447,11 +470,7 @@ namespace Genetic
             if (Animations.ContainsKey(name))
             {
                 _currentAnimation = name;
-
-                if (forceReset)
-                    Animations[name].Reset();
-
-                Animations[name].IsPlaying = true;
+                Animations[name].Play(forceReset);
             }
         }
 
@@ -465,19 +484,56 @@ namespace Genetic
         /// <param name="callback">The method that will be invoked after the sprite flicker has finished.</param>
         public void Flicker(float intensity = 40f, float duration = 1f, Color? color = null, bool pulsing = false, Action callback = null)
         {
-            color = color.HasValue ? color.Value : _color;
-
             // Apply the flicker if the sprite is not already flickering.
-            if (!_flickering)
+            if (!_flickerTimer.IsRunning)
             {
                 _flickerIntensity = intensity;
-                _flickerDuration = duration;
-                _flickerColor = color.Value;
                 _flickerPulsing = pulsing;
-                _flickerCallback = callback;
-                _flickerTimer = 0f;
 
-                _flickering = true;
+                // Set the flicker color to the sprite's current color if the given value is null.
+                _flickerColor = color.HasValue ? color.Value : _color;
+
+                _flickerTimer.Duration = duration;
+                _flickerTimer.Callback = callback;
+                _flickerTimer.Start(true);
+            }
+        }
+
+        /// <summary>
+        /// Fades the sprite in from an alpha color value of 0 over the given duration.
+        /// </summary>
+        /// <param name="duration">The duration of the sprite fade-in, in seconds.</param>
+        /// <param name="callback">The method that will invoke when the sprite fade-in has completed.</param>
+        public void FadeIn(float duration = 1f, Action callback = null)
+        {
+            Fade(1, duration, callback);
+        }
+
+        /// <summary>
+        /// Fades the sprite out to an alpha color value of 0 over the given duration.
+        /// </summary>
+        /// <param name="duration">The duration of the sprite fade-out, in seconds.</param>
+        /// <param name="callback">The method that will invoke when the sprite fade-out has completed.</param>
+        public void FadeOut(float duration = 1f, Action callback = null)
+        {
+            Fade(-1, duration, callback);
+        }
+
+        /// <summary>
+        /// Fades the sprite in or out by adjusting its alpha color value over the given duration.
+        /// </summary>
+        /// <param name="fadeDirection">The direction of the sprite fade. 1 = fade-in, -1 = fade-out.</param>
+        /// <param name="duration">The duration of the sprite fade, in seconds.</param>
+        /// <param name="callback">The method that will invoke when the sprite fade has completed.</param>
+        protected void Fade(int fadeDirection, float duration, Action callback)
+        {
+            if (!_fadeTimer.IsRunning)
+            {
+                _fadeDirection = fadeDirection;
+
+                _fadeTimer.Duration = duration;
+                _fadeTimer.Callback = callback;
+                _fadeTimer.Start(true);
             }
         }
     }

@@ -1,41 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A container that manages a group of game objects derived from <c>GenBasic</c>, including any updating and drawing.
+    /// Each group may also contain a quadtree data structure to handle overlap and collision checks against its members.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenGroup : GenBasic
     {
-        /// <summary>
-        /// The GenBasic objects that have been added to the group, and are available for calling updates.
-        /// </summary>
-        protected List<GenBasic> _activeMembers;
-
         /// <summary>
         /// The GenBasic objects that have been added to the group.
         /// </summary>
         public List<GenBasic> Members;
 
         /// <summary>
+        /// The GenBasic objects that have been added to the group, and are available for calling updates.
+        /// </summary>
+        protected List<GenBasic> _activeMembers;
+
+        /// <summary>
         /// A flag used to determine if any objects are waiting to be added to the active members list.
-        /// Prevents new objects from being directly added to the active members list during update loops.
+        /// Prevents new objects from being directly added or removed from the active members list during update loops.
         /// </summary>
         protected bool _updateMembers;
-
-        /// <summary>
-        /// The GenBasic overlay objects that have been added to the group, and are available for calling updates.
-        /// </summary>
-        protected List<GenBasic> _activeMembersOverlay;
-
-        /// <summary>
-        /// The GenBasic overlay objects that have been added to the group.
-        /// </summary>
-        public List<GenBasic> MembersOverlay;
-
-        /// <summary>
-        /// A flag used to determine if any overlay objects are waiting to be added to the active members overlay list.
-        /// Prevents new overlay objects from being directly added to the active members overlay list during update loops.
-        /// </summary>
-        protected bool _updateMembersOverlay;
 
         /// <summary>
         /// A quadtree data structure for group member objects.
@@ -51,23 +42,13 @@ namespace Genetic
         /// <summary>
         /// A group used to manage a list of objects inherited from GenBasic.
         /// </summary>
-        /// <param name="useQuadtree">A flag used to determine if the group will use a quadtree for overlap/collision detection with other objects or groups. Use false when overlapping/colliding with tilemaps.</param>
-        public GenGroup(bool useQuadtree = false)
+        public GenGroup()
         {
             Members = new List<GenBasic>();
             _activeMembers = new List<GenBasic>();
             _updateMembers = false;
 
-            MembersOverlay = new List<GenBasic>();
-            _activeMembersOverlay = new List<GenBasic>();
-            _updateMembersOverlay = false;
-
-            // If the group uses a quadtree for collision detection, set its position and size using the world bounding box.
-            if (useQuadtree)
-                Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
-            else
-                Quadtree = null;
-
+            Quadtree = null;
             _clear = false;
         }
 
@@ -81,7 +62,6 @@ namespace Genetic
             if (_clear)
             {
                 _activeMembers.Clear();
-                _activeMembersOverlay.Clear();
                 _clear = false;
             }
 
@@ -93,23 +73,9 @@ namespace Genetic
                 _updateMembers = false;
             }
 
-            // if any overlay objects have been recently added or removed, update the active members overlay list.
-            if (_updateMembersOverlay)
-            {
-                _activeMembersOverlay.Clear();
-                _activeMembersOverlay.AddRange(MembersOverlay);
-                _updateMembersOverlay = false;
-            }
-
             if (Exists && Active)
             {
                 foreach (GenBasic member in _activeMembers)
-                {
-                    if (member.Exists && member.Active)
-                        member.PreUpdate();
-                }
-
-                foreach (GenBasic member in _activeMembersOverlay)
                 {
                     if (member.Exists && member.Active)
                         member.PreUpdate();
@@ -131,12 +97,7 @@ namespace Genetic
                         member.Update();
                 }
 
-                foreach (GenBasic member in _activeMembersOverlay)
-                {
-                    if (member.Exists && member.Active)
-                        member.Update();
-                }
-
+                // Update the quadtree.
                 if (Quadtree != null)
                     Quadtree.Update();
             }
@@ -151,12 +112,6 @@ namespace Genetic
             if (Exists && Active)
             {
                 foreach (GenBasic member in _activeMembers)
-                {
-                    if (member.Exists && member.Active)
-                        member.PostUpdate();
-                }
-
-                foreach (GenBasic member in _activeMembersOverlay)
                 {
                     if (member.Exists && member.Active)
                         member.PostUpdate();
@@ -178,83 +133,30 @@ namespace Genetic
                         if (member.Visible)
                             member.Draw();
 
-                        if (GenG.IsDebug)
+                        if (GenG.AllowDebug && GenG.IsDebug)
                             member.DrawDebug();
                     }
                 }
 
-                if (GenG.IsDebug && (Quadtree != null))
-                    Quadtree.Draw();
-            }
-        }
-
-        /// <summary>
-        /// Calls Draw on each of the overlay objects in the active members overlay list.
-        /// </summary>
-        public override void DrawOverlay()
-        {
-            if (Exists && Visible)
-            {
-                foreach (GenBasic member in _activeMembersOverlay)
-                {
-                    if (member.Exists)
-                    {
-                        if (member.Visible)
-                        {
-                            if (member is GenGroup)
-                                member.DrawOverlay();
-                            else
-                                member.Draw();
-                        }
-
-                        if (GenG.IsDebug)
-                            member.DrawDebug();
-                    }
-                }
-
-                if (GenG.IsDebug && (Quadtree != null))
-                    Quadtree.Draw();
+                if (GenG.AllowDebug && GenG.IsDebug && (Quadtree != null))
+                    Quadtree.DrawDebug();
             }
         }
 
         /// <summary>
         /// Adds an object to the group.
+        /// If the group already contains the object, the object will not be added again.
         /// </summary>
         /// <param name="basic">The object to add.</param>
-        /// <param name="overlay">A flag used to determine if the object should be drawn to the screen directly, ignoring cameras.</param>
-        /// <returns>The object added to the group.</returns>
-        public GenBasic Add(GenBasic basic, bool overlay = false)
+        /// <returns>The object that was added to the group.</returns>
+        public GenBasic Add(GenBasic basic)
         {
-            if (overlay)
-            {
-                // Do not add the same overlay object twice.
-                if (MembersOverlay.Contains(basic))
-                    return basic;
+            // Do not add the same object twice.
+            if (Members.Contains(basic))
+                return basic;
 
-                MembersOverlay.Add(basic);
-                _updateMembersOverlay = true;
-
-                if (Quadtree != null)
-                {
-                    if ((basic is GenObject) || (basic is GenGroup))
-                        Quadtree.Insert(basic);
-                }
-            }
-            else
-            {
-                // Do not add the same object twice.
-                if (Members.Contains(basic))
-                    return basic;
-
-                Members.Add(basic);
-                _updateMembers = true;
-
-                if (Quadtree != null)
-                {
-                    if ((basic is GenObject) || (basic is GenGroup))
-                        Quadtree.Insert(basic);
-                }
-            }
+            Members.Add(basic);
+            _updateMembers = true;
 
             return basic;
         }
@@ -263,36 +165,19 @@ namespace Genetic
         /// Removes a specified object from the members list.
         /// </summary>
         /// <param name="basic">The object to remove.</param>
-        /// <param name="overlay">A flag used to determine if the object being removed is an overlay object.</param>
         /// <returns>The object removed from the members list. Null if the object was not found in the members list.</returns>
-        public GenBasic Remove(GenBasic basic, bool overlay = false)
+        public GenBasic Remove(GenBasic basic)
         {
-            if (overlay)
+            // Attempt to remove the object from the members list.
+            if (Members.Contains(basic))
             {
-                int index = MembersOverlay.IndexOf(basic);
+                Members.Remove(basic);
+                _updateMembers = true;
 
-                if (index > -1)
-                {
-                    MembersOverlay.Remove(basic);
-                    _updateMembersOverlay = true;
-                }
-                else
-                    return null;
-            }
-            else
-            {
-                int index = Members.IndexOf(basic);
-
-                if (index > -1)
-                {
-                    Members.Remove(basic);
-                    _updateMembers = true;
-                }
-                else
-                    return null;
+                return basic;
             }
 
-            return basic;
+            return null;
         }
 
         /// <summary>
@@ -300,34 +185,17 @@ namespace Genetic
         /// </summary>
         /// <param name="oldMember">The existing object to replace.</param>
         /// <param name="newMember">The new object that will replace the existing object.</param>
-        /// <param name="overlay">A flag used to determine if the object being replaced is an overlay object.</param>
         /// <returns>The new object that replaced the existing object. Null if the object was not found in the members list.</returns>
-        public GenBasic Replace(GenBasic oldMember, GenBasic newMember, bool overlay = false)
+        public GenBasic Replace(GenBasic oldMember, GenBasic newMember)
         {
-            if (overlay)
-            {
-                int index = MembersOverlay.IndexOf(oldMember);
+            // Attempt to replace the existing object in the members list.
+            int index = Members.IndexOf(oldMember);
 
-                if (index > -1)
-                {
-                    MembersOverlay[index] = newMember;
-                    _updateMembersOverlay = true;
-                }
-                else
-                    return null;
-            }
-            else
-            {
-                int index = Members.IndexOf(oldMember);
+            if (index == -1)
+                return null;
 
-                if (index > -1)
-                {
-                    Members[index] = newMember;
-                    _updateMembers = true;
-                }
-                else
-                    return null;
-            }
+            Members[index] = newMember;
+            _updateMembers = true;
 
             return newMember;
         }
@@ -433,16 +301,22 @@ namespace Genetic
         /// <returns>A random object from the list. Null if the index was outside of the list.</returns>
         public GenBasic GetRandom(int startIndex = 0, int length = 0)
         {
-            if (length == 0)
-                length = _activeMembers.Count;
+            // Get a random object from the active members list if the list contains any members.
+            if (_activeMembers.Count > 0)
+            {
+                if (length == 0)
+                    length = _activeMembers.Count;
 
-            int index = GenU.Random(startIndex, startIndex + length);
+                int index = GenU.Random(startIndex, startIndex + length);
 
-            // Check if the index is outside of the list.
-            if (_activeMembers.Count < (index - 1))
-                return null;
+                // Check if the index is outside of the list.
+                if (_activeMembers.Count < (index - 1))
+                    return null;
 
-            return _activeMembers[index];
+                return _activeMembers[index];
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -506,12 +380,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Creates a quadtree for the group based on the current world bounds, and inserts the group's current members.
+        /// </summary>
+        public void MakeQuadtree()
+        {
+            Quadtree = new GenQuadtree(GenG.WorldBounds.X, GenG.WorldBounds.Y, GenG.WorldBounds.Width, GenG.WorldBounds.Height);
+
+            // Add each current member of this group to the quadtree by adding the group itself.
+            Quadtree.Add(this);
+        }
+
+        /// <summary>
         /// Clears the members list of all current objects.
         /// </summary>
         public void Clear()
         {
             Members.Clear();
-            MembersOverlay.Clear();
 
             if (Quadtree != null)
                 Quadtree.Clear();

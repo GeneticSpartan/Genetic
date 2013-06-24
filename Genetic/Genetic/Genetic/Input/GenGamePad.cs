@@ -5,12 +5,43 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Genetic.Input
 {
+    /// <summary>
+    /// Manages input from a game pad device.
+    /// Extends features such as game pad vibration fading.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenGamePad
     {
         /// <summary>
         /// A special-case control scheme to use the variable values available to certain gamepad controls to move at variable speeds.
         /// </summary>
-        public enum ButtonsSpecial { ThumbStickLeft, ThumbStickRight, TriggerLeft, TriggerRight, None };
+        public enum ButtonsSpecial {
+            /// <summary>
+            /// The left thumb stick control on a game pad.
+            /// </summary>
+            ThumbStickLeft,
+
+            /// <summary>
+            /// The right thumb stick control on a game pad.
+            /// </summary>
+            ThumbStickRight,
+
+            /// <summary>
+            /// The left trigger control on a game pad.
+            /// </summary>
+            TriggerLeft,
+
+            /// <summary>
+            /// The right trigger control on a game pad.
+            /// </summary>
+            TriggerRight,
+
+            /// <summary>
+            /// Represents no game pad control.
+            /// </summary>
+            None
+        };
 
         /// <summary>
         /// The current state of the game pad.
@@ -38,29 +69,11 @@ namespace Genetic.Input
         protected float _rightMotorSpeed;
 
         /// <summary>
-        /// Determines if the gampad is currently vibrating.
-        /// </summary>
-        protected bool _vibrating;
-
-        /// <summary>
-        /// The current duration of the gamepad vibration.
-        /// </summary>
-        protected float _vibrateDuration;
-
-        /// <summary>
         /// Determines whether the gamepad vibration intensity decreases over time.
         /// </summary>
         protected bool _vibrateDecreasing;
 
-        /// <summary>
-        /// The amount of time since the gamepad vibration started, in seconds.
-        /// </summary>
-        protected float _vibrateTimer;
-
-        /// <summary>
-        /// The callback function that will invoke after the gamepad vibration has finished.
-        /// </summary>
-        protected Action _vibrateCallback;
+        protected GenTimer _vibrateTimer;
 
         /// <summary>
         /// Gets the x position of the left thumbstick, a value between -1.0 and 1.0.
@@ -128,11 +141,11 @@ namespace Genetic.Input
         }
 
         /// <summary>
-        /// Gets whether the gamepad is vibrating or not.
+        /// Gets if the gamepad is currently vibrating.
         /// </summary>
         public bool Vibrating
         {
-            get { return _vibrating; }
+            get { return _vibrateTimer.IsRunning; }
         }
 
         /// <summary>
@@ -144,44 +157,37 @@ namespace Genetic.Input
             _playerIndex = playerIndex;
             _leftMotorSpeed = 0f;
             _rightMotorSpeed = 0f;
-            _vibrating = false;
-            _vibrateDuration = 0f;
             _vibrateDecreasing = false;
-            _vibrateTimer = 0f;
-            _vibrateCallback = null;
+            _vibrateTimer = new GenTimer(0f, null, true);
         }
 
         /// <summary>
         /// Updates the current and previous game pad states.
+        /// Handles game pad vibration.
         /// </summary>
         public void Update()
         {
             _oldGamePadState = _gamePadState;
             _gamePadState = GamePad.GetState(_playerIndex);
 
-            if (_vibrating)
+            if (_vibrateTimer.IsRunning)
             {
-                if (_vibrateTimer < _vibrateDuration)
+                _vibrateTimer.Update();
+
+                if (!_vibrateTimer.IsRunning)
+                    StopVibrate();
+                else if (_vibrateDecreasing)
                 {
-                    if (_vibrateDecreasing)
-                    {
-                        float vibrateFade = (_vibrateDuration - _vibrateTimer) / _vibrateDuration;
+                    float vibrateDecrease = _vibrateTimer.Remaining / _vibrateTimer.Duration;
 
-                        GamePad.SetVibration(_playerIndex, _leftMotorSpeed * vibrateFade, _rightMotorSpeed * vibrateFade);
-                    }
-
-                    _vibrateTimer += GenG.TimeStep;
-                }
-                else
-                {
-                    GamePad.SetVibration(_playerIndex, 0f, 0f);
-
-                    _vibrating = false;
-
-                    if (_vibrateCallback != null)
-                        _vibrateCallback.Invoke();
+                    GamePad.SetVibration(_playerIndex, _leftMotorSpeed * vibrateDecrease, _rightMotorSpeed * vibrateDecrease);
                 }
             }
+        }
+
+        public void StopVibrate()
+        {
+            GamePad.SetVibration(_playerIndex, 0f, 0f);
         }
 
         /// <summary>
@@ -211,7 +217,7 @@ namespace Genetic.Input
         /// <returns>True if the button was just pressed, false if not.</returns>
         public bool JustPressed(Buttons button)
         {
-            return (_oldGamePadState.IsButtonUp(button) && _gamePadState.IsButtonDown(button)) ? true : false;
+            return (_oldGamePadState.IsButtonUp(button) && _gamePadState.IsButtonDown(button));
         }
 
         /// <summary>
@@ -221,7 +227,7 @@ namespace Genetic.Input
         /// <returns>True if the button was just released, false if not.</returns>
         public bool JustReleased(Buttons button)
         {
-            return (_oldGamePadState.IsButtonDown(button) && _gamePadState.IsButtonUp(button)) ? true : false;
+            return (_oldGamePadState.IsButtonDown(button) && _gamePadState.IsButtonUp(button));
         }
 
         /// <summary>
@@ -231,24 +237,17 @@ namespace Genetic.Input
         /// <param name="rightMotor">The speed of the right motor, a value between 0.0 and 1.0. This motor is a high-frequency motor.</param>
         /// <param name="duration">The duration of the gamepad vibration, in seconds.</param>
         /// <param name="decreasing">A flag used to determine if the vibration speeds will decrease over time.</param>
-        /// <param name="callback">The method that will be invoked after the gamepad vibration has finished.</param>
-        public void Vibrate(float leftMotor = 1f, float rightMotor = 0.5f, float duration = 0.2f, bool decreasing = false, Action callback = null)
+        public void Vibrate(float leftMotor = 1f, float rightMotor = 0.5f, float duration = 0.2f, bool decreasing = false)
         {
-            // Apply the vibration if the gamepad is not already vibrating.
-            if (!_vibrating)
-            {
-                _leftMotorSpeed = leftMotor;
-                _rightMotorSpeed = rightMotor;
+            _leftMotorSpeed = leftMotor;
+            _rightMotorSpeed = rightMotor;
 
-                GamePad.SetVibration(_playerIndex, _leftMotorSpeed, _rightMotorSpeed);
+            GamePad.SetVibration(_playerIndex, _leftMotorSpeed, _rightMotorSpeed);
 
-                _vibrateDuration = duration;
-                _vibrateDecreasing = decreasing;
-                _vibrateCallback = callback;
-                _vibrateTimer = 0f;
+            _vibrateDecreasing = decreasing;
 
-                _vibrating = true;
-            }
+            _vibrateTimer.Duration = duration;
+            _vibrateTimer.Start(true);
         }
     }
 }

@@ -3,6 +3,11 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Genetic.Input
 {
+    /// <summary>
+    /// Manages input from a keyboard device.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenKeyboard
     {
         /// <summary>
@@ -66,7 +71,7 @@ namespace Genetic.Input
         /// <returns>True if the key was just pressed, false if not.</returns>
         public bool JustPressed(Keys key)
         {
-            return (_oldKeyboardState.IsKeyUp(key) && _keyboardState.IsKeyDown(key)) ? true : false;
+            return (_oldKeyboardState.IsKeyUp(key) && _keyboardState.IsKeyDown(key));
         }
 
         /// <summary>
@@ -76,7 +81,7 @@ namespace Genetic.Input
         /// <returns>True if the key was just released, false if not.</returns>
         public bool JustReleased(Keys key)
         {
-            return (_oldKeyboardState.IsKeyDown(key) && _keyboardState.IsKeyUp(key)) ? true : false;
+            return (_oldKeyboardState.IsKeyDown(key) && _keyboardState.IsKeyUp(key));
         }
     }
 }

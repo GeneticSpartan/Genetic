@@ -1,28 +1,43 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Media;
 
 using Genetic.Geometry;
 using Genetic.Input;
+using Genetic.Physics;
 using Genetic.Sound;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A global manager for most necessary game resources.
+    /// Manages all game states and cameras.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public static class GenG
     {
-        private static string fileSize;
-
+        /// <summary>
+        /// The mode that determines how game objects should be drawn to the screen.
+        /// </summary>
         public enum DrawType
         {
-            // Draws using the point clamp sampler state to achieve sharp texture edges, ideal for pixel art.
+            /// <summary>
+            /// Draws using the point clamp sampler state to achieve sharp texture edges, ideal for pixel art.
+            /// </summary>
             Pixel,
 
-            // Draws using the linear clamp sampler state to achieve smooth texture edges.
+            /// <summary>
+            /// Draws using the linear clamp sampler state to achieve smooth texture edges.
+            /// </summary>
             Smooth
         }
 
@@ -84,19 +99,14 @@ namespace Genetic
         public static SpriteFont Font;
 
         /// <summary>
-        /// An effect shader used to apply post-processing effects to the render target texture.
+        /// The global default spritefont used for drawing debug strings.
         /// </summary>
-        private static Effect _effect;
+        public static SpriteFont DebugFont;
 
         /// <summary>
-        /// The default viewport of the graphics device.
+        /// The current <c>GenState</c> being run by the game.
         /// </summary>
-        private static Viewport _defaultViewport;
-
-        /// <summary>
-        /// The current state object of the game.
-        /// </summary>
-        private static GenState _state = null;
+        private static GenState _state;
 
         /// <summary>
         /// The next state that will be loaded.
@@ -104,14 +114,34 @@ namespace Genetic
         private static GenState _requestedState;
 
         /// <summary>
-        /// The background color of the game window.
+        /// The <c>GenState</c> that will run while a requested state is being loaded.
         /// </summary>
-        public static Color BackgroundColor;
+        private static GenState _loadState;
 
         /// <summary>
-        /// The amount of seconds needed between each update.
+        /// A <c>BackgroundWorker</c> used to a load a requested state while a load state is running.
         /// </summary>
-        private static float _timeStep = 1f / 60f;
+        private static BackgroundWorker _stateLoader;
+
+        /// <summary>
+        /// A flag used to determine if a requested state has finished being created.
+        /// </summary>
+        private static bool _stateLoaded;
+
+        /// <summary>
+        /// A flag used to determine if a loaded requested state is permitted to start on the next update.
+        /// </summary>
+        private static bool _canStartState;
+
+        /// <summary>
+        /// The amount of seconds that must elapse between each update.
+        /// </summary>
+        private static float _timeStep;
+
+        /// <summary>
+        /// The inverse of the time step, used for optimizing physics simulations.
+        /// </summary>
+        private static float _inverseTimeStep;
 
         /// <summary>
         /// The amount to scale the physics time factor by. A default value of 1.0 means there is no change.
@@ -119,7 +149,7 @@ namespace Genetic
         public static float TimeScale;
 
         /// <summary>
-        /// The amount of seconds that have elapsed between each update relative to the time scale.
+        /// The amount of seconds that have elapsed since the last update relative to the time scale.
         /// Used for calculating physics relative to the time scale.
         /// </summary>
         private static float _scaleTimeStep;
@@ -136,15 +166,9 @@ namespace Genetic
         private static float _updateTimer;
 
         /// <summary>
-        /// A flag used to determine if the current frame rate whould be drawn to the screen.
+        /// A counter used to keep track of the number of frames drawn per second.
         /// </summary>
-        public static bool ShowFps;
-
-        // A counter used to keep track of the number of frames drawn per second.
         private static int fpsCounter;
-
-        // A string used to display the current number of frames drawn per second.
-        private static string currentFps;
 
         /// <summary>
         /// A stopwatch used to calculate the game's frame rate.
@@ -161,16 +185,6 @@ namespace Genetic
         /// Used to keep camera views within these bounds when following a target.
         /// </summary>
         public static Rectangle WorldBounds;
-
-        /// <summary>
-        /// A list of all current cameras.
-        /// </summary>
-        public static List<GenCamera> Cameras;
-
-        /// <summary>
-        /// The initial camera created at the start of the game.
-        /// </summary>
-        public static GenCamera Camera;
 
         /// <summary>
         /// The camera that is currently being drawn to.
@@ -201,7 +215,7 @@ namespace Genetic
         /// <summary>
         /// The global volume for all sounds, a value from 0.0 to 1.0.
         /// </summary>
-        private static float _volume = 1f;
+        private static float _volume;
 
         /// <summary>
         /// A group that controls the volume control display components.
@@ -236,12 +250,69 @@ namespace Genetic
         #endregion
 
         /// <summary>
-        /// Determines whether debug mode is on or off.
+        /// A flag used to determine if debug mode can be enabled.
         /// </summary>
-        public static bool IsDebug = false;
+        public static bool AllowDebug;
 
         /// <summary>
-        /// Gets the amount of seconds that have elapsed between each update.
+        /// Determines whether debug mode is on or off.
+        /// </summary>
+        public static bool IsDebug;
+
+        /// <summary>
+        /// A flag used to determine if the debug info, such as framerate and memory usage, should be drawn to the screen.
+        /// Useful for forcing the display of debug info without needing to be in debug mode.
+        /// </summary>
+        public static bool ShowDebugInfo;
+
+        /// <summary>
+        /// A string used to display debug information.
+        /// </summary>
+        private static string _debugInfo;
+
+        /// <summary>
+        /// The position to draw debug information.
+        /// </summary>
+        private static Vector2 _debugInfoPosition;
+
+        /// <summary>
+        /// The background box of the debug info display.
+        /// </summary>
+        private static GenSprite _debugInfoBox;
+
+        /// <summary>
+        /// A stopwatch used to measure the execution time of update and draw loops.
+        /// </summary>
+        private static Stopwatch _debugStopwatch;
+
+        /// <summary>
+        /// Holds the accumulation of time used to execute update loops.
+        /// </summary>
+        private static float _updateTime;
+
+        /// <summary>
+        /// Holds the accumulation of time used to execute draw loops.
+        /// </summary>
+        private static float _drawTime;
+
+        /// <summary>
+        /// Gets the current <c>GenState</c> being run by the game.
+        /// </summary>
+        public static GenState State
+        {
+            get { return _state; }
+        }
+
+        /// <summary>
+        /// Gets a flag used to determine if a requested state has finished being created.
+        /// </summary>
+        public static bool StateLoaded
+        {
+            get { return _stateLoaded; }
+        }
+
+        /// <summary>
+        /// Gets amount of seconds that must elapse between each update.
         /// </summary>
         public static float TimeStep
         {
@@ -249,7 +320,15 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the amount of seconds that have elapsed between each update relative to the time scale.
+        /// Gets the inverse of the time step, used for physics simulation optimization.
+        /// </summary>
+        public static float InverseTimeStep
+        {
+            get { return _inverseTimeStep; }
+        }
+
+        /// <summary>
+        /// Gets the amount of seconds that have elapsed since the last update relative to the time scale.
         /// </summary>
         public static float ScaleTimeStep
         {
@@ -289,6 +368,16 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the mouse cursor should be visible.
+        /// </summary>
+        public static bool IsMouseVisible
+        {
+            get { return Game.IsMouseVisible; }
+
+            set { Game.IsMouseVisible = value; }
+        }
+
+        /// <summary>
         /// Gets the title safe area of the current viewport.
         /// </summary>
         public static Rectangle TitleSafeArea
@@ -306,33 +395,47 @@ namespace Genetic
             set { _volume = MathHelper.Clamp(value, 0.0f, 1.0f); }
         }
 
+        /// <summary>
+        /// Initializes the necessary game resources.
+        /// </summary>
+        /// <param name="game">The main type for the game.</param>
+        /// <param name="graphicsDevice">The graphics device.</param>
+        /// <param name="content">The content manager used for loading game assets.</param>
+        /// <param name="spriteBatch">The sprite batch used for drawing game objects.</param>
         public static void Initialize(GenGame game, GraphicsDevice graphicsDevice, ContentManager content, SpriteBatch spriteBatch)
         {
             GlobalSeed = Environment.TickCount;
-
-            Pixel = new Texture2D(graphicsDevice, 1, 1);
-            Pixel.SetData<Color>(new Color[] { Color.White });
-            Font = content.Load<SpriteFont>("Nokia");
-
             Game = game;
             GraphicsDevice = graphicsDevice;
             Content = content;
             SpriteBatch = spriteBatch;
-            _effect = Content.Load<Effect>("grayscale");
-            _defaultViewport = GraphicsDevice.Viewport;
-            BackgroundColor = Color.CornflowerBlue;
-            TimeScale = 1.0f;
+
+            // Load default assets.
+            Pixel = GenU.MakeTexture(Color.White, 1, 1);
+            Font = LoadContent<SpriteFont>("cellphone");
+            DebugFont = LoadContent<SpriteFont>("genetic_debug");
+            DebugFont.LineSpacing = 10;
+
+            _state = null;
+            _stateLoader = null;
+            _stateLoaded = false;
+            _canStartState = false;
+
+            _timeStep = 1f / 60f;
+            _inverseTimeStep = 1f / _timeStep;
+            TimeScale = 1f;
+
             WorldBounds = new Rectangle(0, 0, Game.Width, Game.Height);
-            Cameras = new List<GenCamera>();
             _screenEffect = new GenScreenEffect(GraphicsDevice.Viewport.Bounds);
+
             _updateTimer = 0f;
-            ShowFps = false;
             fpsCounter = 0;
-            currentFps = "";
             _fpsStopwatch = new Stopwatch();
             _fpsStopwatch.Start();
+
             Paused = false;
 
+            // Create the input managers.
             _keyboards = new Dictionary<PlayerIndex, GenKeyboard>();
             _keyboards.Add(PlayerIndex.One, new GenKeyboard(PlayerIndex.One));
             _keyboards.Add(PlayerIndex.Two, new GenKeyboard(PlayerIndex.Two));
@@ -347,11 +450,24 @@ namespace Genetic
 
             _mouse = new GenMouse();
 
+            _volume = 1f;
+            AllowDebug = true;
+            IsDebug = false;
+            ShowDebugInfo = false;
+            _debugInfo = String.Empty;
+            _debugInfoPosition = new Vector2(TitleSafeArea.X + 16f, TitleSafeArea.Y + 16f);
+            _debugInfoBox = new GenSprite(_debugInfoPosition.X - 8f, _debugInfoPosition.Y - 8f, Pixel, 1, 1);
+            _debugInfoBox.Color = Color.Black;
+            _debugInfoBox.Alpha = 0.5f;
+            _debugInfoBox.PostUpdate(); // Call PostUpdate once to update its draw color.
+            _debugStopwatch = new Stopwatch();
+
             // Create the volume control display.
             _volumeDisplay = new GenGroup();
 
-            _volumeBox = new GenSprite((Game.Width / 2) - 46, 0);
-            _volumeBox.MakeTexture(Color.Black * 0.5f, 92, 56);
+            _volumeBox = new GenSprite((Game.Width / 2) - 46, 0, null, 92, 54);
+            _volumeBox.MakeTexture(Color.Black * 0.5f, 92, 54, false);
+            _volumeBox.SetOrigin(0f, 0f);
             _volumeDisplay.Add(_volumeBox);
 
             _volumeBars = new GenGroup();
@@ -359,14 +475,22 @@ namespace Genetic
 
             for (int i = 0; i < 10; i++)
             {
-                _volumeBars.Add(new GenSprite(_volumeBox.X + (i * 8 + 8), 20 - i * 2 + 8, null, 4, i * 2 + 2));
-                ((GenSprite)_volumeBars.Members[i]).MakeTexture(Color.White);
+                _volumeBars.Add(new GenSprite(0f, 0f, null, 4, i * 2 + 2));
+                (_volumeBars.Members[i] as GenSprite).MakeTexture(Color.White);
+                (_volumeBars.Members[i] as GenObject).SetOrigin(0f, 0f);
+                (_volumeBars.Members[i] as GenObject).ParentOffset.X = i * 8 + 8;
+                (_volumeBars.Members[i] as GenObject).ParentOffset.Y = 18 - i * 2 + 8;
+                (_volumeBars.Members[i] as GenObject).SetParent(_volumeBox, GenObject.ParentType.Position);
             }
 
-            _volumeText = new GenText("VOLUME", _volumeBox.X + 8, 32, 0, 0);
+            _volumeText = new GenText("VOLUME", 0f, 0f, 0, 0);
+            _volumeText.SetOrigin(0f, 0f);
+            _volumeText.SetParent(_volumeBox, GenObject.ParentType.Position);
+            _volumeText.ParentOffset.X = 7;
+            _volumeText.ParentOffset.Y = 32;
             _volumeDisplay.Add(_volumeText);
 
-            _volumeBeep = new GenSound("beep");
+            _volumeBeep = new GenSound(LoadContent<SoundEffect>("beep"));
             _volumeDisplay.Add(_volumeBeep);
 
             _volumeDisplayTimer = new GenTimer(1f, HideVolumeDisplay, false);
@@ -383,27 +507,33 @@ namespace Genetic
         /// </summary>
         public static void Update(GameTime gameTime)
         {
-            _scaleTimeStep = TimeScale * _timeStep;
+            _debugStopwatch.Reset();
+            _debugStopwatch.Start();
+
+            _scaleTimeStep = (float)gameTime.ElapsedGameTime.TotalSeconds * TimeScale;
             _elapsedTime += _scaleTimeStep;
 
             if (_requestedState != null)
             {
-                // Reset the cameras.
-                Cameras.Clear();
-                Camera.Reset();
-                AddCamera(Camera);
-
-                // Reset the members of the previous state.
-                if (_state != null && _state.Members.Count > 0)
+                if ((_loadState == null) || _canStartState)
                 {
-                    foreach (GenBasic member in _state.Members)
-                        member.Reset();
-                }
+                    LoadState(_requestedState);
 
-                // Create a new state from the requested state.
-                _state = _requestedState;
-                _state.Create();
-                _requestedState = null;
+                    _requestedState = null;
+                    _loadState = null;
+
+                    _stateLoaded = false;
+                    _canStartState = false;
+                }
+                else if ((_stateLoader == null) && !_stateLoaded)
+                {
+                    _stateLoader = new BackgroundWorker();
+                    _stateLoader.DoWork += new DoWorkEventHandler(StateLoader_DoWork);
+                    _stateLoader.RunWorkerCompleted += new RunWorkerCompletedEventHandler(StateLoader_RunWorkerCompleted);
+                    _stateLoader.RunWorkerAsync();
+
+                    LoadState(_loadState);
+                }
             }
 
             while (_updateTimer >= _timeStep)
@@ -422,6 +552,9 @@ namespace Genetic
 
                 // Update the mouse.
                 _mouse.Update();
+
+                // Update music.
+                GenMusic.Update();
 
                 // Volume down control.
                 if (_keyboards[PlayerIndex.One].JustPressed(Keys.OemMinus))
@@ -445,11 +578,29 @@ namespace Genetic
                 _state.PostUpdate();
 
                 _volumeDisplay.Update();
+                _volumeDisplay.PostUpdate();
 
                 _updateTimer -= _timeStep;
             }
 
             _updateTimer += _scaleTimeStep;
+
+            _debugStopwatch.Stop();
+            _updateTime += _debugStopwatch.ElapsedMilliseconds;
+        }
+
+        static void StateLoader_DoWork(object sender, DoWorkEventArgs e)
+        {
+            _requestedState.Create();
+        }
+
+        static void StateLoader_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            _stateLoaded = true;
+
+            _stateLoader.DoWork -= StateLoader_DoWork;
+            _stateLoader.RunWorkerCompleted -= StateLoader_RunWorkerCompleted;
+            _stateLoader = null;
         }
 
         /// <summary>
@@ -457,32 +608,26 @@ namespace Genetic
         /// </summary>
         public static void Draw()
         {
-            foreach (GenCamera camera in Cameras)
+            _debugStopwatch.Reset();
+            _debugStopwatch.Start();
+
+            foreach (GenCamera camera in State.Cameras)
             {
                 if (camera.Exists && camera.Visible)
                 {
                     CurrentCamera = camera;
 
-                    GraphicsDevice.SetRenderTarget(CurrentCamera.RenderTarget);
+                    GraphicsDevice.SetRenderTarget(camera.RenderTarget);
 
-                    // Clear the back buffer to a transparent color so that each camera render target will have a transparent background.
-                    GraphicsDevice.Clear(Color.Transparent);
-
-                    // Draw the camera background color.
-                    if (CurrentCamera.BgColor != null)
-                    {
-                        SpriteBatch.Begin();
-                        CurrentCamera.DrawBg();
-                        SpriteBatch.End();
-                    }
+                    // Clear the back buffer to the camera background color.
+                    GraphicsDevice.Clear(camera.BgColor);
 
                     if (DrawMode == DrawType.Pixel)
-                        SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, CurrentCamera.Transform);
-                    else if (DrawMode == DrawType.Smooth)
-                        SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null, null, CurrentCamera.Transform);
+                        SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, camera.Transform);
+                    else
+                        SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null, null, camera.Transform);
 
                     _state.Draw();
-
                     SpriteBatch.End();
 
                     // Draw the camera effects.
@@ -492,68 +637,126 @@ namespace Genetic
                 }
             }
 
-            GraphicsDevice.SetRenderTarget(null);
-            GraphicsDevice.Clear(BackgroundColor);
+            if (DrawMode == DrawType.Pixel)
+            {
+                foreach (GenCamera camera in State.Cameras)
+                {
+                    if (camera.Exists && camera.Visible)
+                    {
+                        CurrentCamera = camera;
 
-            // Draw the camera render targets with any attatched effects.
-            foreach (GenCamera camera in Cameras)
+                        GraphicsDevice.SetRenderTarget(camera.PixelRenderTarget);
+
+                        // Clear the back buffer to transparent.
+                        GraphicsDevice.Clear(Color.Transparent);
+
+                        SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.CreateScale(camera.Zoom));
+                        SpriteBatch.Draw(camera.RenderTarget, Vector2.Zero, Color.White);
+                        SpriteBatch.End();
+                    }
+                }
+            }
+
+            GraphicsDevice.SetRenderTarget(null);
+            GraphicsDevice.Clear(_state.BgColor);
+
+            // Draw the camera render targets with any attached effects.
+            foreach (GenCamera camera in State.Cameras)
             {
                 if (camera.Exists && camera.Visible)
                 {
-                    _effect.Parameters["timer"].SetValue(_elapsedTime);
-                    _effect.CurrentTechnique = _effect.Techniques["Grayscale"];
+                    camera.SetEffect();
 
-                    // Draw the render target texture.
+                    // Begin drawing the camera render target texture.
                     if (DrawMode == DrawType.Pixel)
-                        SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.Identity);
-                    else if (DrawMode == DrawType.Smooth)
-                        SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+                        SpriteBatch.Begin(SpriteSortMode.Immediate, camera.BlendState, SamplerState.PointClamp, null, null, null, Matrix.Identity);
+                    else
+                        SpriteBatch.Begin(SpriteSortMode.Immediate, camera.BlendState, SamplerState.LinearClamp, null, null, null, Matrix.Identity);
 
-                    _effect.CurrentTechnique.Passes[0].Apply();
+                    camera.ApplyEffect();
 
-                    // Draw the render target texture.
+                    // Draw the camera render target texture.
                     if (DrawMode == DrawType.Pixel)
-                        GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, camera.Zoom * camera.Scale, SpriteEffects.None, 0);
-                    else if (DrawMode == DrawType.Smooth)
-                        GenG.SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, camera.Rotation, camera.Origin, camera.Scale, SpriteEffects.None, 0);
+                        SpriteBatch.Draw(camera.PixelRenderTarget, camera.DrawPosition, null, camera.Color, 0f, camera.Origin, camera.Scale, camera.SpriteEffect, 0);
+                    else
+                        SpriteBatch.Draw(camera.RenderTarget, camera.DrawPosition, null, camera.Color, 0f, camera.Origin, camera.Scale, camera.SpriteEffect, 0);
 
                     SpriteBatch.End();
                 }
             }
 
-            // Call Draw on any overlay objects after the cameras have been drawn.
+            // Draw the screen effects.
             if (DrawMode == DrawType.Pixel)
-                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.Identity);
-            else if (DrawMode == DrawType.Smooth)
-                SpriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend);
+                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null, null, Matrix.Identity);
+            else
+                SpriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.LinearClamp, null, null, null, Matrix.Identity);
 
-            _state.DrawOverlay();
             _screenEffect.Draw();
 
             SpriteBatch.End();
 
-            if (ShowFps || IsDebug)
-            {
-                if (_fpsStopwatch.ElapsedMilliseconds >= 1000)
-                {
-                    _fpsStopwatch.Reset();
-                    _fpsStopwatch.Start();
-                    fileSize = GC.GetTotalMemory(false).ToString();
-                    currentFps = fpsCounter.ToString() + " - GC:" + fileSize + " bytes";
-                    fpsCounter = 0;
-                }
-                else
-                    fpsCounter++;
-            }
-
             SpriteBatch.Begin();
             _volumeDisplay.Draw();
 
-            // Draw the frame rate.
-            if (ShowFps || IsDebug)
-                SpriteBatch.DrawString(Font, currentFps, new Vector2(16, 16), Color.White);
+            // Draw the debug info.
+            if (ShowDebugInfo || (AllowDebug && IsDebug))
+            {
+                _debugInfoBox.Draw();
+                SpriteBatch.DrawString(DebugFont, _debugInfo, _debugInfoPosition, Color.White);
+            }
 
             SpriteBatch.End();
+
+            _debugStopwatch.Stop();
+            _drawTime += _debugStopwatch.ElapsedMilliseconds;
+
+            if (_fpsStopwatch.ElapsedMilliseconds >= 1000)
+            {
+                _fpsStopwatch.Reset();
+                _fpsStopwatch.Start();
+
+                _debugInfo =
+                    "Genetic v1.0" +
+                    "\n\nFPS: " + fpsCounter +
+                    "\nMemory: " + Math.Round((GC.GetTotalMemory(false) / 1024f) / 1024f, 2) + " MB" +
+                    "\nUpdate: " + Math.Round(_updateTime / fpsCounter, 2) + " ms" +
+                    "\nDraw: " + Math.Round(_drawTime / fpsCounter, 2) + " ms";
+
+                // Resize the background box to fit the debug info text.
+                Vector2 debugInfoMeasure = DebugFont.MeasureString(_debugInfo);
+                _debugInfoBox.SetSourceRect(0, 0, (int)debugInfoMeasure.X + 16, (int)debugInfoMeasure.Y + 16, false);
+
+                fpsCounter = 0;
+                _updateTime = 0f;
+                _drawTime = 0f;
+            }
+            else
+                fpsCounter++;
+        }
+
+        private static void LoadState(GenState state)
+        {
+            // Call Create on the current state if it has not already been created previously.
+            if (!state.Loaded)
+                state.Create();
+
+            _state = state;
+        }
+
+        public static bool StartLoadedState()
+        {
+            return _canStartState = _stateLoaded;
+        }
+
+        /// <summary>
+        /// A simplified method for loading assets that have been processed by the Content Pipeline.
+        /// </summary>
+        /// <typeparam name="T">The <c>Type</c> of the content to load. Example: Texture2D, SoundEffect, SpriteFont, etc.</typeparam>
+        /// <param name="assetName">The asset's name, relative to the loader root directory, and not including the .xnb file extension.</param>
+        /// <returns>The content that was loaded.</returns>
+        public static T LoadContent<T>(string assetName)
+        {
+            return Content.Load<T>(assetName);
         }
 
         /// <summary>
@@ -561,11 +764,10 @@ namespace Genetic
         /// Useful for adding objects to the current state within other object classes.
         /// </summary>
         /// <param name="basic">The object to add.</param>
-        /// <param name="overlay">A flag used to determine if the object should be drawn to the screen directly, ignoring cameras.</param>
         /// <returns>The object added to the members list of the current state.</returns>
-        public static GenBasic Add(GenBasic basic, bool overlay = false)
+        public static GenBasic Add(GenBasic basic)
         {
-            return _state.Add(basic, overlay);
+            return _state.Add(basic);
         }
 
         /// <summary>
@@ -573,76 +775,62 @@ namespace Genetic
         /// Useful for removing objects from the current state within other object classes.
         /// </summary>
         /// <param name="basic">The object to remove.</param>
-        /// <param name="overlay">A flag used to determine if the object being removed is an overlay object.</param>
         /// <returns>The object removed from the members list of the current state.</returns>
-        public static GenBasic Remove(GenBasic basic, bool overlay = false)
+        public static GenBasic Remove(GenBasic basic)
         {
-            return _state.Remove(basic, overlay);
+            return _state.Remove(basic);
         }
 
         /// <summary>
-        /// Adds a new camera to the cameras list.
+        /// Resets the current state by loading a new instance of the state.
         /// </summary>
-        /// <param name="newCamera">The new camera to add.</param>
-        /// <returns>The newly added camera.</returns>
-        public static GenCamera AddCamera(GenCamera newCamera)
-        {
-            Cameras.Add(newCamera);
-
-            return newCamera;
-        }
-
-        /// <summary>
-        /// Resets the current state.
-        /// </summary>
-        public static void ResetState()
+        /// <param name="loadingState">The game state to run while the current state is being reset.</param>
+        public static void ResetState(GenState loadingState = null)
         {
             GenState newState = (GenState)Activator.CreateInstance(_state.GetType());
 
-            SwitchState(newState);
+            SwitchState(newState, loadingState);
         }
 
         /// <summary>
-        /// Sets the requested state that will be switched to.
+        /// Sets the requested game state that will be loaded.
         /// </summary>
-        public static void SwitchState(GenState newState)
+        /// <param name="newState">The new game state to load.</param>
+        /// <param name="loadingState">The game state to run while the new state is loading.</param>
+        public static void SwitchState(GenState newState, GenState loadingState = null)
         {
             _requestedState = newState;
+            _loadState = loadingState;
         }
 
         /// <summary>
         /// Draws a line between the two given points.
         /// </summary>
-        /// <param name="xA">The x position of the starting point.</param>
-        /// <param name="yA">The y position of the starting point.</param>
-        /// <param name="xB">The x position of the ending point.</param>
-        /// <param name="yB">The y position of the ending point.</param>
+        /// <param name="pointA">The position of the starting point of the line.</param>
+        /// <param name="pointB">The position of the ending point of the line.</param>
         /// <param name="color">The color of the line. Defaults to white if set to null.</param>
         /// <param name="thickness">The thickness of the line, in pixels.</param>
-        public static void DrawLine(float xA, float yA, float xB, float yB, Color? color = null, float thickness = 1)
+        public static void DrawLine(Vector2 pointA, Vector2 pointB, Color? color = null, float thickness = 1)
         {
             color = color.HasValue ? color.Value : Color.White;
 
-            Vector2 point1 = new Vector2(xA, yA);
-            Vector2 point2 = new Vector2(xB, yB);
+            float angle = (float)Math.Atan2(pointB.Y - pointA.Y, pointB.X - pointA.X);
+            float length = (pointB - pointA).Length();
 
-            float angle = (float)Math.Atan2(point2.Y - point1.Y, point2.X - point1.X);
-            float length = (point2 - point1).Length();
-
-            SpriteBatch.Draw(Pixel, point1, null, color.Value, angle, Vector2.Zero, new Vector2(length, thickness), SpriteEffects.None, 0);
+            SpriteBatch.Draw(Pixel, pointA, null, color.Value, angle, Vector2.Zero, new Vector2(length, thickness), SpriteEffects.None, 0);
         }
 
         /// <summary>
         /// Checks for overlap between two objects, groups of objects, or tilemaps.
+        /// Quadtree data structures are used by groups for optimized overlap checks.
         /// </summary>
         /// <param name="objectOrGroupA">The first object, group, or tilemap to check for overlap.</param>
         /// <param name="objectOrGroupB">The second object, group, or tilemap to check for overlap.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <param name="separate">Determines if objects should collide with each other.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the second object or group of objects are collidable.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool Overlap(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        public static bool Overlap(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool separate = false, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             bool overlap = false;
 
@@ -651,43 +839,67 @@ namespace Genetic
                 if (objectOrGroupB is GenObject)
                 {
                     if (separate)
-                        overlap = ((GenObject)objectOrGroupA).Collide((GenObject)objectOrGroupB, callback, penetrate, collidableEdges);
+                        overlap = GenCollide.Collide(objectOrGroupA as GenObject, objectOrGroupB as GenObject, callback, collidableEdges);
                     else
-                        overlap = ((GenObject)objectOrGroupA).Overlap((GenObject)objectOrGroupB, callback);
+                        overlap = GenCollide.Overlap(objectOrGroupA as GenObject, objectOrGroupB as GenObject, callback);
                 }
                 else if (objectOrGroupB is GenGroup)
                 {
-                    if (((GenGroup)objectOrGroupB).Quadtree != null)
-                    {
-                        if (((GenGroup)objectOrGroupB).Quadtree.Overlap((GenObject)objectOrGroupA, callback, separate, penetrate, collidableEdges) && !overlap)
-                            overlap = true;
-                    }
-                    else
-                        throw new Exception(String.Format("{0} must have a quadtree containing its members before being used in Overlap or Collide. Set useQuadtree to true in its constructor to fix this.", objectOrGroupB));
+                    // If the second group does not currently have a quadtree used for overlap and collision checks, create one.
+                    if ((objectOrGroupB as GenGroup).Quadtree == null)
+                        (objectOrGroupB as GenGroup).MakeQuadtree();
+
+                    if ((objectOrGroupB as GenGroup).Quadtree.Overlap(objectOrGroupA as GenObject, callback, separate, collidableEdges))
+                        overlap = true;
                 }
             }
             else if (objectOrGroupA is GenGroup)
             {
-                for (int i = 0; i < ((GenGroup)objectOrGroupA).Members.Count; i++)
+                // If the first group does not currently have a quadtree used for overlap and collision checks, create one.
+                if ((objectOrGroupA as GenGroup).Quadtree == null)
+                    (objectOrGroupA as GenGroup).MakeQuadtree();
+
+                if (objectOrGroupB is GenObject)
                 {
-                    if (objectOrGroupB is GenObject)
+                    if ((objectOrGroupA as GenGroup).Quadtree.Overlap(objectOrGroupB as GenObject, callback, separate, collidableEdges))
+                        overlap = true;
+                }
+                else if (objectOrGroupB is GenGroup)
+                {
+                    // If the second group does not currently have a quadtree used for overlap and collision checks, create one.
+                    if ((objectOrGroupB as GenGroup).Quadtree == null)
+                        (objectOrGroupB as GenGroup).MakeQuadtree();
+
+                    // If the first and second groups are not the same, check for overlaps and collisions against game objects between the two groups.
+                    // Otherwise, do overlap and collision checks among the group quadtree's own objects.
+                    if (objectOrGroupA != objectOrGroupB)
                     {
-                        if (separate)
+                        // If the first group's quadtree contains the least game objects, call Overlap against the second group for each object in the first group.
+                        // Otherwise, call Overlap against the first group for each object in the second group.
+                        // This can reduce the amount of overlap and collision checks by iterating through the smallest group.
+                        if ((objectOrGroupA as GenGroup).Quadtree.Objects.Count <= (objectOrGroupB as GenGroup).Quadtree.Objects.Count)
                         {
-                            if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Collide((GenObject)objectOrGroupB, callback, penetrate, collidableEdges) && !overlap)
-                                overlap = true;
+                            foreach (GenObject gameObject in (objectOrGroupA as GenGroup).Quadtree.Objects)
+                            {
+                                if (Overlap(gameObject, objectOrGroupB as GenGroup, callback, separate, collidableEdges))
+                                    overlap = true;
+                            }
                         }
                         else
                         {
-                            if (((GenObject)((GenGroup)objectOrGroupA).Members[i]).Overlap((GenObject)objectOrGroupB, callback) && !overlap)
-                                overlap = true;
+                            foreach (GenObject gameObject in (objectOrGroupB as GenGroup).Quadtree.Objects)
+                            {
+                                if (Overlap(gameObject, objectOrGroupA as GenGroup, callback, separate, collidableEdges))
+                                    overlap = true;
+                            }
                         }
                     }
-                    else if (objectOrGroupB is GenGroup)
+                    else
                     {
-                        if (((GenGroup)objectOrGroupB).Quadtree != null)
+                        // Since the first and second group are the same, do overlap and collision checks among the group quadtree's own objects.
+                        foreach (GenObject gameObject in (objectOrGroupA as GenGroup).Quadtree.Objects)
                         {
-                            if (((GenGroup)objectOrGroupB).Quadtree.Overlap((GenObject)((GenGroup)objectOrGroupA).Members[i], callback, separate, penetrate, collidableEdges) && !overlap)
+                            if ((objectOrGroupA as GenGroup).Quadtree.Overlap(gameObject, callback, separate, collidableEdges))
                                 overlap = true;
                         }
                     }
@@ -698,22 +910,22 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Applys collision detection and response between two objects, groups of objects, or tilemap that may overlap.
+        /// Applies collision detection and response between two objects, groups of objects, or tilemaps that may overlap.
+        /// Quadtree data structures are used by groups for optimized collision checks.
         /// </summary>
         /// <param name="objectOrGroupA">The first object, group, or tilemap to check for collisions.</param>
         /// <param name="objectOrGroupB">The second object, group, or tilemap to check for collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for soft collision response.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the second object or group of objects are collidable.</param>
         /// <returns>True if a collision occurs, false if not.</returns>
-        public static bool Collide(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        public static bool Collide(GenBasic objectOrGroupA, GenBasic objectOrGroupB, CollideEvent callback = null, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             if (objectOrGroupA is GenTilemap)
-                return ((GenTilemap)objectOrGroupA).Collide(objectOrGroupB, callback);
+                return (objectOrGroupA as GenTilemap).Collide(objectOrGroupB, callback);
             else if (objectOrGroupB is GenTilemap)
-                return ((GenTilemap)objectOrGroupB).Collide(objectOrGroupA, callback);
+                return (objectOrGroupB as GenTilemap).Collide(objectOrGroupA, callback);
 
-            return Overlap(objectOrGroupA, objectOrGroupB, callback, true, penetrate, collidableEdges);
+            return Overlap(objectOrGroupA, objectOrGroupB, callback, true, collidableEdges);
         }
 
         /// <summary>
@@ -747,7 +959,7 @@ namespace Genetic
         {
             // Set the alpha values of the volume bars.
             for (int i = 0; i < 10; i++)
-                ((GenSprite)_volumeBars.Members[i]).Color = (i < Math.Round(_volume * 10)) ? Color.White : Color.White * 0.5f;
+                (_volumeBars.Members[i] as GenSprite).Color = (i < Math.Round(_volume * 10)) ? Color.White : Color.White * 0.5f;
 
             _volumeDisplay.Revive();
             _volumeDisplayTimer.Start();

@@ -16,6 +16,7 @@ float4 GrayscalePS(float2 texCoords : TEXCOORD0) : COLOR
 	//texCoords.y = 1 - texCoords.y;
 	//float4 color = tex2D(textureSampler, texCoords);
 
+	// Blur
 	//float4 color = tex2D(textureSampler, float2(texCoords.x + blurDistance, texCoords.y + blurDistance));
 	//color += tex2D(textureSampler, float2(texCoords.x - blurDistance, texCoords.y - blurDistance));
 	//color += tex2D(textureSampler, float2(texCoords.x + blurDistance/2, texCoords.y + blurDistance/2));

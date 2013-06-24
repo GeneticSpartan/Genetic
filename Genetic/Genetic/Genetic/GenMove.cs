@@ -4,16 +4,32 @@ using Microsoft.Xna.Framework;
 
 namespace Genetic
 {
+    /// <summary>
+    /// Provides various helper functions useful for moving game objects.
+    /// </summary>
     public static class GenMove
     {
         /// <summary>
         /// A bit field of flags determining the allowed movement axis of an object.
         /// Used to constrain movement horizontally, vertically, or both.
+        /// 
+        /// Author: Tyler Gregory (GeneticSpartan)
         /// </summary>
         public enum Axis 
         { 
+            /// <summary>
+            /// A bit field representing a movement constraint along the x-axis.
+            /// </summary>
             Horizontal = 0x01,
+
+            /// <summary>
+            /// A bit field representing a movement constraint along the y-axis.
+            /// </summary>
             Vertical = 0x10,
+
+            /// <summary>
+            /// A bit field representing a movement constraint along both the x-axis and y-axis.
+            /// </summary>
             Both = Axis.Horizontal | Axis.Vertical
         }
 
@@ -21,7 +37,7 @@ namespace Genetic
         /// A global container used to store vector calculation results.
         /// Useful for reducing Vector2 allocations.
         /// </summary>
-        private static Vector2 _vector = Vector2.Zero;
+        private static Vector2 _vector;
 
         /// <summary>
         /// Gets a normalized vector of the x and y distances from an object to a point.
@@ -112,17 +128,17 @@ namespace Genetic
             {
                 if (objectOrGroup is GenObject)
                 {
-                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                        _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
+                        _vector = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
 
-                        ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                        (objectOrGroup as GenObject).Velocity = _vector * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
-                    foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                         MoveToPoint(basic, point, speed, axis, allowImmovable);
                 }
             }
@@ -143,26 +159,26 @@ namespace Genetic
             {
                 if (objectOrGroup is GenObject)
                 {
-                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                        _vector = GetDistanceNormal((GenObject)objectOrGroup, point, axis);
+                        _vector = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
 
                         if (radius <= 0)
-                            ((GenObject)objectOrGroup).Velocity += _vector * speed * GenG.TimeStep;
+                            (objectOrGroup as GenObject).Velocity += _vector * speed * GenG.TimeStep;
                         else
                         {
                             // If the object is within the radius from the point, accelerate the object towards the point.
                             // The closer the object is to the point, the higher its acceleration will be.
-                            float accelerationFactor = MathHelper.Clamp(radius - Vector2.Distance(((GenObject)objectOrGroup).CenterPosition, point), 0, 1);
+                            float accelerationFactor = MathHelper.Clamp(radius - Vector2.Distance((objectOrGroup as GenObject).CenterPosition, point), 0, 1);
 
-                            ((GenObject)objectOrGroup).Velocity += _vector * speed * accelerationFactor * GenG.TimeStep;
+                            (objectOrGroup as GenObject).Velocity += _vector * speed * accelerationFactor * GenG.TimeStep;
                         }
                     }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
-                    foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                         AccelerateToPoint(basic, point, speed, radius, axis, allowImmovable);
                 }
             }
@@ -181,17 +197,17 @@ namespace Genetic
             {
                 if (objectOrGroup is GenObject)
                 {
-                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
                         _vector = AngleToVector(angle);
 
-                        ((GenObject)objectOrGroup).Velocity = _vector * speed;
+                        (objectOrGroup as GenObject).Velocity = _vector * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
-                    foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                         MoveAtAngle(basic, angle, speed, allowImmovable);
                 }
             }
@@ -210,17 +226,17 @@ namespace Genetic
             {
                 if (objectOrGroup is GenObject)
                 {
-                    if (allowImmovable || !((GenObject)objectOrGroup).Immovable)
+                    if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
                         _vector = AngleToVector(angle);
 
-                        ((GenObject)objectOrGroup).Acceleration = _vector * speed;
+                        (objectOrGroup as GenObject).Acceleration = _vector * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
                 {
-                    foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                    foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                         AccelerateAtAngle(basic, angle, speed, allowImmovable);
                 }
             }

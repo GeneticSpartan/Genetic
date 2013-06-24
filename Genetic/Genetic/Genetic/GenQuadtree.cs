@@ -2,23 +2,31 @@
 using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 
 using Genetic.Geometry;
+using Genetic.Physics;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A quadtree data structure manager.
+    /// Useful for optimizing overlap and collision checks among multiple game objects.
+    /// Handles moving objects by inserting them back into the quadtree, and removes only the quadtree nodes which no longer contain any objects.
+    /// Game objects that do not intersect the quadtree bounds will not be inserted into any nodes, avoiding too many overlap and collision checks.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenQuadtree
     {
         /// <summary>
-        /// The maximum amount of objects allowed in a node.
+        /// The maximum amount of objects allowed in a single node.
         /// </summary>
-        internal const int MAX_OBJECTS = 10;
+        public int MaxObjects;
 
         /// <summary>
         /// The maximum amount of splits that can occur through a series of nodes.
         /// </summary>
-        internal const int MAX_LEVELS = 6;
+        public int MaxLevels;
 
         /// <summary>
         /// The highest level node of the quadtree in which all other nodes will be contained.
@@ -26,11 +34,26 @@ namespace Genetic
         protected GenQuadtreeNode _rootNode;
 
         /// <summary>
-        /// A dictionary holding the quadtree node location of each object inserted into the quadtree.
+        /// A list of each <c>GenObject</c> added to the quadtree manager.
+        /// Modifying this list directly may produce undesired results.
+        /// </summary>
+        public List<GenObject> Objects;
+
+        /// <summary>
+        /// A list of each <c>GenObject</c> added to the quadtree and active within its nodes.
+        /// </summary>
+        protected List<GenObject> _activeObjects;
+
+        /// <summary>
+        /// A flag used to determine if any objects are waiting to be added or removed from the active objects list.
+        /// Prevents new objects from being directly added or removed from the active members list during update loops.
+        /// </summary>
+        protected bool _updateObjects;
+
+        /// <summary>
+        /// The node location of each active object in the quadtree.
         /// </summary>
         internal Dictionary<GenObject, GenQuadtreeNode> _objectLocations;
-
-        internal List<GenObject> _objectLocationKeys;
 
         /// <summary>
         /// A manager for a quadtree data structure.
@@ -41,100 +64,147 @@ namespace Genetic
         /// <param name="height">The height of the root node bounding box.</param>
         public GenQuadtree(float x, float y, float width, float height)
         {
-            _rootNode = new GenQuadtreeNode(x, y, width, height, this, 0);
+            MaxObjects = 5;
+            MaxLevels = 5;
+            _rootNode = new GenQuadtreeNode(x, y, width, height, this, null, 0);
+            Objects = new List<GenObject>();
+            _activeObjects = new List<GenObject>();
+            _updateObjects = false;
             _objectLocations = new Dictionary<GenObject, GenQuadtreeNode>();
-            _objectLocationKeys = new List<GenObject>();
         }
 
         /// <summary>
-        /// Checks each object in the quadtree, and places any object that has moved since the last update into the correct node.
+        /// Updates the quadtree by inserting recently added game objects into its nodes as active objects.
+        /// Game objects that have moved since the previous update will be inserted back into the quadtree.
         /// </summary>
         public void Update()
         {
-            foreach (GenObject objectKey in _objectLocationKeys)
+            // If any objects have been added or removed since the last update, repopulate the quadtree.
+            if (_updateObjects)
             {
-                // If the object has not moved since the last update, move on to the next object.
-                if (objectKey.Position == objectKey.OldPosition)
-                    continue;
+                // Clear the quadtree nodes.
+                _rootNode.Clear();
 
-                // Remove the object from its current node location, and re-insert the object into the quadtree.
-                _objectLocations[objectKey].Remove(objectKey);
-                _rootNode.Insert(objectKey);
+                // Repopulate the active objects list with the current objects that have been added to the quadtree manager.
+                _activeObjects.Clear();
+                _activeObjects.AddRange(Objects);
+
+                // Clear the current object locations, since the active objects list has been repopulated.
+                // Allows for new object locations to be created as the current active objects are being inserted back into the quadtree.
+                _objectLocations.Clear();
+
+                // Insert each active object into the quadtree.
+                foreach (GenObject activeObject in _activeObjects)
+                    _rootNode.Add(activeObject);
+
+                _updateObjects = false;
+            }
+
+            foreach (GenObject activeObject in _activeObjects)
+            {
+                if (activeObject.HasMoved)
+                {
+                    if (_objectLocations[activeObject]._objects.Remove(activeObject))
+                        CheckObjects(_objectLocations[activeObject]);
+
+                    // Check if the game object intersects the root node before inserting it into the quadtree.
+                    // Prevents objects that are outside of the quadtree bounds from being checked for overlaps or collisions, possibly causing slowdown.
+                    if (activeObject.MoveBounds.Intersects(_rootNode))
+                        _rootNode.Add(activeObject);
+                }
             }
         }
 
         /// <summary>
-        /// Calls Clear on the root quadtree node, and resets the node index value to 0.
+        /// Decrements the object cound in a given node.
+        /// Clears each leaf node within the given node if the object count is 0.
+        /// Walks up the tree from the first given node, repeating the process for each parent node.
+        /// </summary>
+        /// <param name="node">The node to check for its object count.</param>
+        protected void CheckObjects(GenQuadtreeNode node)
+        {
+            if (node != null)
+            {
+                if (--node._objectCount <= 0)
+                    node.ClearLeaves();
+
+                CheckObjects(node._parentNode);
+            }
+        }
+
+        /// <summary>
+        /// Adds an object or group of objects to the quadtree.
+        /// Added objects will be inserted into the quadtree nodes during the next update, and added to the active objects list.
+        /// </summary>
+        /// <param name="objectOrGroup">The object or group of objects to add.</param>
+        public void Add(GenBasic objectOrGroup)
+        {
+            if (objectOrGroup is GenObject)
+            {
+                // If the object has already been added to the quadtree, do not add the same object twice.
+                if (!Objects.Contains(objectOrGroup as GenObject))
+                {
+                    Objects.Add(objectOrGroup as GenObject);
+                    _updateObjects = true;
+                }
+            }
+            else if (objectOrGroup is GenGroup)
+            {
+                foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
+                    Add(basic);
+            }
+        }
+
+        /// <summary>
+        /// Checks for overlaps or collisions between the given game object and objects within the quadtree.
+        /// A broad phase check is done by only checking for overlaps or collisions against objects within the nodes that intersect with the given game object.
+        /// </summary>
+        /// <param name="gameObject">The game object to check for overlaps or collisions.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
+        /// <param name="separate">Determines if objects should collide with each other.</param>
+        /// <param name="collidableEdges">A bit field of flags determining which edges of the quadtree objects are collidable.</param>
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        public bool Overlap(GenObject gameObject, CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
+        {
+            return _rootNode.Overlap(gameObject, callback, separate, collidableEdges);
+        }
+
+        /// <summary>
+        /// Calls <c>Clear</c> on the root quadtree node to recursively clear all leaf nodes in the quadtree.
+        /// All leaf nodes will be set to null after their objects lists have been cleared.
         /// </summary>
         public void Clear()
         {
             _rootNode.Clear();
-            _objectLocations.Clear();
-            _objectLocationKeys.Clear();
-        }
-
-        /// <summary>
-        /// Iterates through each node that entirely contains the given object or group of objects, and adds the object to the lowest level node possible.
-        /// </summary>
-        /// <param name="objectOrGroup">The object or group of objects to insert into the quadtree.</param>
-        public void Insert(GenBasic objectOrGroup)
-        {
-            _rootNode.Insert(objectOrGroup);
-        }
-
-        /// <summary>
-        /// Removes a given object from the quadtree by removing the object from its containing node.
-        /// </summary>
-        /// <param name="gameObject">The game object to remove from the quadtree.</param>
-        public void Remove(GenObject gameObject)
-        {
-            // Remove the object from its containing node.
-            _objectLocations[gameObject].Remove(gameObject);
-
-            // Remove node location references to the object.
-            _objectLocations.Remove(gameObject);
-            _objectLocationKeys.Remove(gameObject);
-        }
-
-        /// <summary>
-        /// Iterates through each node that entirely contains the given bounding box, and retrieves a list of objects from each node.
-        /// </summary>
-        /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
-        /// <param name="box">The bounding box used to search for nodes.</param>
-        public void Retrieve(List<GenBasic> returnObjects, GenAABB box)
-        {
-            _rootNode.Retrieve(returnObjects, box);
-        }
-
-        /// <summary>
-        /// Iterates through each node that entirely contains the given object's bounding box, and checks for a collision with every object in each node.
-        /// </summary>
-        /// <param name="gameObject">The object to check for a collision.</param>
-        /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True if a collision occurs, false if not.</returns>
-        public bool Overlap(GenObject gameObject, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
-        {
-            return _rootNode.Overlap(gameObject, callback, separate, penetrate, collidableEdges);
+            Objects.Clear();
         }
 
         /// <summary>
         /// Draws debug lines that visually represent each node.
         /// </summary>
-        public void Draw()
+        public void DrawDebug()
         {
-            _rootNode.Draw();
+            _rootNode.DrawDebug();
         }
     }
 
+    /// <summary>
+    /// Makes up a single node within a quadtree data structure.
+    /// Manages game objects within the node, and assigns overlap and collision checks against those objects.
+    /// Manages references to its four leaf nodes.
+    /// </summary>
     public class GenQuadtreeNode : GenAABB
     {
         /// <summary>
         /// A reference to the quadtree manager of this node.
         /// </summary>
         protected GenQuadtree _quadtree;
+
+        /// <summary>
+        /// The quadtree node that this node is a leaf of.
+        /// The root node will have a parent node of null.
+        /// </summary>
+        internal GenQuadtreeNode _parentNode;
 
         /// <summary>
         /// The current split level of the node.
@@ -144,7 +214,12 @@ namespace Genetic
         /// <summary>
         /// A list of game objects associated with the node.
         /// </summary>
-        protected List<GenBasic> _objects;
+        internal List<GenObject> _objects;
+
+        /// <summary>
+        /// An internal tracker for the amount of objects currently within this node and its leaf nodes.
+        /// </summary>
+        internal int _objectCount;
 
         /// <summary>
         /// An array of four leaf nodes that are created when a split occurs.
@@ -160,48 +235,102 @@ namespace Genetic
         /// <param name="width">The width of the node bounding box.</param>
         /// <param name="height">The height of the node bounding box.</param>
         /// <param name="quadtree">A reference to the quadtree manager of this node.</param>
+        /// <param name="parentNode">The quadtree node that this node is a leaf of. Use null if this is a root node.</param>
         /// <param name="level">The split level of the node.</param>
-        public GenQuadtreeNode(float x, float y, float width, float height, GenQuadtree quadtree, int level)
+        public GenQuadtreeNode(float x, float y, float width, float height, GenQuadtree quadtree, GenQuadtreeNode parentNode, int level)
             : base(x, y, width, height)
         {
             _quadtree = quadtree;
+            _parentNode = parentNode;
             _level = level;
-            _objects = new List<GenBasic>();
+            _objects = new List<GenObject>();
+            _objectCount = 0;
             _nodes = new GenQuadtreeNode[4];
         }
 
-        /// <summary>
-        /// Clears the quadtree node objects list and sets the leaf nodes to null.
-        /// </summary>
-        public void Clear()
+        internal void Add(GenObject gameObject)
         {
-            _objects.Clear();
+            if (_nodes[0] == null)
+            {
+                Insert(gameObject);
 
-            for (int i = 0; i < _nodes.Length; i++)
-                _nodes[i] = null;
+                // If the node is full, attempt to add each of its objects into a leaf node.
+                if ((_objects.Count >= _quadtree.MaxObjects) && (_level < _quadtree.MaxLevels))
+                {
+                    int nextLevel = _level + 1;
+
+                    // Create the leaf nodes.
+                    _nodes[0] = new GenQuadtreeNode(Left, Top, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[1] = new GenQuadtreeNode(_midpointX, Top, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[2] = new GenQuadtreeNode(Left, _midpointY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[3] = new GenQuadtreeNode(_midpointX, _midpointY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+
+                    // Iterate through the objects list in reverse, attempting to add each object into a leaf node.
+                    // Otherwise, leave the object in this node.
+                    for (int i = _objects.Count - 1; i >= 0; i--)
+                    {
+                        int index = GetIndex(_objects[i].MoveBounds);
+
+                        if (index != -1)
+                        {
+                            _nodes[index].Add(_objects[i]);
+                            _objects.Remove(_objects[i]);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Since leaf nodes have already been created, attempt to add the object into a leaf node.
+                // Otherwise, add the object to this node.
+                int index = GetIndex(gameObject.MoveBounds);
+
+                if (index != -1)
+                    _nodes[index].Add(gameObject);
+                else
+                    Insert(gameObject);
+            }
+
+            _objectCount++;
         }
 
         /// <summary>
-        /// Gets the index of the node that entirely contains the given bounding box.
+        /// Inserts a given object by adding it to this quadtree node's objects list, and sets this node as its current location.
         /// </summary>
-        /// <param name="box">The bounding box used to search the nodes.</param>
-        /// <returns>The index of the node that entirely contains the given bounding box.</returns>
-        private int GetIndex(GenAABB box)
+        /// <param name="gameObject">The <c>GenObject</c> to insert into this node.</param>
+        protected void Insert(GenObject gameObject)
         {
-            if ((box.Left > _left) && (box.Right < _right) && (box.Top > _top) && (box.Bottom < _bottom))
+            // If the game object is already contained within the node, do not insert the same object twice.
+            _objects.Add(gameObject);
+
+            // Set the object's location to this node.
+            if (_quadtree._objectLocations.ContainsKey(gameObject))
+                _quadtree._objectLocations[gameObject] = this;
+            else
+                _quadtree._objectLocations.Add(gameObject, this);
+        }
+
+        /// <summary>
+        /// Gets the index of the leaf node that entirely contains the given bounding box.
+        /// </summary>
+        /// <param name="box">The bounding box used to search the leaf nodes.</param>
+        /// <returns>The index of the leaf node that entirely contains the given bounding box. Otherwise, -1 is returned.</returns>
+        internal int GetIndex(GenAABBBasic box)
+        {
+            if (Contains(box))
             {
-                if (box.Right < _midpointY)
+                if (box.Bottom < _midpointY)
                 {
-                    if (box.Bottom < _midpointX)
-                        return 1;
-                    else if (box.Top > _midpointX)
-                        return 2;
-                }
-                else if (box.Left > _midpointY)
-                {
-                    if (box.Bottom < _midpointX)
+                    if (box.Right < _midpointX) // Top-left leaf node.
                         return 0;
-                    else if (box.Top > _midpointX)
+                    else if (box.Left > _midpointX) // Top-right leaf node.
+                        return 1;
+                }
+                else if (box.Top > _midpointY)
+                {
+                    if (box.Right < _midpointX) // Bottom-left leaf node.
+                        return 2;
+                    else if (box.Left > _midpointX) // Bottom-right leaf node.
                         return 3;
                 }
             }
@@ -211,222 +340,66 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Iterates through each node that entirely contains the given object or group of objects, and adds the object to the lowest level node possible.
+        /// Checks for overlaps or collisions between the given game object and objects within the node and its leaf nodes.
+        /// A broad phase check is done by only checking for overlaps or collisions against objects within the leaf nodes that intersect with the given game object.
         /// </summary>
-        /// <param name="objectOrGroup">The object or group of objects to insert into the quadtree.</param>
-        public void Insert(GenBasic objectOrGroup)
+        /// <param name="gameObject">The game object to check for overlaps or collisions.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
+        /// <param name="separate">Determines if objects should collide with each other.</param>
+        /// <param name="collidableEdges">A bit field of flags determining which edges of the quadtree objects are collidable.</param>
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        internal bool Overlap(GenObject gameObject, CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
         {
-            if (objectOrGroup is GenObject)
+            bool overlap = false;
+
+            if (_nodes[0] != null)
             {
-                if (_nodes[0] != null)
+                // If the game object's movement bounds intersects with any leaf node, do overlap and collision checks against any objects in that node.
+                if (gameObject.MoveBounds.Intersects(this))
                 {
-                    int index = GetIndex(((GenObject)objectOrGroup).BoundingBox);
-
-                    if (index != -1)
+                    if (gameObject.MoveBounds.Top <= _midpointY)
                     {
-                        _nodes[index].Insert(objectOrGroup);
-                        return;
-                    }
-                }
-
-                _objects.Add(objectOrGroup);
-
-                // If the object is not already in the quadtree, add the object to the object locations list in the quadtree manager using this node as its location.
-                // Otherwise, update the object's node location.
-                if (_quadtree._objectLocationKeys.Contains((GenObject)objectOrGroup))
-                    _quadtree._objectLocations[(GenObject)objectOrGroup] = this;
-                else
-                {
-                    _quadtree._objectLocations.Add((GenObject)objectOrGroup, this);
-                    _quadtree._objectLocationKeys.Add((GenObject)objectOrGroup);
-                }
-
-                if ((_objects.Count > GenQuadtree.MAX_OBJECTS) && (_level < GenQuadtree.MAX_LEVELS))
-                {
-                    if (_nodes[0] == null)
-                    {
-                        _nodes[0] = new GenQuadtreeNode(_midpointX, _top, _halfWidth, _halfHeight, _quadtree, _level + 1);
-                        _nodes[1] = new GenQuadtreeNode(_left, _top, _halfWidth, _halfHeight, _quadtree, _level + 1);
-                        _nodes[2] = new GenQuadtreeNode(_left, _midpointY, _halfWidth, _halfHeight, _quadtree, _level + 1);
-                        _nodes[3] = new GenQuadtreeNode(_midpointX, _midpointY, _halfWidth, _halfHeight, _quadtree, _level + 1);
-                    }
-
-                    // Attempt to move each object in this node to a leaf node.
-                    int i = 0;
-
-                    while (i < _objects.Count)
-                    {
-                        int index = GetIndex(((GenObject)_objects[i]).BoundingBox);
-
-                        if (index != -1)
+                        if (gameObject.MoveBounds.Left <= _midpointX) // Top-left leaf node.
                         {
-                            _nodes[index].Insert(_objects[i]);
-                            _objects.RemoveAt(i);
+                            if (_nodes[0].Overlap(gameObject, callback, separate, collidableEdges))
+                                overlap = true;
                         }
-                        else
-                            i++;
+
+                        if (gameObject.MoveBounds.Right >= _midpointX) // Top-right leaf node.
+                        {
+                            if (_nodes[1].Overlap(gameObject, callback, separate, collidableEdges))
+                                overlap = true;
+                        }
+                    }
+
+                    if (gameObject.MoveBounds.Bottom >= _midpointY)
+                    {
+                        if (gameObject.MoveBounds.Left <= _midpointX) // Bottom-left leaf node.
+                        {
+                            if (_nodes[2].Overlap(gameObject, callback, separate, collidableEdges))
+                                overlap = true;
+                        }
+
+                        if (gameObject.MoveBounds.Right >= _midpointX) // Bottom-right leaf node.
+                        {
+                            if (_nodes[3].Overlap(gameObject, callback, separate, collidableEdges))
+                                overlap = true;
+                        }
                     }
                 }
             }
-            else if (objectOrGroup is GenGroup)
+
+            // Check for overlaps and collisions against this node's objects.
+            foreach (GenObject nodeObject in _objects)
             {
-                foreach (GenBasic member in ((GenGroup)objectOrGroup).Members)
-                    Insert(member);
-            } 
-        }
-
-        /// <summary>
-        /// Removes a given object from this node.
-        /// </summary>
-        /// <param name="gameObject">The game object to remove.</param>
-        public void Remove(GenObject gameObject)
-        {
-            _objects.Remove(gameObject);
-        }
-
-        /// <summary>
-        /// Iterates through each node that entirely contains the given bounding box, and retrieves a list of objects from each of those nodes.
-        /// </summary>
-        /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
-        /// <param name="box">The bounding box used to search for nodes.</param>
-        public void Retrieve(List<GenBasic> returnObjects, GenAABB box)
-        {
-            if (_nodes[0] != null)
-            {
-                // Get the index of the leaf node that entirely contains the bounding box.
-                int index = GetIndex(box);
-
-                // If the bounding box fits within a leaf node, iterate through that node.
-                // Otherwise, iterate through each leaf node.
-                if (index != -1)
-                    _nodes[index].Retrieve(returnObjects, box);
-                else
-                    RetrieveNodes(returnObjects, box);
-            }
-
-            // Retrieve the objects within this node.
-            returnObjects.AddRange(_objects);
-        }
-
-        /// <summary>
-        /// Iterates through remaining leaf nodes that intersect the given bounding box.
-        /// </summary>
-        /// <param name="returnObjects">A list that will be populated with accessible game objects.</param>
-        /// <param name="box">The bounding box used to search for nodes.</param>
-        /// <returns>A list populated with accessible game objects.</returns>
-        protected void RetrieveNodes(List<GenBasic> returnObjects, GenAABB box)
-        {
-            // If the bounding box intersects a leaf node, iterate through that node.
-            if (box.Left <= _midpointY)
-            {
-                if (box.Top <= _midpointX)
-                    _nodes[1].Retrieve(returnObjects, box);
-
-                if (box.Bottom >= _midpointX)
-                    _nodes[2].Retrieve(returnObjects, box);
-            }
-
-            if (box.Right >= _midpointY)
-            {
-                if (box.Top <= _midpointX)
-                    _nodes[0].Retrieve(returnObjects, box);
-
-                if (box.Bottom >= _midpointX)
-                    _nodes[3].Retrieve(returnObjects, box);
-            }
-        }
-
-        /// <summary>
-        /// Iterates through each node that entirely contains the given object's bounding box, and checks for overlaps or collisions against every object in each node.
-        /// </summary>
-        /// <param name="gameObject">The object to check for an overlap.</param>
-        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True if an overlap occurs, false if not.</returns>
-        public bool Overlap(GenObject gameObject, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
-        {
-            bool overlap = false;
-
-            if (_nodes[0] != null)
-            {
-                // Get the index of the leaf node that entirely contains the object's bounding box.
-                int index = GetIndex(gameObject.BoundingBox);
-
-                // If the object's bounding box fits within a leaf node, check for overlaps or collisions against objects within that node.
-                // Otherwise, check for overlaps or collisions against objects within each leaf node.
-                if (index != -1)
+                if (separate)
                 {
-                    if (_nodes[index].Overlap(gameObject, callback, separate, penetrate, collidableEdges) && !overlap)
+                    if (GenCollide.Collide(gameObject, nodeObject, callback, collidableEdges))
                         overlap = true;
                 }
                 else
-                    if (OverlapNodes(gameObject, callback, separate, penetrate, collidableEdges) && !overlap)
-                        overlap = true;
-            }
-
-            // Check for overlaps or collisions against objects within this node.
-            foreach (GenBasic basic in _objects)
-            {
-                if (basic is GenObject)
                 {
-                    if (separate)
-                    {
-                        if (gameObject.Collide((GenObject)basic, callback, penetrate, collidableEdges) && !overlap)
-                            overlap = true;
-                    }
-                    else
-                    {
-                        if (gameObject.Overlap((GenObject)basic, callback) && !overlap)
-                            overlap = true;
-                    }
-                }
-            }
-
-            return overlap;
-        }
-
-        /// <summary>
-        /// Iterates through remaining leaf nodes that intersect the given object's bounding box, and checks for overlaps or collisions against every object in the leaf node.
-        /// </summary>
-        /// <param name="gameObject">The object to check for an overlap.</param>
-        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True if an overlap occurs, false if not.</returns>
-        protected bool OverlapNodes(GenObject gameObject, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
-        {
-            bool overlap = false;
-
-            // If the object's bounding box intersects a leaf node, check for overlaps or collisions within that node.
-            if (gameObject.BoundingBox.Left <= _midpointY)
-            {
-                if (gameObject.BoundingBox.Top <= _midpointX)
-                {
-                    if (OverlapLeafNode(1, gameObject, callback, separate, penetrate, collidableEdges))
-                        overlap = true;
-                }
-
-                if (gameObject.BoundingBox.Bottom >= _midpointX)
-                {
-                    if (OverlapLeafNode(2, gameObject, callback, separate, penetrate, collidableEdges))
-                        overlap = true;
-                }
-            }
-
-            if (gameObject.BoundingBox.Right >= _midpointY)
-            {
-                if (gameObject.BoundingBox.Top <= _midpointX)
-                {
-                    if (OverlapLeafNode(0, gameObject, callback, separate, penetrate, collidableEdges))
-                        overlap = true;
-                }
-
-                if (gameObject.BoundingBox.Bottom >= _midpointX)
-                {
-                    if (OverlapLeafNode(3, gameObject, callback, separate, penetrate, collidableEdges))
+                    if (GenCollide.Overlap(gameObject, nodeObject, callback))
                         overlap = true;
                 }
             }
@@ -435,75 +408,62 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Iterates through each object in a leaf node, and checks for overlaps or collisions against a given object.
+        /// Clears the quadtree node objects list.
+        /// Calls <c>Clear</c> on each leaf node, which are then set to null.
         /// </summary>
-        /// <param name="nodeIndex">The index number of the leaf node to check.</param>
-        /// <param name="gameObject">The object to check for an overlap.</param>
-        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
-        /// <param name="penetrate">Determines if the objects are able to penetrate each other for elastic collision response.</param>
-        /// <param name="collidableEdges">A bit field of flags determining which edges of the given object are collidable.</param>
-        /// <returns>True if an overlap occurs, false if not.</returns>
-        protected bool OverlapLeafNode(int nodeIndex, GenObject gameObject, CollideEvent callback = null, bool separate = false, bool penetrate = true, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        public void Clear()
         {
-            bool overlap = false;
+            _objects.Clear();
 
-            // Check for overlaps or collisions against objects within a leaf node.
-            foreach (GenBasic basic in _nodes[nodeIndex]._objects)
+            if (_nodes[0] != null)
             {
-                if (basic is GenObject)
+                for (int i = 0; i < _nodes.Length; i++)
                 {
-                    if (separate)
-                    {
-                        if (gameObject.Collide((GenObject)basic, callback, penetrate, collidableEdges) && !overlap)
-                            overlap = true;
-                    }
-                    else
-                    {
-                        if (gameObject.Overlap((GenObject)basic, callback) && !overlap)
-                            overlap = true;
-                    }
+                    // Call Clear on the leaf node before setting it to null.
+                    _nodes[i].Clear();
+                    _nodes[i] = null;
                 }
             }
-
-            return overlap;
         }
 
         /// <summary>
-        /// Draws debug lines that visually represent each node.
+        /// Sets each leaf node to null.
         /// </summary>
-        public void Draw()
+        public void ClearLeaves()
         {
-            Draw(_nodes);
+            if (_nodes[0] != null)
+            {
+                for (int i = 0; i < _nodes.Length; i++)
+                    _nodes[i] = null;
+            }
         }
 
         /// <summary>
-        /// Draws debug lines that visually represent a node.
+        /// Draws debug lines that visually represent each leaf node.
         /// </summary>
-        /// <param name="_nodes">The array of leaf nodes to draw.</param>
-        protected void Draw(GenQuadtreeNode[] _nodes)
+        internal void DrawDebug()
         {
             if (_nodes[0] != null)
             {
                 foreach (GenQuadtreeNode node in _nodes)
                 {
+                    Vector2 topRight = new Vector2(node._max.X, node._min.Y);
+                    Vector2 bottomLeft = new Vector2(node._min.X, node._max.Y);
+
                     // Draw the top bounding box line.
-                    GenG.DrawLine(node._left, node._top, node._right, node._top, Color.White);
+                    GenG.DrawLine(node._min, topRight, Color.White);
 
                     // Draw the right bounding box line.
-                    GenG.DrawLine(node._right, node._top, node._right, node._bottom, Color.White);
+                    GenG.DrawLine(topRight, node._max, Color.White);
 
                     // Draw the bottom bounding box line.
-                    GenG.DrawLine(node._left, node._bottom, node._right, node._bottom, Color.White);
+                    GenG.DrawLine(bottomLeft, node._max, Color.White);
 
                     // Draw the left bounding box line.
-                    GenG.DrawLine(node._left, node._top, node._left, node._bottom, Color.White);
+                    GenG.DrawLine(node._min, bottomLeft, Color.White);
 
-                    if (node._nodes != null)
-                    {
-                        //GenG.SpriteBatch.DrawString(GenG.Font, node._objects.Count.ToString(), new Vector2(node._left, node._top), Color.White);
-                        Draw(node._nodes);
-                    }
+                    // Draw the leaf nodes contained within this node.
+                    node.DrawDebug();
                 }
             }
         }

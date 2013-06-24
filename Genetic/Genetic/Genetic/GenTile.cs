@@ -2,6 +2,11 @@
 
 namespace Genetic
 {
+    /// <summary>
+    /// A game object that makes up a single tile in a tilemap.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenTile : GenSprite
     {
         /// <summary>
@@ -31,7 +36,8 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            GenG.SpriteBatch.Draw(_texture, _position, _sourceRect, _color);
+            if (_texture != null)
+                GenG.SpriteBatch.Draw(_texture, _position, _sourceRect, _color);
         }
     }
 }

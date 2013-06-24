@@ -5,6 +5,12 @@ using Microsoft.Xna.Framework;
 
 namespace Genetic.Physics
 {
+    /// <summary>
+    /// Manages a group of points that can be connected together in various arrangments by link constraints using verlet integration physics.
+    /// Useful for creating simulations such as ropes, cloth, or collision bodies.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenVerlet : GenGroup
     {
         /// <summary>
@@ -47,6 +53,10 @@ namespace Genetic.Physics
             Iterations = 1;
         }
 
+        /// <summary>
+        /// Calls <c>Update</c> on this verlat chain's group.
+        /// Calls <c>Update</c> on each link constraint in the verlet chain for a specified number of iterations.
+        /// </summary>
         public override void Update()
         {
             base.Update();
@@ -58,6 +68,10 @@ namespace Genetic.Physics
             }
         }
 
+        /// <summary>
+        /// Calls <c>Draw</c> on this verlet chain's group.
+        /// Draws lines that represent each link constraint in the verlet chain.
+        /// </summary>
         public override void Draw()
         {
             base.Draw();
@@ -65,7 +79,7 @@ namespace Genetic.Physics
             if (DrawLines)
             {
                 foreach (GenLink link in Links)
-                    GenG.DrawLine(link.PointA.X + link.OffsetA.X, link.PointA.Y + link.OffsetA.Y, link.PointB.X + link.OffsetB.X, link.PointB.Y + link.OffsetB.Y, LineColor, LineThickness);
+                    GenG.DrawLine(link.PointA.Position + link.OffsetA, link.PointB.Position + link.OffsetB, LineColor, LineThickness);
             }
         }
 
@@ -87,15 +101,15 @@ namespace Genetic.Physics
             {
                 for (int x = 0; x < columns; x++)
                 {
-                    GenObject point = (GenObject)Add(new GenSprite(startX + x * distance, startY + y * distance, null, 1, 1));
+                    GenObject point = Add(new GenSprite(startX + x * distance, startY + y * distance, null, 1, 1)) as GenObject;
 
                     // Make a link to the left point.
                     if (x != 0)
-                        MakeLink(point, (GenObject)Members[x + (columns * y) - 1]);
+                        MakeLink(Members[x + (columns * y) - 1] as GenObject, point);
 
                     // Make a link to the above point.
                     if (y != 0)
-                        MakeLink(point, (GenObject)Members[x + columns * (y - 1)]);
+                        MakeLink(Members[x + columns * (y - 1)] as GenObject, point);
                 }
             }
         }
@@ -107,6 +121,9 @@ namespace Genetic.Physics
         /// <param name="pointB">The second object to use as a connection point.</param>
         public void MakeLink(GenObject pointA, GenObject pointB)
         {
+            Add(pointA);
+            Add(pointB);
+
             Links.Add(new GenLink(pointA, pointB));
         }
 
@@ -116,8 +133,8 @@ namespace Genetic.Physics
         /// <param name="mass">The mass value to set each object.</param>
         public void SetMass(float mass)
         {
-            foreach (GenObject member in Members)
-                member.Mass = mass;
+            foreach (GenObject gameObject in Members)
+                gameObject.Mass = mass;
         }
 
         /// <summary>
@@ -145,14 +162,14 @@ namespace Genetic.Physics
         /// <summary>
         /// Sets the x and y acceleration of each object in the verlet group.
         /// </summary>
-        /// <param name="decelerationX">The acceleration value along the x-axis.</param>
+        /// <param name="gravityX">The acceleration value along the x-axis.</param>
         /// <param name="gravityY">The acceleration value along the y-axis.</param>
         public void SetGravity(float gravityX, float gravityY)
         {
-            foreach (GenObject member in Members)
+            foreach (GenObject gameObject in Members)
             {
-                member.Acceleration.X = gravityX;
-                member.Acceleration.Y = gravityY;
+                gameObject.Acceleration.X = gravityX;
+                gameObject.Acceleration.Y = gravityY;
             }
         }
 
@@ -163,20 +180,24 @@ namespace Genetic.Physics
         /// <param name="decelerationY">The deceleration value along the y-axis.</param>
         public void SetDeceleration(float decelerationX, float decelerationY)
         {
-            foreach (GenObject member in Members)
+            foreach (GenObject gameObject in Members)
             {
-                member.Deceleration.X = decelerationX;
-                member.Deceleration.Y = decelerationY;
+                gameObject.Deceleration.X = decelerationX;
+                gameObject.Deceleration.Y = decelerationY;
             }
         }
     }
 
+    /// <summary>
+    /// A link constraint between two points in a verlet chain.
+    /// Uses verlet integration physics to attempt to keep the two points at a specified distance from ecah other.
+    /// </summary>
     public class GenLink
     {
         /// <summary>
         /// The value that the distance between the two points will attempt to match.
         /// </summary>
-        public float RestingDistance;
+        protected float _restingDistance;
 
         /// <summary>
         /// The stiffness of the link constraint between the two points.
@@ -209,6 +230,16 @@ namespace Genetic.Physics
         public Vector2 OffsetB;
 
         /// <summary>
+        /// Gets or sets the value that the distance between the two points will attempt to match.
+        /// </summary>
+        public float RestingDistance
+        {
+            get { return _restingDistance; }
+
+            set { _restingDistance = Math.Max(0f, value); }
+        }
+
+        /// <summary>
         /// A constraint used to link two objects together, and push or pull them until they are a specified distance apart.
         /// Each link point is offset to the center point of its connected object by default.
         /// </summary>
@@ -220,12 +251,14 @@ namespace Genetic.Physics
             TearDistance = 0f;
             PointA = pointA;
             PointB = pointB;
-            OffsetA = Vector2.Zero;
-            OffsetB = Vector2.Zero;
 
-            RestingDistance = Vector2.Distance(PointA.OriginPosition, PointB.OriginPosition);
+            _restingDistance = Vector2.Distance(PointA.OriginPosition, PointB.OriginPosition);
         }
 
+        /// <summary>
+        /// Applies verlet integration to attempt to keep the two points at a specified distance from each other.
+        /// Updates each point's velocity based on the distance each point has been moved.
+        /// </summary>
         public void Update()
         {
             // Calculate the distances between the points.
@@ -237,29 +270,36 @@ namespace Genetic.Physics
             // Remove link.
 
             // Calculate the difference scalar.
-            float difference = (RestingDistance - distance) / distance;
+            float difference = (distance == 0) ? 0 : (_restingDistance - distance) / distance;
 
             // Inverse the mass values.
-            float inverseMassA = 1 / PointA.Mass;
-            float inverseMassB = 1 / PointB.Mass;
+            float inverseMassA = (PointA.Mass == 0) ? 0 : 1 / PointA.Mass;
+            float inverseMassB = (PointB.Mass == 0) ? 0 : 1 / PointB.Mass;
             float scalarPointA = (inverseMassA / (inverseMassA + inverseMassB)) * Stiffness;
             float scalarPointB = Stiffness - scalarPointA;
+            float scalarDifference;
 
             // Push or pull the point objects based on their distance and mass.
             // Set the velocity of each point object to account for the distance they have been moved.
             if (!PointA.Immovable && PointA.Exists && PointA.Active)
             {
-                PointA.X += differenceX * scalarPointA * difference;
-                PointA.Y += differenceY * scalarPointA * difference;
-                PointA.Velocity = (PointA.Position - PointA.OldPosition) / GenG.TimeStep;
+                scalarDifference = scalarPointA * difference;
+
+                PointA.X += differenceX * scalarDifference;
+                PointA.Y += differenceY * scalarDifference;
+                PointA.Velocity = (PointA.Position - PointA.OldPosition) * GenG.InverseTimeStep;
             }
 
             if (!PointB.Immovable && PointB.Exists && PointB.Active)
             {
-                PointB.X -= differenceX * scalarPointB * difference;
-                PointB.Y -= differenceY * scalarPointB * difference;
-                PointB.Velocity = (PointB.Position - PointB.OldPosition) / GenG.TimeStep;
+                scalarDifference = scalarPointB * difference;
+
+                PointB.X -= differenceX * scalarDifference;
+                PointB.Y -= differenceY * scalarDifference;
+                PointB.Velocity = (PointB.Position - PointB.OldPosition) * GenG.InverseTimeStep;
             }
+
+            // TODO: Fix verlet point collisions breaking through objects.
         }
     }
 }

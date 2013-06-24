@@ -1,10 +1,17 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.Collections.Generic;
+
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using Genetic.Geometry;
 
 namespace Genetic.Particles
 {
+    /// <summary>
+    /// A particle emitter that emits and manages a group of <c>GenParticle</c> objects.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenEmitter : GenGroup
     {
         /// <summary>
@@ -13,9 +20,20 @@ namespace Genetic.Particles
         protected Vector2 _position;
 
         /// <summary>
+        /// The x and y position to draw the bounding box of the emitter in debug mode.
+        /// </summary>
+        protected Vector2 _debugDrawPosition;
+
+        /// <summary>
         /// The bounding box within which particles will emit.
         /// </summary>
-        protected GenAABB _boundingBox;
+        protected GenAABB _bounds;
+
+        /// <summary>
+        /// The bounding rectangle of the object.
+        /// Used during draw debug calls.
+        /// </summary>
+        protected Rectangle _boundingRect;
 
         /// <summary>
         /// The minimum x speed allowed for particles as they are emitted.
@@ -23,7 +41,7 @@ namespace Genetic.Particles
         public int MinParticleSpeedX;
 
         /// <summary>
-        /// The minimum x speed allowed for particles as they are emitted.
+        /// The maximum x speed allowed for particles as they are emitted.
         /// </summary>
         public int MaxParticleSpeedX;
 
@@ -33,9 +51,19 @@ namespace Genetic.Particles
         public int MinParticleSpeedY;
 
         /// <summary>
-        /// The minimum y speed allowed for particles as they are emitted.
+        /// The maximum y speed allowed for particles as they are emitted.
         /// </summary>
         public int MaxParticleSpeedY;
+
+        /// <summary>
+        /// The minimum rotation allowed for particles as they are emitted.
+        /// </summary>
+        public int MinRotation;
+
+        /// <summary>
+        /// The maximum rotation allowed for particles as they are emitted.
+        /// </summary>
+        public int MaxRotation;
 
         /// <summary>
         /// The minimum rotation speed allowed for particles as they are emitted.
@@ -48,14 +76,35 @@ namespace Genetic.Particles
         public int MaxRotationSpeed;
 
         /// <summary>
+        /// A list of colors used to tint the particles over the span of their lifetimes.
+        /// The order of the colors proceeds from the birth to the death of a particle.
+        /// </summary>
+        public List<Color> Colors;
+
+        /// <summary>
+        /// The starting color alpha of a particle sprite when it is emitted.
+        /// </summary>
+        public float StartAlpha;
+
+        /// <summary>
+        /// The ending color alpha of a particle sprite when it reaches the end of its lifetime.
+        /// </summary>
+        public float EndAlpha;
+
+        /// <summary>
+        /// The starting scale of a particle sprite when it is emitted.
+        /// </summary>
+        public float StartScale;
+
+        /// <summary>
+        /// The ending scale of a particle sprite when it reaches the end of its lifetime.
+        /// </summary>
+        public float EndScale;
+
+        /// <summary>
         /// A flag used to determine if all of the particles should emit at once.
         /// </summary>
         public bool Explode;
-
-        /// <summary>
-        /// A flag used to determine if the emitter is currently emitting particles.
-        /// </summary>
-        public bool Emitting;
 
         /// <summary>
         /// The amount of particles to emit at one time.
@@ -63,15 +112,7 @@ namespace Genetic.Particles
         /// </summary>
         public int EmitQuantity;
 
-        /// <summary>
-        /// The amount of time, in seconds, to wait for the next particle emission.
-        /// </summary>
-        public float EmitFrequency;
-
-        /// <summary>
-        /// The amount of time, in seconds, that has elapsed since the last particle emission.
-        /// </summary>
-        protected float _emitTimer;
+        public GenTimer _emitTimer;
 
         /// <summary>
         /// A flag used to determine if the emitted particles should inherit the velocity of the emitter's parent object.
@@ -85,9 +126,14 @@ namespace Genetic.Particles
 
         /// <summary>
         /// The object that the emitter will be parented to.
-        /// The position of the emitter will move with the center point of the parent object.
+        /// The position of the emitter will move with the origin position of the parent object.
         /// </summary>
         public GenObject Parent;
+
+        /// <summary>
+        /// The x and y position offsets relative to the parent object's origin position.
+        /// </summary>
+        public Vector2 ParentOffset;
 
         /// <summary>
         /// Gets the x and y positions of the top-left corner of the emitter.
@@ -107,7 +153,7 @@ namespace Genetic.Particles
             set
             {
                 _position.X = value;
-                _boundingBox.X = value;
+                _bounds.X = value;
             }
         }
 
@@ -121,7 +167,7 @@ namespace Genetic.Particles
             set
             {
                 _position.Y = value;
-                _boundingBox.Y = value;
+                _bounds.Y = value;
             }
         }
 
@@ -130,9 +176,13 @@ namespace Genetic.Particles
         /// </summary>
         public float Width
         {
-            get { return _boundingBox.Width; }
+            get { return _bounds.Width; }
 
-            set { _boundingBox.Width = value; }
+            set
+            {
+                _bounds.Width = value;
+                _boundingRect.Width = (int)value;
+            }
         }
 
         /// <summary>
@@ -140,9 +190,20 @@ namespace Genetic.Particles
         /// </summary>
         public float Height
         {
-            get { return _boundingBox.Height; }
+            get { return _bounds.Height; }
 
-            set { _boundingBox.Height = value; }
+            set
+            {
+                _bounds.Height = value;
+                _boundingRect.Height = (int)value;
+            }
+        }
+
+        public float EmitFrequency
+        {
+            get { return _emitTimer.Duration; }
+
+            set { _emitTimer.Duration = value; }
         }
 
         /// <summary>
@@ -153,45 +214,91 @@ namespace Genetic.Particles
         public GenEmitter(float x = 0, float y = 0)
         {
             _position = new Vector2(x, y);
-            _boundingBox = new GenAABB(x, y, 0, 0);
+            _bounds = new GenAABB(x, y, 0, 0);
+            _boundingRect = Rectangle.Empty;
             MinParticleSpeedX = -100;
             MaxParticleSpeedX = 100;
             MinParticleSpeedY = -100;
             MaxParticleSpeedY = 100;
             MinRotationSpeed = 0;
             MaxRotationSpeed = 0;
+            Colors = new List<Color>();
+            StartAlpha = 1f;
+            EndAlpha = 1f;
+            StartScale = 1f;
+            EndScale = 1f;
             Explode = true;
-            Emitting = false;
-            EmitQuantity = 0;
-            EmitFrequency = 0.1f;
-            _emitTimer = 0f;
+            EmitQuantity = 10;
+            _emitTimer = new GenTimer(0.1f, EmitParticles, true) { IsLooping = true };
             InheritVelocity = false;
             Parent = null;
         }
 
+        /// <summary>
+        /// Updates the emitter timer, and emits particles at each frequency interval.
+        /// </summary>
         public override void Update()
         {
-            if (Emitting)
-            {
-                if (_emitTimer >= EmitFrequency)
-                {
-                    if (Explode)
-                        EmitParticles(Members.Count);
-                    else
-                        EmitParticles(EmitQuantity);
-
-                    _emitTimer -= EmitFrequency;
-                }
-                else
-                    _emitTimer += GenG.TimeStep;
-            }
+            _emitTimer.Update();
 
             base.Update();
+
+            float lerp;
+            int lastColorIndex = Colors.Count - 1;
+            int currentColorIndex;
+            float colorLerp;
+
+            foreach (GenParticle particle in Members)
+            {
+                lerp = particle.LifeTimer.Elapsed / particle.LifeTimer.Duration;
+
+                if (!particle.Flickering)
+                {
+                    if (Colors.Count > 0)
+                    {
+                        // Interpolate the particle's color over the span of it's lifetime.
+                        currentColorIndex = (int)(lerp * lastColorIndex);
+                        colorLerp = (lerp - ((1f / lastColorIndex) * currentColorIndex)) / (1f / lastColorIndex);
+
+                        if (currentColorIndex < lastColorIndex)
+                            particle.Color = Color.Lerp(Colors[currentColorIndex], Colors[currentColorIndex + 1], colorLerp);
+                        else
+                            particle.Color = Colors[lastColorIndex];
+                    }
+
+                    // Interpolate the sprite alpha.
+                    particle.Alpha = (StartAlpha == EndAlpha) ? StartAlpha : MathHelper.Lerp(StartAlpha, EndAlpha, lerp);
+                }
+
+                // Interpolate the sprite scale.
+                particle.Scale.X = particle.Scale.Y = (StartScale == EndScale) ? StartScale : MathHelper.Lerp(StartScale, EndScale, lerp);
+            }
         }
 
+        /// <summary>
+        /// Handles any post-update logic for the emitter.
+        /// </summary>
         public override void PostUpdate()
         {
+            base.PostUpdate();
+
             MoveToParent();
+        }
+
+        /// <summary>
+        /// Draws a box that represents the bounding box of the emitter in debug mode.
+        /// </summary>
+        public override void DrawDebug()
+        {
+            _debugDrawPosition = _position;
+
+            if (GenG.DrawMode == GenG.DrawType.Pixel)
+            {
+                _debugDrawPosition.X = (int)_debugDrawPosition.X;
+                _debugDrawPosition.Y = (int)_debugDrawPosition.Y;
+            }
+
+            GenG.SpriteBatch.Draw(GenG.Pixel, _debugDrawPosition, _boundingRect, Color.BlueViolet * 0.5f);
         }
 
         /// <summary>
@@ -201,8 +308,8 @@ namespace Genetic.Particles
         {
             if (Parent != null)
             {
-                X = Parent.OriginPosition.X;
-                Y = Parent.OriginPosition.Y;
+                X = Parent.OriginPosition.X + ParentOffset.X;
+                Y = Parent.OriginPosition.Y + ParentOffset.Y;
             }
         }
 
@@ -217,8 +324,8 @@ namespace Genetic.Particles
             if (_currentParticle != null)
             {
                 // Give the particle a random x and y position, keeping the center of the particle's bounding box within the bounding box of the emitter.
-                _currentParticle.X = GenU.Random((int)(_boundingBox.Left - _currentParticle.BoundingBox.HalfWidth), (int)(_boundingBox.Right + _currentParticle.BoundingBox.HalfWidth + 1));
-                _currentParticle.Y = GenU.Random((int)(_boundingBox.Top - _currentParticle.BoundingBox.HalfHeight), (int)(_boundingBox.Bottom + _currentParticle.BoundingBox.HalfHeight + 1));
+                _currentParticle.X = GenU.Random((int)(_bounds.Left - _currentParticle.Bounds.HalfWidth), (int)(_bounds.Right + _currentParticle.Bounds.HalfWidth + 1));
+                _currentParticle.Y = GenU.Random((int)(_bounds.Top - _currentParticle.Bounds.HalfHeight), (int)(_bounds.Bottom + _currentParticle.Bounds.HalfHeight + 1));
 
                 _currentParticle.Velocity.X = GenU.Random(MinParticleSpeedX, MaxParticleSpeedX + 1);
                 _currentParticle.Velocity.Y = GenU.Random(MinParticleSpeedY, MaxParticleSpeedY + 1);
@@ -226,6 +333,7 @@ namespace Genetic.Particles
                 if ((Parent != null) && InheritVelocity)
                     _currentParticle.Velocity += Parent.Velocity;
 
+                _currentParticle.Rotation = GenU.Random(MinRotation, MaxRotation + 1);
                 _currentParticle.RotationSpeed = GenU.Random(MinRotationSpeed, MaxRotationSpeed + 1);
                 _currentParticle.Reset();
 
@@ -233,6 +341,14 @@ namespace Genetic.Particles
             }
 
             return false;
+        }
+
+        public void EmitParticles()
+        {
+            if (Explode)
+                EmitParticles(Members.Count);
+            else
+                EmitParticles(EmitQuantity);
         }
 
         /// <summary>
@@ -270,7 +386,7 @@ namespace Genetic.Particles
         public void MakeParticles(Texture2D texture, int width, int height, int count = 1)
         {
             for (int i = 0; i < count; i++)
-                Add(new GenParticle(0, 0, null, width, height)).LoadTexture(texture);
+                Add(new GenParticle(0, 0, texture, width, height));
         }
 
         /// <summary>
@@ -310,6 +426,17 @@ namespace Genetic.Particles
         }
 
         /// <summary>
+        /// Sets the minimum and maximum rotation allowed for particles as they are emitted.
+        /// </summary>
+        /// <param name="min">The minimum rotation allowed for particles.</param>
+        /// <param name="max">The maximum rotation allowed for particles.</param>
+        public void SetRotation(int min, int max)
+        {
+            MinRotation = min;
+            MaxRotation = max;
+        }
+
+        /// <summary>
         /// Sets the minimum and maximum rotation speeds allowed for particles as they are emitted.
         /// </summary>
         /// <param name="min">The minimum rotation speed allowed for particles.</param>
@@ -328,52 +455,32 @@ namespace Genetic.Particles
         public void SetLifetime(float seconds)
         {
             foreach (GenParticle particle in Members)
-                particle.Lifetime = seconds;
+                particle.LifeTimer.Duration = seconds;
         }
 
         /// <summary>
-        /// Sets the starting and ending color tints of each particle in the emitter group.
-        /// Each particle will interpolate its color from the starting to the ending color tints over the span of its lifetime.
-        /// </summary>
-        /// <param name="startAlpha">The starting color tint of a particle.</param>
-        /// <param name="endAlpha">The ending color tint of a particle.</param>
-        public void SetColor(Color startColor, Color endColor)
-        {
-            foreach (GenParticle particle in Members)
-            {
-                particle.StartColor = startColor;
-                particle.EndColor = endColor;
-            }
-        }
-
-        /// <summary>
-        /// Sets the starting and ending color alpha values of each particle in the emitter group.
+        /// Sets the starting and ending color alpha values of the particles.
         /// Each particle will interpolate its color alpha from the starting to the ending alpha values over the span of its lifetime.
         /// </summary>
         /// <param name="startAlpha">The starting alpha value of a particle.</param>
         /// <param name="endAlpha">The ending alpha value of a particle.</param>
         public void SetAlpha(float startAlpha, float endAlpha)
         {
-            foreach (GenParticle particle in Members)
-            {
-                particle.StartAlpha = startAlpha;
-                particle.EndAlpha = endAlpha;
-            }
+            StartAlpha = startAlpha;
+            EndAlpha = endAlpha;
         }
 
+
         /// <summary>
-        /// Sets the starting and ending scale values of each particle in the emitter group.
+        /// Sets the starting and ending scale values of the particles.
         /// Each particle will interpolate its scale from the starting to the ending scale values over the span of its lifetime.
         /// </summary>
         /// <param name="startScale">The starting scale value of a particle.</param>
         /// <param name="endScale">The ending scale value of a particle.</param>
         public void SetScale(float startScale, float endScale)
         {
-            foreach (GenParticle particle in Members)
-            {
-                particle.StartScale = startScale;
-                particle.EndScale = endScale;
-            }
+            StartScale = startScale;
+            EndScale = endScale;
         }
 
         /// <summary>
@@ -393,11 +500,15 @@ namespace Genetic.Particles
         /// <summary>
         /// Sets the camera scroll factor of each particle in the emitter group.
         /// </summary>
-        /// <param name="scrollFactor">The factor by which the camera scroll values affect each particle's draw position within a camera.</param>
-        public void SetScrollFactor(float scrollFactor)
+        /// <param name="x">The horizontal scroll factor.</param>
+        /// <param name="y">The vertical scroll factor.</param>
+        public void SetScrollFactor(float x, float y)
         {
             foreach (GenParticle particle in Members)
-                particle.ScrollFactor = scrollFactor;
+            {
+                particle.ScrollFactor.X = x;
+                particle.ScrollFactor.Y = y;
+            }
         }
 
         /// <summary>
@@ -406,17 +517,13 @@ namespace Genetic.Particles
         /// <param name="explode">A flag used to emit every available particle, ignoring the emit quantity.</param>
         public void Start(bool explode = false)
         {
-            Emitting = true;
+            _emitTimer.Start(true);
 
             // Move the emitter relative to its parent before emitting particles.
             MoveToParent();
 
             Explode = explode;
-
-            if (Explode)
-                EmitParticles(Members.Count);
-            else
-                EmitParticles(EmitQuantity);
+            EmitParticles();
         }
 
         /// <summary>
@@ -424,7 +531,7 @@ namespace Genetic.Particles
         /// </summary>
         public void Stop()
         {
-            Emitting = false;
+            _emitTimer.Stop();
         }
     }
 }

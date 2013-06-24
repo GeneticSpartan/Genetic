@@ -7,26 +7,28 @@ using Genetic.Geometry;
 
 namespace Genetic
 {
+    /// <summary>
+    /// Contains various useful static helper methods.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public static class GenU
     {
         /// <summary>
-        /// A random number object used to generate psuedo-random values.
+        /// A random number object used to generate pseudo-random values.
         /// </summary>
         private static Random _random;
 
         /// <summary>
-        /// A global container used to store vector calculation results.
-        /// Useful for reducing Vector2 allocations.
+        /// Initializes any necessary resources used by this class.
         /// </summary>
-        private static Vector2 _vector = Vector2.Zero;
-
         public static void Initialize()
         {
             SetRandomSeed(GenG.GlobalSeed);
         }
 
         /// <summary>
-        /// Sets the psuedo-random number seed.
+        /// Sets the pseudo-random number seed.
         /// Useful for achieving deterministic random number values.
         /// </summary>
         /// <param name="seed">The random number seed.</param>
@@ -36,7 +38,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Generates a psuedo-random number between 0.0 and 1.0.
+        /// Generates a pseudo-random number between 0.0 and 1.0.
         /// The result will never equal 1.0.
         /// </summary>
         /// <returns>A random number between 0.0 to 1.0.</returns>
@@ -46,19 +48,19 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Generates a random number between a minumum and maximum value.
-        /// The reslut will never equal the maximum value.
+        /// Generates a random number between a minimum and maximum value.
+        /// The result will never equal the maximum value.
         /// </summary>
         /// <param name="min">The minimum value of the number.</param>
         /// <param name="max">The maximum value of the number.</param>
-        /// <returns>A random number between the minumum and maximum values given.</returns>
+        /// <returns>A random number between the minimum and maximum values given.</returns>
         public static int Random(int min, int max)
         {
             return (int)(Random() * (max - min) + min);
         }
 
         /// <summary>
-        /// Generates a random color using the mimimum and maximum RGB values given.
+        /// Generates a random color using the minimum and maximum RGB values given.
         /// </summary>
         /// <param name="minValue">The minimum RGB value.</param>
         /// <param name="maxValue">The maximum RGB value.</param>
@@ -83,9 +85,9 @@ namespace Genetic
         {
             color = color.HasValue ? color.Value : Color.White;
 
-            // Set the width or height value to 1 if either are 0.
-            width = (width != 0) ? width : 1;
-            height = (height != 0) ? height : 1;
+            // Keep the width and height values to a minimum of 1.
+            width = Math.Max(width, 1);
+            height = Math.Max(height, 1);
 
             Texture2D texture = new Texture2D(GenG.GraphicsDevice, width, height);
 
@@ -94,9 +96,7 @@ namespace Genetic
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
-                {
                     colorData[x + y * width] = color.Value;
-                }
             }
 
             texture.SetData<Color>(colorData);
@@ -105,46 +105,23 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the x and y intersection depths of two bounding boxes.
+        /// Creates a copy of an existing texture.
         /// </summary>
-        /// <param name="box1">The first bounding box to compare.</param>
-        /// <param name="box2">The second bounding box to compare.</param>
-        /// <returns>A Vector2 containing the x and y intersection depths, or a Vector2.Zero if no intersection occurs.</returns>
-        public static Vector2 GetIntersectDepthAABB(GenAABB box1, GenAABB box2)
+        /// <param name="texture">The original texture to copy.</param>
+        /// <returns>The new texture copy.</returns>
+        public static Texture2D CopyTexture(Texture2D texture)
         {
-            float distanceX = box1.MidpointX - box2.MidpointX;
-            float minDistanceX = box1.HalfWidth + box2.HalfWidth;
+            // Create a new texture with the same dimensions as the original texture.
+            Texture2D textureCopy = new Texture2D(GenG.GraphicsDevice, texture.Width, texture.Height);
 
-            if (Math.Abs(distanceX) < minDistanceX)
-            {
-                float distanceY = box1.MidpointY - box2.MidpointY;
-                float minDistanceY = box1.HalfHeight + box2.HalfHeight;
+            // Get the pixel color data of the original texture.
+            Color[] colorData = new Color[texture.Width * texture.Height];
+            textureCopy.GetData<Color>(colorData);
 
-                if (Math.Abs(distanceY) < minDistanceY)
-                {
-                    // Get the intersection depth.
-                    _vector.X = (distanceX > 0) ? minDistanceX - distanceX : -minDistanceX - distanceX;
-                    _vector.Y = (distanceY > 0) ? minDistanceY - distanceY : -minDistanceY - distanceY;
+            // Set the pixel color data of the original texture to the new texture.
+            textureCopy.SetData<Color>(colorData);
 
-                    return _vector;
-                }
-            }
-
-            return Vector2.Zero;
-        }
-
-        /// <summary>
-        /// Gets the positive or negative distances between the edges of two bounding boxes on the x-axis and y-axis.
-        /// </summary>
-        /// <param name="box1">The first bounding box to compare.</param>
-        /// <param name="box2">The second bounding box to compare.</param>
-        /// <returns>A Vector2 containing the positive or negative distances between the edges of two bounding boxes on the x-axis and y-axis.</returns>
-        public static Vector2 GetDistanceAABB(GenAABB box1, GenAABB box2)
-        {
-            _vector.X = Math.Abs(box1.MidpointX - box2.MidpointX) - (box1.HalfWidth + box2.HalfWidth);
-            _vector.Y = Math.Abs(box1.MidpointY - box2.MidpointY) - (box1.HalfHeight + box2.HalfHeight);
-
-            return _vector;
+            return textureCopy;
         }
 
         /// <summary>
@@ -153,7 +130,7 @@ namespace Genetic
         /// </summary>
         /// <param name="start">The starting position that the wave will be relative to, usually the center point of the wave.</param>
         /// <param name="rate">The rate at which the wave will fluctuate.</param>
-        /// <param name="intensity">The instensity or size of the wave.</param>
+        /// <param name="intensity">The intensity or size of the wave.</param>
         /// <returns>The current position of the wave relative to the total elapsed time.</returns>
         public static float SineWave(float start, float rate, float intensity)
         {
@@ -166,7 +143,7 @@ namespace Genetic
         /// </summary>
         /// <param name="start">The starting position that the wave will be relative to, usually the center point of the wave.</param>
         /// <param name="rate">The rate at which the wave will fluctuate.</param>
-        /// <param name="intensity">The instensity or size of the wave.</param>
+        /// <param name="intensity">The intensity or size of the wave.</param>
         /// <returns>The current position of the wave relative to the total elapsed time.</returns>
         public static float CosineWave(float start, float rate, float intensity)
         {

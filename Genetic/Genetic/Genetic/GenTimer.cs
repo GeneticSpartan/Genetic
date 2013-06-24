@@ -2,6 +2,11 @@
 
 namespace Genetic
 {
+    /// <summary>
+    /// A timer that can invoke a given callback method after a specified time has elapsed since the timer was started.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenTimer : GenBasic
     {
         /// <summary>
@@ -13,17 +18,19 @@ namespace Genetic
         /// A flag to determine if the elapsed time should be affected by GenG.TimeScale.
         /// Used for calculating the timer based on fast/slow motion.
         /// </summary>
-        public bool UseTimeScale;
+        public bool UseTimeScale; // TODO: Find a reason for UseTimeScale in GenTimer, or remove it completely.
 
         /// <summary>
         /// The total amount of time, in seconds, for the timer to reach.
         /// </summary>
-        public float Time;
+        public float Duration;
 
         /// <summary>
-        /// The amount of time, in seconds, that has elpased since the timer has been running.
+        /// The amount of time, in seconds, that has elapsed since the timer has been running.
         /// </summary>
-        public float ElapsedTime;
+        public float Elapsed;
+
+        public bool IsLooping;
 
         /// <summary>
         /// The method to invoke when the timer has finished.
@@ -31,35 +38,47 @@ namespace Genetic
         public Action Callback;
 
         /// <summary>
+        /// Gets the remaining time left, in seconds, before the timer completes its duration.
+        /// </summary>
+        public float Remaining
+        {
+            get { return Duration - Elapsed; }
+        }
+
+        /// <summary>
         /// A timer used to invoke a method after a given time has elapsed.
         /// </summary>
-        /// <param name="time">The total amount of time, in seconds, for the timer to reach.</param>
+        /// <param name="duration">The total amount of time, in seconds, for the timer to reach.</param>
         /// <param name="callback">The method to invoke when the timer has finished.</param>
-        /// <param name="useTimeScale">Determines if the elapsed time should be affected by GenG.TimeScale. Used for calculating the timer based on fast/slow motion.</param>
-        public GenTimer(float time, Action callback = null, bool useTimeScale = true)
+        /// <param name="useTimeScale">Determines if the elapsed time should be affected by <c>GenG.TimeScale</c>. Used for calculating the timer based on faster/slower update calls.</param>
+        public GenTimer(float duration, Action callback = null, bool useTimeScale = true)
         {
             IsRunning = false;
             UseTimeScale = useTimeScale;
-            Time = time;
-            ElapsedTime = 0f;
+            Duration = duration;
+            Elapsed = 0f;
+            IsLooping = false;
             Callback = callback;
         }
 
+        /// <summary>
+        /// Updates the timer, and invokes the callback method when the timer has finished.
+        /// </summary>
         public override void Update()
         {
             if (IsRunning)
             {
-                if (UseTimeScale)
-                    ElapsedTime += GenG.ScaleTimeStep;
-                else
-                    ElapsedTime += GenG.TimeStep;
+                Elapsed += GenG.TimeStep;
 
-                if (ElapsedTime > Time)
+                if (Elapsed >= Duration)
                 {
-                    Stop();
-
                     if (Callback != null)
                         Callback.Invoke();
+
+                    if (IsLooping)
+                        Elapsed -= Duration;
+                    else
+                        Stop();
                 }
             }
         }
@@ -71,7 +90,7 @@ namespace Genetic
         public void Start(bool forceReset = true)
         {
             if (forceReset)
-                ElapsedTime = 0;
+                Elapsed = 0f;
 
             IsRunning = true;
         }
@@ -82,6 +101,14 @@ namespace Genetic
         public void Stop()
         {
             IsRunning = false;
+        }
+
+        public override void Reset()
+        {
+            base.Reset();
+
+            Elapsed = 0f;
+            Stop();
         }
     }
 }

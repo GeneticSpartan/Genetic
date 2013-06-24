@@ -3,47 +3,14 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic.Particles
 {
+    /// <summary>
+    /// A game object that makes up a single particle used by a particle emitter.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenParticle : GenSprite
     {
-        /// <summary>
-        /// The amount of time, in seconds, that the particle will last after being emitted.
-        /// </summary>
-        public float Lifetime;
-
-        /// <summary>
-        /// The amount of time, in seconds, that has elapsed since the particle was emitted.
-        /// </summary>
-        protected float _lifeTimer;
-
-        /// <summary>
-        /// The starting color of the particle when it is emitted.
-        /// </summary>
-        public Color StartColor;
-
-        /// <summary>
-        /// The ending color of the particle when it reaches the end of its lifetime.
-        /// </summary>
-        public Color EndColor;
-
-        /// <summary>
-        /// The starting color alpha of the particle when it is emitted.
-        /// </summary>
-        public float StartAlpha;
-
-        /// <summary>
-        /// The ending color alpha of the particle when it reaches the end of its lifetime.
-        /// </summary>
-        public float EndAlpha;
-
-        /// <summary>
-        /// The starting scale of the particle sprite when it is emitted.
-        /// </summary>
-        public float StartScale;
-
-        /// <summary>
-        /// The ending scale of the particle sprite when it reaches the end of its lifetime.
-        /// </summary>
-        public float EndScale;
+        public GenTimer LifeTimer;
 
         /// <summary>
         /// A particle used by a particle emitter.
@@ -58,14 +25,7 @@ namespace Genetic.Particles
         public GenParticle(float x = 0, float y = 0, Texture2D texture = null, int width = 1, int height = 1, float lifetime = 3f)
             : base(x, y, texture, width, height)
         {
-            Lifetime = lifetime;
-            _lifeTimer = 0f;
-            StartColor = Color.White;
-            EndColor = Color.White;
-            StartAlpha = 1f;
-            EndAlpha = 1f;
-            StartScale = 1f;
-            EndScale = 1f;
+            LifeTimer = new GenTimer(lifetime, Kill, true);
         }
 
         /// <summary>
@@ -75,21 +35,7 @@ namespace Genetic.Particles
         {
             base.Update();
 
-            if (_lifeTimer < Lifetime)
-            {
-                float lerp = _lifeTimer / Lifetime;
-
-                // Interpolate the color and alpha.
-                _color = Color.Lerp(StartColor, EndColor, lerp) * MathHelper.Lerp(StartAlpha, EndAlpha, lerp);
-
-                // Interpolate the sprite scale.
-                Scale.X = MathHelper.Lerp(StartScale, EndScale, lerp);
-                Scale.Y = Scale.X;
-
-                _lifeTimer += GenG.TimeStep;
-            }
-            else
-                Kill();
+            LifeTimer.Update();
         }
 
         /// <summary>
@@ -99,7 +45,9 @@ namespace Genetic.Particles
         {
             base.Reset();
 
-            _lifeTimer = 0f;
+            LifeTimer.Start(true);
+            _color = _baseColor;
+            _alpha = _baseAlpha;
         }
     }
 }

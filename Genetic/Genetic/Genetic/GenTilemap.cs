@@ -5,13 +5,19 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 using Genetic.Geometry;
+using Genetic.Physics;
 
 namespace Genetic
 {
+    /// <summary>
+    /// A manager for a grid of tilemap tiles.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenTilemap : GenBasic
     {
         /// <summary>
-        /// A list of the various tile types in this tilemap, each with a unique string identifier.
+        /// A dictionary of the various tile types in this tilemap, each with a unique string identifier.
         /// </summary>
         public Dictionary<string, GenTile> TileTypes;
 
@@ -46,19 +52,24 @@ namespace Genetic
         public Texture2D TileSheetTexture;
 
         /// <summary>
-        /// The location of a premade automatic tilemap sheet.
+        /// A premade automatic tile sheet texture.
         /// </summary>
-        public const string ImageAuto = "auto_tiles";
+        public static Texture2D ImageAuto;
 
         /// <summary>
-        /// An array used to contain the positons of the left, right, top, and bottom tile positons in the Tiles array during optimized tile checking.
+        /// An array used to contain the positions of the left, right, top, and bottom tile positions in the Tiles array during optimized tile checking.
         /// [0] = left, [1] = right, [2] = top, and [3] = bottom.
         /// </summary>
-        protected int[] _tileBounds = new int[4];
+        protected int[] _tileBounds;
 
+        /// <summary>
+        /// Initializes the manager for a grid of tilemap tiles.
+        /// </summary>
         public GenTilemap()
         {
             TileTypes = new Dictionary<string, GenTile>();
+            ImageAuto = GenG.LoadContent<Texture2D>("auto_tiles");
+            _tileBounds = new int[4];
         }
 
         /// <summary>
@@ -66,27 +77,33 @@ namespace Genetic
         /// </summary>
         public override void Draw()
         {
-            _tileBounds[0] = (int)(GenG.CurrentCamera.CameraView.Left / TileWidth);
-            _tileBounds[1] = (int)(GenG.CurrentCamera.CameraView.Right / TileWidth);
-            _tileBounds[2] = (int)(GenG.CurrentCamera.CameraView.Top / TileHeight);
-            _tileBounds[3] = (int)(GenG.CurrentCamera.CameraView.Bottom / TileHeight);
+            // Prevent drawing tiles outside of the camera view to increase performance.
+            // If the camera is rotated, extend the drawing bounds to prevent culling tiles rotated into the camera view.
+            float extendBounds = 0f;
 
-            int x;
-            int y;
-
-            for (y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
+            if (GenG.CurrentCamera.Rotation != 0)
             {
-                for (x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
-                {
-                    if ((x >= 0) && (x < _columns) && (y >= 0) && (y < _rows))
-                    {
-                        if ((Tiles[y][x] != null) && Tiles[y][x].Exists && Tiles[y][x].Visible)
-                        {
-                            Tiles[y][x].Draw();
+                extendBounds =
+                    (float)Math.Sqrt((GenG.CurrentCamera.CameraView.HalfWidth * GenG.CurrentCamera.CameraView.HalfWidth) + (GenG.CurrentCamera.CameraView.HalfHeight * GenG.CurrentCamera.CameraView.HalfHeight)) -
+                    Math.Min(GenG.CurrentCamera.CameraView.HalfWidth, GenG.CurrentCamera.CameraView.HalfHeight);
+            }
 
-                            if (GenG.IsDebug)
-                                Tiles[y][x].DrawDebug();
-                        }
+            GetTileBounds(
+                GenG.CurrentCamera.CameraView.Left - extendBounds,
+                GenG.CurrentCamera.CameraView.Right + extendBounds,
+                GenG.CurrentCamera.CameraView.Top - extendBounds,
+                GenG.CurrentCamera.CameraView.Bottom + extendBounds);
+
+            for (int y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
+            {
+                for (int x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
+                {
+                    if ((Tiles[y][x] != null) && Tiles[y][x].Exists && Tiles[y][x].Visible)
+                    {
+                        Tiles[y][x].Draw();
+
+                        if (GenG.AllowDebug && GenG.IsDebug)
+                            Tiles[y][x].DrawDebug();
                     }
                 }
             }
@@ -94,7 +111,7 @@ namespace Genetic
 
         /// <summary>
         /// Loads a tile associated with a specific string id used when loading a tilemap.
-        /// The tile is stored in a list of tyle types used to create tiles for a tilemap.
+        /// The tile is stored in a list of tile types used to create tiles for a tilemap.
         /// </summary>
         /// <param name="id">The unique string id associated with this tile.</param>
         /// <param name="tile">The tile object to store in the list of tile types.</param>
@@ -107,11 +124,11 @@ namespace Genetic
         /// <summary>
         /// Loads a CSV tilemap containing comma separated string values, each associated with a predefined tile used by the LoadTile method.
         /// </summary>
-        /// <param name="mapData">The CSV (Comma Separated Values) tilmap to load.</param>
+        /// <param name="mapData">The CSV (Comma Separated Values) tilemap to load.</param>
         /// <param name="tileWidth">The width of each tile.</param>
         /// <param name="tileHeight">The height of each tile.</param>
-        /// <param name="tileSheet">The location of the tilesheet image used for automatic tilemap texturing. A value of null will not use a tilesheet image.</param>
-        public void LoadMap(string mapData, int tileWidth, int tileHeight, string tileSheet = null)
+        /// <param name="tileSheet">The tilesheet texture used for automatic tilemap texturing. A value of null will not use a tilesheet texture.</param>
+        public void LoadMap(string mapData, int tileWidth, int tileHeight, Texture2D tileSheet = null)
         {
             TileWidth = tileWidth;
             TileHeight = tileHeight;
@@ -146,12 +163,15 @@ namespace Genetic
                 {
                     if (row[x] != "0")
                     {
-                        Tiles[y][x] = new GenTile(x * tileWidth, y * tileHeight, tileWidth, tileHeight);
-                        Tiles[y][x].LoadTexture(TileTypes[row[x]].Texture);
+                        Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+
+                        if (tileSheet == null)
+                            Tiles[y][x].LoadTexture(TileTypes[row[x]].Texture);
 
                         // Check for a tile to the left of the current tile, and flag internal edges as closed.
                         if ((x > 0) && (Tiles[y][x - 1] != null))
                         {
+
                             Tiles[y][x].OpenEdges &= ~GenObject.Direction.Left;
                             Tiles[y][x - 1].OpenEdges &= ~GenObject.Direction.Right;
                         }
@@ -160,7 +180,7 @@ namespace Genetic
                         if ((y > 0) && (Tiles[y - 1][x] != null))
                         {
                             Tiles[y][x].OpenEdges &= ~GenObject.Direction.Up;
-                            Tiles[y - 1][x].OpenEdges &= ~GenObject.Direction.Down;
+                            Tiles[y][y - 1].OpenEdges &= ~GenObject.Direction.Down;
                         }
                     }
                     else
@@ -176,64 +196,260 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Loads a tile sheet image, using it to automatically texture each tilemap tile based on open edges.
+        /// Loads a tile sheet texture, using it to automatically texture each tilemap tile based on open edges.
         /// </summary>
-        /// <param name="tileSheet">The location of the tilesheet image used for automatic tilemap texturing.</param>
-        public void LoadTileSheet(string tileSheet)
+        /// <param name="tileSheet">The tilesheet texture used for automatic tilemap texturing.</param>
+        public void LoadTileSheet(Texture2D tileSheet)
         {
-            TileSheetTexture = GenG.Content.Load<Texture2D>(tileSheet);
+            TileSheetTexture = tileSheet;
 
-            int x;
-            int y;
-
-            for (y = 0; y < _rows; y++)
+            for (int y = 0; y < _rows; y++)
             {
-                for (x = 0; x < _columns; x++)
+                for (int x = 0; x < _columns; x++)
                 {
                     if (Tiles[y][x] != null)
                     {
-                        ((GenSprite)Tiles[y][x]).LoadTexture(TileSheetTexture);
-
-                        // Set the source rect of each tile, setting the tile image relative to its open edges using the automatic tile sheet.
-                        if (Tiles[y][x].OpenEdges == GenObject.Direction.Any)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(1, 1, TileWidth, TileWidth); // Open edges: Left, Right, Up, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0111)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth + 2, 1, TileWidth, TileWidth); // Open edges: Left, Right, Up
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1110)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 2 + 3, 1, TileWidth, TileWidth); // Open edges: Right, Up, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1011)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 3 + 4, 1, TileWidth, TileWidth); // Open edges: Left, Right, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1101)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 4 + 5, 1, TileWidth, TileWidth); // Open edges: Left, Up, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1100)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 5 + 6, 1, TileWidth, TileWidth); // Open edges: Up, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0011)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 6 + 7, 1, TileWidth, TileWidth); // Open edges: Left, Right
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0100)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 7 + 8, 1, TileWidth, TileWidth); // Open edges: Up
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0110)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 8 + 9, 1, TileWidth, TileWidth); // Open edges: Right, Up
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0010)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 9 + 10, 1, TileWidth, TileWidth); // Open edges: Right
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1010)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 10 + 11, 1, TileWidth, TileWidth); // Open edges: Right, Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1000)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 11 + 12, 1, TileWidth, TileWidth); // Open edges: Down
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x1001)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 12 + 13, 1, TileWidth, TileWidth); // Open edges: Left, Down
-                        else if (Tiles[y][x].OpenEdges == GenObject.Direction.Left)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 13 + 14, 1, TileWidth, TileWidth); // Open edges: Left
-                        else if (Tiles[y][x].OpenEdges == (GenObject.Direction)0x0101)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 14 + 15, 1, TileWidth, TileWidth); // Open edges: Left, Up
-                        else if (Tiles[y][x].OpenEdges == GenObject.Direction.None)
-                            ((GenSprite)Tiles[y][x]).SetSourceRect(TileWidth * 15 + 16, 1, TileWidth, TileWidth); // Open edges: None
+                        (Tiles[y][x]).LoadTexture(TileSheetTexture, false);
+                        GetAutoTile(x, y);
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Applys collision detection and response between an object or group of objects and the tiles of the tilemap.
+        /// Automatically sets the source rectangle of the tile at the given position in the tiles array.
+        /// Sets the tile image relative to its open edges using the automatic tile sheet.
+        /// </summary>
+        /// <param name="x">The column position of the tile, starting from 0.</param>
+        /// <param name="y">The row position of the tile, starting from 0.</param>
+        public void GetAutoTile(int x, int y)
+        {
+            int xOffset = 0;
+
+            switch ((int)Tiles[y][x].OpenEdges)
+            {
+                case 0x1111: // Open edges: Left, Right, Up, Down
+                    xOffset = 0; 
+                    break;
+
+                case 0x0111: // Open edges: Left, Right, Up
+                    xOffset = TileWidth;
+                    break;
+
+                case 0x1110: // Open edges: Right, Up, Down
+                    xOffset = TileWidth * 2;
+                    break;
+
+                case 0x1011: // Open edges: Left, Right, Down
+                    xOffset = TileWidth * 3;
+                    break;
+
+                case 0x1101: // Open edges: Left, Up, Down
+                    xOffset = TileWidth * 4;
+                    break;
+
+                case 0x1100: // Open edges: Up, Down
+                    xOffset = TileWidth * 5;
+                    break;
+
+                case 0x0011: // Open edges: Left, Right
+                    xOffset = TileWidth * 6;
+                    break;
+
+                case 0x0100: // Open edges: Up
+                    xOffset = TileWidth * 7;
+                    break;
+
+                case 0x0110: // Open edges: Right, Up
+                    xOffset = TileWidth * 8;
+                    break;
+
+                case 0x0010: // Open edges: Right
+                    xOffset = TileWidth * 9;
+                    break;
+
+                case 0x1010: // Open edges: Right, Down
+                    xOffset = TileWidth * 10;
+                    break;
+
+                case 0x1000: // Open edges: Down
+                    xOffset = TileWidth * 11;
+                    break;
+
+                case 0x1001: // Open edges: Left, Down
+                    xOffset = TileWidth * 12;
+                    break;
+
+                case 0x0001: // Open edges: Left
+                    xOffset = TileWidth * 13;
+                    break;
+
+                case 0x0101: // Open edges: Left, Up
+                    xOffset = TileWidth * 14;
+                    break;
+
+                case 0x0000: // Open edges: None
+                    xOffset = TileWidth * 15;
+                    break;
+            }
+
+            Tiles[y][x].SetSourceRect(xOffset, 0, TileWidth, TileHeight, true);
+        }
+
+        /// <summary>
+        /// Flags the given edge of a specific tile as open.
+        /// </summary>
+        /// <param name="x">The column position of the tile, starting from 0.</param>
+        /// <param name="y">The row position of the tile, starting from 0.</param>
+        /// <param name="edge">The direction of the edge to flag as closed.</param>
+        /// <returns>True if the tile edge was flagged as open, false if not.</returns>
+        public bool OpenTileEdge(int x, int y, GenObject.Direction edge)
+        {
+            if (Tiles[y][x] == null)
+                return false;
+
+            Tiles[y][x].OpenEdges |= edge;
+
+            if (TileSheetTexture != null)
+                GetAutoTile(x, y);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Flags the given edge of a specific tile as closed.
+        /// </summary>
+        /// <param name="x">The column position of the tile, starting from 0.</param>
+        /// <param name="y">The row position of the tile, starting from 0.</param>
+        /// <param name="edge">The direction of the edge to flag as closed.</param>
+        /// <returns>True if the tile edge was flagged as closed, false if not.</returns>
+        public bool CloseTileEdge(int x, int y, GenObject.Direction edge)
+        {
+            if (Tiles[y][x] == null)
+                return false;
+
+            Tiles[y][x].OpenEdges &= ~edge;
+
+            if (TileSheetTexture != null)
+                GetAutoTile(x, y);
+
+            return true;
+        }
+
+        /// <summary>
+        /// Gets the boundary of tiles within the given boundary positions.
+        /// Translates the boundary positions to row and column positions used by the tiles array.
+        /// </summary>
+        /// <param name="left">The horizontal position of the left edge of the bounding box.</param>
+        /// <param name="right">The horizontal position of the right edge of the bounding box.</param>
+        /// <param name="top">The vertical position of the top edge of the bounding box.</param>
+        /// <param name="bottom">The vertical position of the bottom edge of the bounding box.</param>
+        public void GetTileBounds(float left, float right, float top, float bottom)
+        {
+            // Left bound.
+            _tileBounds[0] = (int)Math.Max(left / TileWidth, 0);
+
+            // Right bound.
+            _tileBounds[1] = (int)Math.Min(right / TileWidth, _columns - 1);
+
+            // Top bound.
+            _tileBounds[2] = (int)Math.Max(top / TileHeight, 0);
+
+            // Bottom bound.
+            _tileBounds[3] = (int)Math.Min(bottom / TileHeight, _rows - 1);
+        }
+
+        /// <summary>
+        /// Adds a tile to the tilemap at the specified position.
+        /// </summary>
+        /// <param name="x">The column position of the tile, starting from 0.</param>
+        /// <param name="y">The row position of the tile, starting from 0.</param>
+        /// <param name="replace">A flag used to determine if any existing tile will be replaced.</param>
+        /// <returns>The tile that was added to the tilemap. Null if no tile was added.</returns>
+        public GenTile AddTile(int x, int y, bool replace = false)
+        {
+            if ((x < 0) || (y < 0))
+                return null;
+
+            if ((x >= Tiles[0].Length) || (y >= Tiles.Length))
+                return null;
+
+            if ((Tiles[y][x] != null) && !replace)
+                return null;
+
+            Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+
+            if (TileSheetTexture != null)
+            {
+                Tiles[y][x].LoadTexture(TileSheetTexture, false);
+                GetAutoTile(x, y);
+            }
+
+            // Check for a tile to the left of the current tile, and flag internal edges as closed.
+            if (x > 0)
+            {
+                if (CloseTileEdge(x - 1, y, GenObject.Direction.Right))
+                    CloseTileEdge(x, y, GenObject.Direction.Left);             
+            }
+
+            // Check for a tile to the right of the current tile, and flag internal edges as closed.
+            if (x < _columns - 1)
+            {
+                if (CloseTileEdge(x + 1, y, GenObject.Direction.Left))
+                    CloseTileEdge(x, y, GenObject.Direction.Right);
+            }
+
+            // Check for a tile above the current tile, and flag internal edges as closed.
+            if (y > 0)
+            {
+                if (CloseTileEdge(x, y - 1, GenObject.Direction.Down))
+                    CloseTileEdge(x, y, GenObject.Direction.Up);
+            }
+
+            // Check for a tile below the current tile, and flag internal edges as closed.
+            if (y < _rows - 1)
+            {
+                if (CloseTileEdge(x, y + 1, GenObject.Direction.Up))
+                    CloseTileEdge(x, y, GenObject.Direction.Down);
+            }
+
+            return Tiles[y][x];
+        }
+
+        /// <summary>
+        /// Removes a tile from the tilemap at the specified position.
+        /// </summary>
+        /// <param name="x">The column position of the tile, starting from 0.</param>
+        /// <param name="y">The row position of the tile, starting from 0.</param>
+        public void RemoveTile(int x, int y)
+        {
+            if ((x < 0) || (y < 0))
+                return;
+
+            if ((x >= Tiles[0].Length) || (y >= Tiles.Length))
+                return;
+
+            Tiles[y][x] = null;
+
+            // Check for a tile to the left of the current tile, and flag its right edge as open.
+            if (x > 0)
+                OpenTileEdge(x - 1, y, GenObject.Direction.Right);
+
+            // Check for a tile to the right of the current tile, and flag its left edge as open.
+            if (x < _columns - 1)
+                OpenTileEdge(x + 1, y, GenObject.Direction.Left);
+
+            // Check for a tile above the current tile, and flag its bottom edge as open.
+            if (y > 0)
+                OpenTileEdge(x, y - 1, GenObject.Direction.Down);
+
+            // Check for a tile below the current tile, and flag its top edge as open.
+            if (y < _rows - 1)
+                OpenTileEdge(x, y + 1, GenObject.Direction.Up);
+        }
+
+        /// <summary>
+        /// Applies collision detection and response between an object or group of objects and the tiles of the tilemap.
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
         /// <param name="objectOrGroup">The object or group to check for collisions.</param>
@@ -242,16 +458,15 @@ namespace Genetic
         public bool Collide(GenBasic objectOrGroup, CollideEvent callback = null)
         {            
             if (objectOrGroup is GenObject)
-            {
-                return CollideObject((GenObject)objectOrGroup, callback);
-            }
-            else if (objectOrGroup is GenGroup)
+                return CollideObject(objectOrGroup as GenObject, callback);
+            
+            if (objectOrGroup is GenGroup)
             {
                 bool collided = false;
 
-                foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                 {
-                    if (CollideObject((GenObject)basic, callback) && !collided)
+                    if (CollideObject(basic as GenObject, callback))
                         collided = true;
                 }
 
@@ -262,7 +477,7 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Applys collision detection and response between an object and the tiles of the tilemap.
+        /// Applies collision detection and response between an object and the tiles of the tilemap.
         /// Uses an object's position to efficiently find neighboring tiles to check for collision in the tiles two-dimensional array.
         /// </summary>
         /// <param name="gameObject">The object to check for collisions.</param>
@@ -270,31 +485,26 @@ namespace Genetic
         /// <returns>True is a collision occurs, false if not.</returns>
         public bool CollideObject(GenObject gameObject, CollideEvent callback = null)
         {
-            // Refresh the movement bounding box of the object.
-            gameObject.GetMoveBounds();
-
-            _tileBounds[0] = (int)(gameObject.MoveBounds.Left / TileWidth); // Left bound.
-            _tileBounds[1] = (int)(gameObject.MoveBounds.Right / TileWidth); // Right bound.
-            _tileBounds[2] = (int)(gameObject.MoveBounds.Top / TileHeight); // Top bound.
-            _tileBounds[3] = (int)(gameObject.MoveBounds.Bottom / TileHeight); // Bottom bound.
+            GetTileBounds(
+                gameObject.MoveBounds.Left,
+                gameObject.MoveBounds.Right,
+                gameObject.MoveBounds.Top,
+                gameObject.MoveBounds.Bottom);
 
             bool collided = false;
 
-            int x;
-            int y;
-
-            for (y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
+            for (int y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
             {
-                for (x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
+                for (int x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
                 {
-                    if ((x >= 0) && (x < _columns) && (y >= 0) && (y < _rows))
+                    // If the tile is empty, do not check for a collision.
+                    if (Tiles[y][x] == null)
+                        continue;
+
+                    if (GenCollide.Collide(gameObject, Tiles[y][x], callback, Tiles[y][x].OpenEdges))
                     {
-                        // Do not check for a collision if the tile is empty.
-                        if ((Tiles[y][x] != null))
-                        {
-                            if (gameObject.Collide(Tiles[y][x], callback, false, Tiles[y][x].OpenEdges) && !collided)
-                                collided = true;
-                        }
+                        RemoveTile(x, y);
+                        collided = true;
                     }
                 }
             }

@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
 namespace Genetic.Gui
 {
+    /// <summary>
+    /// A graphical progress bar meter.
+    /// Extends from <c>GenSprite</c>, so the progress bar can utilize features of a <c>GenSprite</c> such as animations.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenProgressBar : GenSprite
     {
         /// <summary>
@@ -28,14 +35,15 @@ namespace Genetic.Gui
         protected float _value;
 
         /// <summary>
-        /// The color tint of the progress bar sprite as the progress bar value gets closer to the minimum value.
+        /// A list of colors used to tint the progress bar relative to its current value.
+        /// The order of the colors proceeds from min to max.
         /// </summary>
-        public Color MinColor;
+        public List<Color> Colors;
 
         /// <summary>
-        /// The color tint of the progress bar sprite as the progress bar value gets closer to the maxinum value.
+        /// A flag used to determine if the progress bar colors should interpolate as its value changes.
         /// </summary>
-        public Color MaxColor;
+        public bool BlendColors;
 
         /// <summary>
         /// The method that will invoke when the progress bar value reaches the minimum value.
@@ -67,6 +75,14 @@ namespace Genetic.Gui
             }
         }
 
+        /// <summary>
+        /// A graphical progress bar meter.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the progress bar.</param>
+        /// <param name="y">The y position of the top-left corner of the progress bar.</param>
+        /// <param name="texture">The texture used as the progress bar fill.</param>
+        /// <param name="width">The width of the progress bar.</param>
+        /// <param name="height">The height of the progress bar.</param>
         public GenProgressBar(float x = 0, float y = 0, Texture2D texture = null, int width = 100, int height = 10)
             : base(x, y, texture, width, height)
         {
@@ -74,12 +90,15 @@ namespace Genetic.Gui
             MinValue = 0;
             MaxValue = 100;
             _value = 100;
-            MinColor = Color.White;
-            MaxColor = Color.White;
+            Colors = new List<Color>();
+            BlendColors = true;
             MinCallback = null;
             MaxCallback = null;
         }
 
+        /// <summary>
+        /// Updates the progress bar display using the current progress value.
+        /// </summary>
         public override void Update()
         {
             base.Update();
@@ -101,8 +120,27 @@ namespace Genetic.Gui
                 _progressRect.Height = Animations[_currentAnimation].FrameRect.Height;
             }
 
-            // Interpolate the progress bar color relative to the current progress bar value.
-            _color = Color.Lerp(MinColor, MaxColor, lerp);
+            int lastColorIndex = Colors.Count - 1;
+
+            if (Colors.Count > 0)
+            {
+                if (BlendColors)
+                {
+                    // Interpolate the progress bar colors relative to the current progress bar value.
+                    int currentColorIndex = (int)(lerp * lastColorIndex);
+                    float colorLerp = (lerp - ((1f / lastColorIndex) * currentColorIndex)) / (1f / lastColorIndex);
+
+                    if (currentColorIndex < lastColorIndex)
+                        _color = Color.Lerp(Colors[currentColorIndex], Colors[currentColorIndex + 1], colorLerp);
+                    else
+                        _color = Colors[lastColorIndex];
+                }
+                else
+                {
+                    // Set the progress bar color relative to the current progress bar value.
+                    _color = Colors[Math.Min((int)(lerp * Colors.Count), lastColorIndex)];
+                }
+            }
         }
 
         /// <summary>

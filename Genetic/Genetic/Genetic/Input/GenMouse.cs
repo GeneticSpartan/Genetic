@@ -3,9 +3,42 @@ using Microsoft.Xna.Framework.Input;
 
 namespace Genetic.Input
 {
+    /// <summary>
+    /// Manages input from a mouse device.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenMouse
     {
-        public enum Buttons { LeftButton, MiddleButton, RightButton, XButton1, XButton2 };
+        /// <summary>
+        /// The input buttons provided by a mouse device.
+        /// </summary>
+        public enum Buttons {
+            /// <summary>
+            /// The left mouse button.
+            /// </summary>
+            LeftButton,
+
+            /// <summary>
+            /// The middle mouse button.
+            /// </summary>
+            MiddleButton,
+
+            /// <summary>
+            /// The right mouse button.
+            /// </summary>
+            RightButton,
+
+            /// <summary>
+            /// The first extended mouse button, often used as the back button.
+            /// </summary>
+            XButton1,
+
+            /// <summary>
+            /// The second extended mouse button, often used as the forward button.
+            /// </summary>
+            XButton2
+        };
 
         /// <summary>
         /// The current states of the mouse.
@@ -20,12 +53,12 @@ namespace Genetic.Input
         /// <summary>
         /// The x and y positions of the mouse cursor.
         /// </summary>
-        protected Vector2 _position = Vector2.Zero;
+        protected Vector2 _position;
 
         /// <summary>
         /// The change in the scroll wheel value between the current and previous updates.
         /// </summary>
-        protected int _wheel = 0;
+        protected int _wheel;
 
         /// <summary>
         /// Gets the x and y positions of the mouse cursor.
@@ -67,10 +100,12 @@ namespace Genetic.Input
             get { return _mouseState.ScrollWheelValue; }
         }
 
+        /// <summary>
+        /// Initializes the input manager for a mouse device.
+        /// </summary>
         public GenMouse()
         {
-            _mouseState = new MouseState();
-            _oldMouseState = new MouseState();
+            _wheel = 0;
         }
 
         /// <summary>
@@ -94,7 +129,7 @@ namespace Genetic.Input
         /// <returns>True if the button is currently pressed, false if not.</returns>
         public bool IsPressed(Buttons button)
         {
-            return GetButtonState(button).Value == ButtonState.Pressed;
+            return GetButtonState(button, false).Value == ButtonState.Pressed;
         }
 
         /// <summary>
@@ -104,7 +139,7 @@ namespace Genetic.Input
         /// <returns>True if the button is currently released, false if not.</returns>
         public bool IsReleased(Buttons button)
         {
-            return GetButtonState(button).Value == ButtonState.Released;
+            return GetButtonState(button, false).Value == ButtonState.Released;
         }
 
         /// <summary>
@@ -114,7 +149,7 @@ namespace Genetic.Input
         /// <returns>True if the button was just pressed, false if not.</returns>
         public bool JustPressed(Buttons button)
         {
-            return ((GetButtonState(button, true).Value == ButtonState.Released) && (GetButtonState(button).Value == ButtonState.Pressed)) ? true : false;
+            return ((GetButtonState(button, true).Value == ButtonState.Released) && (GetButtonState(button, false).Value == ButtonState.Pressed));
         }
 
         /// <summary>
@@ -124,7 +159,7 @@ namespace Genetic.Input
         /// <returns>True if the button was just released, false if not.</returns>
         public bool JustReleased(Buttons button)
         {
-            return ((GetButtonState(button, true).Value == ButtonState.Pressed) && (GetButtonState(button).Value == ButtonState.Released)) ? true : false;
+            return ((GetButtonState(button, true).Value == ButtonState.Pressed) && (GetButtonState(button).Value == ButtonState.Released));
         }
 
         /// <summary>

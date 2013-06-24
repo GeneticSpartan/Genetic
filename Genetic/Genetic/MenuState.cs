@@ -9,50 +9,51 @@ namespace Genetic
 {
     public class MenuState : GenState
     {
-        public GenText startGame;
+        public GenText StartGameText;
 
         public override void Create()
         {
             base.Create();
 
-            GenG.Camera.BgColor = Color.IndianRed;
+            Camera.BgColor = Color.IndianRed;
 
-            startGame = new GenText("Press Start", GenG.Camera.CameraView.Width / 2, GenG.Camera.CameraView.Height / 2, 0, 20);
-            startGame.TextAlignment = GenText.TextAlign.Center;
-            startGame.HasShadow = true;
-            startGame.ShadowColor = Color.DarkRed;
-            startGame.Deceleration.Y = 700;
-            Add(startGame);
+            StartGameText = new GenText("Press Start", Camera.CameraView.Width / 2, Camera.CameraView.Height / 2, 0, 20);
+            StartGameText.TextAlignment = GenText.TextAlign.Center;
+            StartGameText.HasShadow = true;
+            StartGameText.ShadowColor = Color.DarkRed;
+            StartGameText.Deceleration.Y = 700;
+            Add(StartGameText);
 
-            //GenG.Camera.Flash(1.2f, 3f, Color.White);
+            //Camera.Flash(1.2f, 3f, Color.White);
         }
 
         public override void Update()
         {
             base.Update();
 
-            //GenG.Camera.Shake();
+            //Camera.Shake();
 
-            startGame.Rotation = GenU.SineWave(0, 4, 30);
-            //startGame.X = GenU.SineWave(GenG.Camera.CameraView.Width / 2, 4, GenG.Camera.CameraView.Width / 2 - 200);
-            //startGame.Y = GenU.SineWave(GenG.Camera.CameraView.Height / 2 - 20, 2, GenG.Camera.CameraView.Height / 2 - 100);
+            StartGameText.Rotation = GenU.SineWave(0, 4, 30);
+            //startGame.X = GenU.SineWave(Camera.CameraView.Width / 2, 4, Camera.CameraView.Width / 2 - 200);
+            //startGame.Y = GenU.SineWave(Camera.CameraView.Height / 2 - 20, 2, Camera.CameraView.Height / 2 - 100);
 
-            startGame.X += GenG.GamePads[PlayerIndex.One].ThumbStickLeftX;
+            StartGameText.X += GenG.GamePads[PlayerIndex.One].ThumbStickLeftX;
 
             if (GenG.Mouse.Wheel != 0)
-                startGame.Acceleration.Y += GenG.Mouse.Wheel * 20;
+                StartGameText.Acceleration.Y += GenG.Mouse.Wheel * 20;
             else
-                startGame.Acceleration.Y = 0;
+                StartGameText.Acceleration.Y = 0;
 
-            startGame.FontSize = GenU.SineWave(24, 8, 2);
+            StartGameText.Scale.X = GenU.SineWave(2, 8, 0.2f);
+            StartGameText.Scale.Y = StartGameText.Scale.X;
 
             if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Space) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.Start) || GenG.Mouse.JustPressed(GenMouse.Buttons.LeftButton))
-                GenG.Camera.Fade(1f, Color.Black, StartGame);
+                Camera.Fade(1f, Color.Black, StartGame);
         }
 
         public void StartGame()
         {
-            GenG.SwitchState(new PlayState());
+            GenG.SwitchState(new PlayState(), new LoadingState());
         }
     }
 }

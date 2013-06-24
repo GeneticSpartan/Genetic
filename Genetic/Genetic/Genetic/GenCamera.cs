@@ -4,8 +4,16 @@ using System.Collections.Generic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
+using Genetic.Geometry;
+
 namespace Genetic
 {
+    /// <summary>
+    /// A 2-dimensional camera used to display an area of the game world to the screen.
+    /// Game objects within the camera view area are drawn to a render target texture, which is then drawn to the screen.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenCamera : GenBasic
     {
         /// <summary>
@@ -44,7 +52,26 @@ namespace Genetic
             LeadingVertical,
         }
 
-        public enum ShakeDirection { Horizontal, Vertical, Both };
+        /// <summary>
+        /// The direction that a camera will shake.
+        /// </summary>
+        public enum ShakeDirection
+        {
+            /// <summary>
+            /// A camera shake will move along the x-axis.
+            /// </summary>
+            Horizontal,
+
+            /// <summary>
+            /// A camera shake will move along the y-axis.
+            /// </summary>
+            Vertical,
+
+            /// <summary>
+            /// A camera shake will move along both the x-axis and y-axis simultaneously.
+            /// </summary>
+            Both
+        };
 
         /// <summary>
         /// The bounding rectangle of the camera.
@@ -54,7 +81,7 @@ namespace Genetic
         /// <summary>
         /// The bounding camera view according to the camera bounding rectangle, scroll positions, and zoom level.
         /// </summary>
-        protected CameraView _cameraView = new CameraView();
+        protected GenAABB _cameraView;
 
         /// <summary>
         /// The x and y position of the top-left corner of the camera.
@@ -65,6 +92,11 @@ namespace Genetic
         /// The render target texture used to apply post-process effects after the camera is drawn.
         /// </summary>
         public RenderTarget2D RenderTarget;
+
+        /// <summary>
+        /// An extra render target texture needed when drawing in the pixel draw mode.
+        /// </summary>
+        public RenderTarget2D PixelRenderTarget;
 
         /// <summary>
         /// The texture used to draw the camera's background color.
@@ -79,22 +111,22 @@ namespace Genetic
         /// <summary>
         /// The color used to tint the camera. White means no tint.
         /// </summary>
-        public Color Color = Color.White;
+        public Color Color;
 
         /// <summary>
         /// The background color of the camera.
         /// </summary>
-        protected Color? _bgColor;
+        public Color BgColor;
 
         /// <summary>
         /// The x and y values used for scrolling the camera view.
         /// </summary>
-        protected Vector2 _scroll = Vector2.Zero;
+        protected Vector2 _scroll;
 
         /// <summary>
         /// The rotation of the camera in radians.
         /// </summary>
-        public float Rotation = 0f;
+        protected float _rotation;
 
         /// <summary>
         /// The position that the camera will rotate around.
@@ -125,28 +157,28 @@ namespace Genetic
         /// <summary>
         /// The style that the camera will use to follow a target.
         /// </summary>
-        public FollowType CameraFollowType = FollowType.LockOn;
+        public FollowType CameraFollowType;
 
         /// <summary>
         /// A list of game objects that the camera will follow.
         /// </summary>
-        protected List<GenObject> _followTargets = new List<GenObject>();
+        protected List<GenObject> _followTargets;
 
         /// <summary>
         /// The x and y positions of the point that the camera will follow, determined by the follow targets.
         /// </summary>
-        public Vector2 FollowPosition = Vector2.Zero;
+        public Vector2 FollowPosition;
 
         /// <summary>
         /// The x and y distances from the follow target used in the leading follow style.
         /// </summary>
-        public Vector2 FollowLeading = new Vector2(50, 30);
+        public Vector2 FollowLeading;
 
         /// <summary>
         /// Controls the smoothness of the camera as it follows a target, a value from 0 to 1.
         /// A value of 1 will cause the camera to follow a target exactly, and any other value closer to 0 means smoother/slower camera movement.
         /// </summary>
-        protected float _followStrength = 1f;
+        protected float _followStrength;
 
         /// <summary>
         /// The minimum amount of camera zoom possible when following multiple targets.
@@ -156,52 +188,46 @@ namespace Genetic
         /// <summary>
         /// The maximum amount of camera zoom possible when following multiple targets.
         /// </summary>
-        public float MaxZoom = 4f;
+        public float MaxZoom;
 
         /// <summary>
         /// The x and y position offsets used to apply camera shake.
         /// </summary>
-        protected Vector2 _shakeOffset = Vector2.Zero;
-
-        /// <summary>
-        /// Determines if the camera is currently shaking.
-        /// </summary>
-        protected bool _shaking = false;
+        protected Vector2 _shakeOffset;
 
         /// <summary>
         /// The current intensity of the camera shake.
         /// </summary>
-        protected float _shakeIntensity = 0f;
-
-        /// <summary>
-        /// The current duration of the camera shake.
-        /// </summary>
-        protected float _shakeDuration = 0f;
+        protected float _shakeIntensity;
 
         /// <summary>
         /// Determines whether the camera shake intensity decreases over time.
         /// </summary>
-        protected bool _shakeDecreasing = false;
-
-        /// <summary>
-        /// The amount of time since the camera shake started, in seconds.
-        /// </summary>
-        protected float _shakeTimer = 0f;
-
-        /// <summary>
-        /// The callback function that will invoke after the camera shake has finished.
-        /// </summary>
-        protected Action _shakeCallback;
+        protected bool _shakeDecreasing;
 
         /// <summary>
         /// The direction of the camera shake.
         /// </summary>
         protected ShakeDirection _shakeDirection;
 
+        protected GenTimer _shakeTimer;
+
+        /// <summary>
+        /// The sprite effect used to draw the camera flipped horizontally or vertically.
+        /// </summary>
+        public SpriteEffects SpriteEffect;
+
         /// <summary>
         /// The camera effect manager.
         /// </summary>
         protected GenScreenEffect _cameraEffect;
+
+        /// <summary>
+        /// The blend state that will be used when the camera render target texture is drawn.
+        /// </summary>
+        public BlendState BlendState;
+
+        public Effect Effect = GenG.LoadContent<Effect>("grayscale");
 
         /// <summary>
         /// Gets the bounding rectangle of the camera.
@@ -214,9 +240,49 @@ namespace Genetic
         /// <summary>
         /// Gets the bounding camera view according to the camera bounding rectangle, scroll positions, and zoom level.
         /// </summary>
-        public CameraView CameraView
+        public GenAABB CameraView
         {
             get { return _cameraView; }
+        }
+
+        /// <summary>
+        /// Gets the x and y positions of the top-left corner of the camera.
+        /// </summary>
+        public Vector2 Position
+        {
+            get { return _position; }
+        }
+
+        /// <summary>
+        /// Gets the x position of the top-left corner of the camera.
+        /// </summary>
+        public float X
+        {
+            get { return _position.X; }
+        }
+
+        /// <summary>
+        /// Gets the y position of the top-left corner of the camera.
+        /// </summary>
+        public float Y
+        {
+            get { return _position.Y; }
+        }
+
+        /// <summary>
+        /// Gets the width of the camera bounding rectangle.
+        /// </summary>
+        public int Width
+        {
+            get { return _cameraRect.Width; }
+        }
+
+        /// <summary>
+        /// Gets the height of the camera bounding rectangle.
+        /// </summary>
+        public int Height
+        {
+            get { return _cameraRect.Height; }
         }
 
         /// <summary>
@@ -259,6 +325,22 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Get or sets the rotation of the camera in degrees.
+        /// </summary>
+        public float Rotation
+        {
+            get { return MathHelper.ToDegrees(_rotation); }
+
+            set
+            {
+                if ((value > 360) || (value < -360))
+                    value %= 360;
+
+                _rotation = MathHelper.ToRadians(value);
+            }
+        }
+
+        /// <summary>
         /// Get or sets the scale at which to draw objects in the camera.
         /// </summary>
         public float Zoom
@@ -274,22 +356,12 @@ namespace Genetic
         }
 
         /// <summary>
-        /// The transform matrix associated with the camera viewport.
+        /// The transform matrix associated with the camera view.
         /// </summary>
         public Matrix Transform
         {
             get;
             protected set;
-        }
-
-        /// <summary>
-        /// Gets or sets the background color of the camera.
-        /// </summary>
-        public Color BgColor
-        {
-            get { return _bgColor.HasValue ? _bgColor.Value : Color.Transparent; }
-
-            set { _bgColor = value; }
         }
 
         /// <summary>
@@ -308,7 +380,7 @@ namespace Genetic
         /// </summary>
         public bool Shaking
         {
-            get { return _shaking; }
+            get { return _shakeTimer.IsRunning; }
         }
 
         /// <summary>
@@ -320,22 +392,48 @@ namespace Genetic
         /// <param name="width">The width of the camera.</param>
         /// <param name="height">The height of the camera.</param>
         /// <param name="zoom">The scale at which to draw objects in the camera.</param>
-        public GenCamera(int x, int y, int width, int height, float zoom)
+        public GenCamera(float x, float y, int width, int height, float zoom)
         {
             _cameraRect = new Rectangle(0, 0, width, height);
+            _cameraView = new GenAABB(0f, 0f, width, height);
             _position = new Vector2(x, y);
             RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
+            PixelRenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
             _backgroundTexture = GenU.MakeTexture(Color.White, 1, 1);
-            _cameraEffect = new GenScreenEffect(_cameraRect);
+            Color = Color.White;
+            BgColor = Color.Transparent;
+            _rotation = 0f;
             Origin = new Vector2(width * 0.5f, height * 0.5f);
             Scale = Vector2.One;
             _drawPosition = new Vector2(x + Origin.X, y + Origin.Y);
             _initialZoom = zoom;
             Zoom = _initialZoom;
+            CameraFollowType = FollowType.LockOn;
+            _followTargets = new List<GenObject>();
+            FollowLeading = new Vector2(50, 30);
+            _followStrength = 1f;
             MinZoom = _initialZoom;
+            MaxZoom = 4f;
+            _shakeIntensity = 0f;
+            _shakeDecreasing = false;
+            _shakeTimer = new GenTimer(0f, null, true);
+            SpriteEffect = SpriteEffects.None;
+            _cameraEffect = new GenScreenEffect(_cameraRect);
             Transform = Matrix.Identity;
+
+            // Set up the default camera blend state as alpha blend.
+            BlendState = new BlendState();
+            BlendState.ColorSourceBlend = Blend.One;
+            BlendState.ColorDestinationBlend = Blend.InverseSourceAlpha;
+            BlendState.ColorBlendFunction = BlendFunction.Add;
+            BlendState.AlphaSourceBlend = Blend.One;
+            BlendState.AlphaDestinationBlend = Blend.InverseSourceAlpha;
+            BlendState.AlphaBlendFunction = BlendFunction.Add;
         }
 
+        /// <summary>
+        /// Handles any post-update logic for the camera.
+        /// </summary>
         public override void PostUpdate()
         {
             if (_followTargets.Count > 0)
@@ -343,25 +441,18 @@ namespace Genetic
                 if (_followTargets.Count > 1)
                 {
                     // Set the initial minimum and maximum x and y values based on the first follow target.
-                    float followXMin = _followTargets[0].BoundingBox.Left;
-                    float followXMax = _followTargets[0].BoundingBox.Right;
-                    float followYMin = _followTargets[0].BoundingBox.Top;
-                    float followYMax = _followTargets[0].BoundingBox.Bottom;
+                    float followXMin = _followTargets[0].Bounds.Left;
+                    float followXMax = _followTargets[0].Bounds.Right;
+                    float followYMin = _followTargets[0].Bounds.Top;
+                    float followYMax = _followTargets[0].Bounds.Bottom;
 
                     // Loop through the remaining follow targets and adjust the minimum and maximum x and y values accordingly.
                     for (int i = 1; i < _followTargets.Count; i++)
                     {
-                        if (_followTargets[i].BoundingBox.Left < followXMin)
-                            followXMin = _followTargets[i].BoundingBox.Left;
-
-                        if (_followTargets[i].BoundingBox.Right > followXMax)
-                            followXMax = _followTargets[i].BoundingBox.Right;
-
-                        if (_followTargets[i].BoundingBox.Top < followYMin)
-                            followYMin = _followTargets[i].BoundingBox.Top;
-
-                        if (_followTargets[i].BoundingBox.Bottom > followYMax)
-                            followYMax = _followTargets[i].BoundingBox.Bottom;
+                        followXMin = Math.Min(followXMin, _followTargets[i].Bounds.Left);
+                        followXMax = Math.Max(followXMax, _followTargets[i].Bounds.Right);
+                        followYMin = Math.Min(followYMin, _followTargets[i].Bounds.Top);
+                        followYMax = Math.Max(followYMax, _followTargets[i].Bounds.Bottom);
                     }
 
                     // Set the follow target to the center point between the minimum and maximum x and y values of all combined follow targets.
@@ -371,30 +462,26 @@ namespace Genetic
                     float distanceX = Math.Abs(followXMax - followXMin) * 2;
                     float distanceY = Math.Abs(followYMax - followYMin) * 2;
 
-                    // Zoom the camera in or out, complying with the minimum and maximum zoom values, and attempt to keep all follow targets within the camera view.
+                    // Zoom the camera in or out, not exceeding the minimum and maximum zoom values.
+                    // Attempt to keep all follow targets within the camera view.
                     Zoom += (MathHelper.Clamp(MathHelper.Min(_cameraRect.Width / distanceX, _cameraRect.Height / distanceY), MinZoom, MaxZoom) - Zoom) * _followStrength;
                 }
                 else
                 {
-                    float followTargetX = 0;
-                    float followTargetY = 0;
+                    float followTargetX = _followTargets[0].CenterPosition.X;
+                    float followTargetY = _followTargets[0].CenterPosition.Y;
 
                     if (GenG.DrawMode == GenG.DrawType.Pixel)
                     {
-                        followTargetX = (int)_followTargets[0].X;
-                        followTargetY = (int)_followTargets[0].Y;
-                    }
-                    else if (GenG.DrawMode == GenG.DrawType.Smooth)
-                    {
-                        followTargetX = _followTargets[0].X;
-                        followTargetY = _followTargets[0].Y;
+                        followTargetX = (int)followTargetX;
+                        followTargetY = (int)followTargetY;
                     }
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnHorizontal))
-                        FollowPosition.X += (followTargetX + _followTargets[0].BoundingBox.HalfWidth - FollowPosition.X) * _followStrength;
+                        FollowPosition.X += (followTargetX - FollowPosition.X) * _followStrength;
 
                     if ((CameraFollowType == FollowType.LockOn) || (CameraFollowType == FollowType.LockOnVertical))
-                        FollowPosition.Y += (followTargetY + _followTargets[0].BoundingBox.HalfHeight - FollowPosition.Y) * _followStrength;
+                        FollowPosition.Y += (followTargetY - FollowPosition.Y) * _followStrength;
 
                     if ((CameraFollowType == FollowType.Leading) || (CameraFollowType == FollowType.LeadingHorizontal))
                     {
@@ -432,33 +519,27 @@ namespace Genetic
                     ScrollY = -GenG.WorldBounds.Bottom + _cameraView.Height;
             }
 
-            if (_shaking)
+            if (_shakeTimer.IsRunning)
             {
-                if (_shakeTimer < _shakeDuration)
+                _shakeTimer.Update();
+
+                if (!_shakeTimer.IsRunning)
+                    _shakeOffset = Vector2.Zero;
+                else
                 {
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Horizontal))
                         _shakeOffset.X = (((float)GenU.Random() * _shakeIntensity * 2) - _shakeIntensity);
+
                     if ((_shakeDirection == ShakeDirection.Both) || (_shakeDirection == ShakeDirection.Vertical))
                         _shakeOffset.Y = (((float)GenU.Random() * _shakeIntensity * 2) - _shakeIntensity);
 
                     if (_shakeDecreasing)
                     {
-                        float shakeFade = (_shakeDuration - _shakeTimer) / _shakeDuration;
+                        float shakeDecrease = _shakeTimer.Remaining / _shakeTimer.Duration;
 
-                        _shakeOffset.X *= shakeFade;
-                        _shakeOffset.Y *= shakeFade;
+                        _shakeOffset.X *= shakeDecrease;
+                        _shakeOffset.Y *= shakeDecrease;
                     }
-
-                    _shakeTimer += GenG.TimeStep;
-                }
-                else
-                {
-                    _shaking = false;
-
-                    if (_shakeCallback != null)
-                        _shakeCallback.Invoke();
-
-                    _shakeOffset = Vector2.Zero;
                 }
             }
 
@@ -468,9 +549,30 @@ namespace Genetic
 
             // Create the camera transform.
             if (GenG.DrawMode == GenG.DrawType.Pixel)
-                Transform = Matrix.CreateTranslation((int)_scroll.X, (int)_scroll.Y, 0f);
-            else if (GenG.DrawMode == GenG.DrawType.Smooth)
-                Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+            {
+                if (_rotation == 0)
+                    Transform = Matrix.CreateTranslation((int)(_scroll.X), (int)(_scroll.Y), 0f);
+                else
+                {
+                    Transform =
+                    Matrix.CreateTranslation((int)(_scroll.X) - (Origin.X / _zoom), (int)(_scroll.Y) - (Origin.Y / _zoom), 0f) *
+                    Matrix.CreateRotationZ(_rotation) *
+                    Matrix.CreateTranslation(Origin.X / _zoom, Origin.Y / _zoom, 0f);
+                }
+            }
+            else
+            {
+                if (_rotation == 0)
+                    Transform = Matrix.CreateTranslation(_scroll.X, _scroll.Y, 0f) * Matrix.CreateScale(_zoom);
+                else
+                {
+                    Transform =
+                    Matrix.CreateTranslation(_scroll.X - (Origin.X / _zoom), _scroll.Y - (Origin.Y / _zoom), 0f) *
+                    Matrix.CreateRotationZ(_rotation) *
+                    Matrix.CreateTranslation(Origin.X / _zoom, Origin.Y / _zoom, 0f) *
+                    Matrix.CreateScale(_zoom);
+                }
+            }
         }
 
         /// <summary>
@@ -478,7 +580,7 @@ namespace Genetic
         /// </summary>
         public void DrawBg()
         {
-            if (_bgColor != null)
+            if (BgColor != null)
                 GenG.SpriteBatch.Draw(_backgroundTexture, _cameraRect, BgColor);
         }
 
@@ -492,14 +594,19 @@ namespace Genetic
 
         /// <summary>
         /// Sets the essential components that function together as the camera view area.
-        /// Do not set the camera view often, since a new render target object must be created.
+        /// Do not set the camera view often, since new render target objects must be created.
         /// </summary>
         /// <param name="x">The x position of the top-left corner of the camera view.</param>
         /// <param name="y">The y position of the top-left corner of the camera view.</param>
         /// <param name="width">The width of the camera view.</param>
         /// <param name="height">The height of the camera view.</param>
-        public void SetCameraView(int x, int y, int width, int height)
+        public void SetCameraView(float x, float y, int width, int height)
         {
+            // Prevent the width and height from being set to values less than 1.
+            // The render target must have width and height values of 1 or greater.
+            width = (int)MathHelper.Max(1, width);
+            height = (int)MathHelper.Max(1, height);
+
             _cameraRect.Width = width;
             _cameraRect.Height = height;
 
@@ -508,17 +615,15 @@ namespace Genetic
             _position.X = x;
             _position.Y = y;
 
-            if (GenG.DrawMode == GenG.DrawType.Smooth)
-            {
-                Origin.X = width * 0.5f;
-                Origin.Y = height * 0.5f;
+            Origin.X = width * 0.5f;
+            Origin.Y = height * 0.5f;
 
-                _drawPosition.X = x + Origin.X;
-                _drawPosition.Y = y + Origin.Y;
-            }
+            _drawPosition.X = x + Origin.X;
+            _drawPosition.Y = y + Origin.Y;
 
-            // Create a new render target object to comply with the new size settings.
+            // Create new render target objects to comply with the new size settings.
             RenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
+            PixelRenderTarget = new RenderTarget2D(GenG.GraphicsDevice, width, height);
         }
 
         /// <summary>
@@ -530,10 +635,10 @@ namespace Genetic
         public void AddTarget(GenBasic objectOrGroup = null)
         {
             if (objectOrGroup is GenObject)
-                _followTargets.Add((GenObject)objectOrGroup);
+                _followTargets.Add(objectOrGroup as GenObject);
             else if (objectOrGroup is GenGroup)
             {
-                foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                     AddTarget(basic);
             }
         }
@@ -546,11 +651,11 @@ namespace Genetic
         {
             if (objectOrGroup is GenObject)
             {
-                _followTargets.Remove((GenObject)objectOrGroup);
+                _followTargets.Remove(objectOrGroup as GenObject);
             }
             else if (objectOrGroup is GenGroup)
             {
-                foreach (GenBasic basic in ((GenGroup)objectOrGroup).Members)
+                foreach (GenBasic basic in (objectOrGroup as GenGroup).Members)
                     RemoveTarget(basic);
             }
         }
@@ -575,16 +680,15 @@ namespace Genetic
         public void Shake(float intensity = 5f, float duration = 1f, bool decreasing = false, bool forceReset = false, Action callback = null, ShakeDirection direction = ShakeDirection.Both)
         {
             // Apply the shake if the camera is not already shaking, unless force reset is true.
-            if (forceReset || !_shaking)
+            if (!_shakeTimer.IsRunning || forceReset)
             {
                 _shakeIntensity = intensity;
-                _shakeDuration = duration;
                 _shakeDecreasing = decreasing;
-                _shakeCallback = callback;
                 _shakeDirection = direction;
-                _shakeTimer = 0f;
 
-                _shaking = true;
+                _shakeTimer.Duration = duration;
+                _shakeTimer.Callback = callback;
+                _shakeTimer.Start(true);
             }
         }
 
@@ -624,16 +728,17 @@ namespace Genetic
             // Adjust the camera view dimensions.
             _cameraView.Width = _cameraRect.Width / _zoom;
             _cameraView.Height = _cameraRect.Height / _zoom;
+        }
 
-            if (GenG.DrawMode == GenG.DrawType.Pixel)
-            {
-                // Adjust the origin and draw position for drawing the camera render target image in the correct position.
-                Origin.X = (_cameraRect.Width * 0.5f) / _zoom;
-                Origin.Y = (_cameraRect.Height * 0.5f) / _zoom;
+        public virtual void SetEffect()
+        {
+            Effect.Parameters["timer"].SetValue(GenG.ElapsedTime);
+            Effect.CurrentTechnique = Effect.Techniques["Grayscale"];
+        }
 
-                _drawPosition.X = (_cameraRect.X + Origin.X) * _zoom + _position.X;
-                _drawPosition.Y = (_cameraRect.Y + Origin.Y) * _zoom + _position.Y;
-            }
+        public virtual void ApplyEffect()
+        {
+            Effect.CurrentTechnique.Passes[0].Apply();
         }
 
         /// <summary>
@@ -643,112 +748,17 @@ namespace Genetic
         {
             base.Reset();
 
-            _bgColor = null;
+            BgColor = Color.Transparent;
             _scroll = Vector2.Zero;
-            Rotation = 0f;
-            _zoom = _initialZoom;
+            _rotation = 0f;
+            _zoom = GenG.Game.Zoom;
             FollowPosition = Vector2.Zero;
             _followTargets.Clear();
 
             // Reset the camera effects.
             _shakeOffset = Vector2.Zero;
-            _shaking = false;
-            _shakeCallback = null;
+            _shakeTimer.Reset();
             _cameraEffect.Reset();
         }
-    }
-
-    public struct CameraView
-    {
-        /// <summary>
-        /// The position of the top-left corner of the camera view.
-        /// </summary>
-        private Vector2 _position;
-
-        /// <summary>
-        /// The width of the camera view;
-        /// </summary>
-        private float _width;
-
-        /// <summary>
-        /// The height of the camera view;
-        /// </summary>
-        private float _height;
-
-        /// <summary>
-        /// Gets or sets the x position of the top-left corner of the camera view.
-        /// </summary>
-        public float X
-        {
-            get { return _position.X; }
-
-            set
-            {
-                _position.X = value;
-                Left = _position.X;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the y position of the top-left corner of the camera view.
-        /// </summary>
-        public float Y
-        {
-            get { return _position.Y; }
-
-            set
-            {
-                _position.Y = value;
-                Top = _position.Y;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the width of the camera view.
-        /// </summary>
-        public float Width
-        {
-            get { return _width; }
-
-            set
-            {
-                _width = value;
-                Right = _position.X + _width;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the height of the camera view.
-        /// </summary>
-        public float Height
-        {
-            get { return _height; }
-
-            set
-            {
-                _height = value;
-                Bottom = _position.Y + _height;
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the position of the left edge of the camera view.
-        /// </summary>
-        public float Left { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position of the right edge of the camera view.
-        /// </summary>
-        public float Right { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position of the top edge of the camera view.
-        /// </summary>
-        public float Top { get; set; }
-
-        /// <summary>
-        /// Gets or sets the position of the bottom edge of the camera view.
-        /// </summary>
-        public float Bottom { get; set; }
     }
 }

@@ -5,22 +5,42 @@ using Microsoft.Xna.Framework.Audio;
 
 namespace Genetic.Sound
 {
-    public class GenSoundInstance : GenSound
+    /// <summary>
+    /// A playable sound that represents one sound instance.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
+    public class GenSoundInstance : GenBasic
     {
         /// <summary>
-        /// A playable sound effect instance that is created from the loaded sound effect.
+        /// A reference to the <c>GenSound</c> object that this sound instance may be handled by.
         /// </summary>
-        protected SoundEffectInstance _soundInstance;
+        protected GenSound _soundParent;
 
         /// <summary>
-        /// The volume of the sound effect instance, a value from 0.0 to 1.0.
+        /// A sound effect loaded from a sound file.
+        /// </summary>
+        protected SoundEffect _sound;
+
+        /// <summary>
+        /// A playable sound effect instance that is created from a loaded sound effect.
+        /// </summary>
+        public SoundEffectInstance SoundInstance;
+
+        /// <summary>
+        /// The volume of the sound instance, a value from 0.0 to 1.0.
         /// </summary>
         protected float _volume;
 
         /// <summary>
+        /// A value used to adjust the initial sound volume during distance fades.
+        /// </summary>
+        protected float _volumeDistance;
+
+        /// <summary>
         /// The game object the sound will follow.
         /// </summary>
-        protected GenObject _follow;
+        public GenObject Follow;
 
         /// <summary>
         /// The position of the sound relative to the camera.
@@ -43,68 +63,40 @@ namespace Genetic.Sound
         /// </summary>
         protected Vector2 _cameraDistance;
 
-        /// <summary>
-        /// A value used to adjust the initial sound volume during fades.
-        /// </summary>
-        protected float _volumeAdjust;
+        protected GenTimer _fadeTimer;
 
         /// <summary>
-        /// Determines if the sound is currently fading.
-        /// </summary>
-        protected bool _fading;
-
-        /// <summary>
-        /// The current duration of the sound fade, in seconds.
-        /// </summary>
-        protected float _fadeDuration;
-
-        /// <summary>
-        /// The amount of time since the sound fade started, in seconds.
-        /// </summary>
-        protected float _fadeTimer;
-
-        /// <summary>
-        /// A flag used to determine if the sound will stop playing after the sound fade has completed.
-        /// </summary>
-        protected bool _fadeStopSound;
-
-        /// <summary>
-        /// The callback function that will invoke after the sound fade has completed.
-        /// </summary>
-        protected Action _fadeCallback;
-
-        /// <summary>
-        /// Gets whether the sound effect instance is currently playing.
+        /// Gets if the sound effect instance is currently playing.
         /// </summary>
         public bool IsPlaying
         {
-            get { return _soundInstance.State == SoundState.Playing; }
+            get { return (SoundInstance.State == SoundState.Playing); }
         }
 
         /// <summary>
-        /// Gets whether the sound effect instance is currently paused.
+        /// Gets if the sound effect instance is currently paused.
         /// </summary>
         public bool IsPaused
         {
-            get { return _soundInstance.State == SoundState.Paused; }
+            get { return (SoundInstance.State == SoundState.Paused); }
         }
 
         /// <summary>
-        /// Gets whether the sound effect instance is currently stopped.
+        /// Gets if the sound effect instance is currently stopped.
         /// </summary>
         public bool IsStopped
         {
-            get { return _soundInstance.State == SoundState.Stopped; }
+            get { return (SoundInstance.State == SoundState.Stopped); }
         }
 
         /// <summary>
-        /// Gets or sets whether the sound effect instance is looping or not.
+        /// Gets or sets if the sound effect instance is looping.
         /// </summary>
         public bool IsLooped
         {
-            get { return _soundInstance.IsLooped; }
+            get { return SoundInstance.IsLooped; }
 
-            set { _soundInstance.IsLooped = value; }
+            set { SoundInstance.IsLooped = value; }
         }
 
         /// <summary>
@@ -114,7 +106,7 @@ namespace Genetic.Sound
         {
             get { return _volume; }
 
-            set { _volume = MathHelper.Clamp(value, 0, 1); }
+            set { _volume = MathHelper.Clamp(value, 0f, 1f); }
         }
 
         /// <summary>
@@ -122,9 +114,9 @@ namespace Genetic.Sound
         /// </summary>
         public float Pitch
         {
-            get { return _soundInstance.Pitch; }
+            get { return SoundInstance.Pitch; }
 
-            set { _soundInstance.Pitch = MathHelper.Clamp(value, -1, 1); }
+            set { SoundInstance.Pitch = MathHelper.Clamp(value, -1f, 1f); }
         }
 
         /// <summary>
@@ -133,9 +125,9 @@ namespace Genetic.Sound
         /// </summary>
         public float Pan
         {
-            get { return _soundInstance.Pan; }
+            get { return SoundInstance.Pan; }
 
-            set { _soundInstance.Pan = MathHelper.Clamp(value, -1, 1); }
+            set { SoundInstance.Pan = MathHelper.Clamp(value, -1f, 1f); }
         }
 
         /// <summary>
@@ -143,176 +135,213 @@ namespace Genetic.Sound
         /// </summary>
         public TimeSpan Duration
         {
-            get { return _sound.Duration; }
+            get
+            {
+                if (_sound != null)
+                    return _sound.Duration;
+                else
+                    return _soundParent.Duration;
+            }
         }
 
         /// <summary>
         /// Creates a playable sound instance.
         /// </summary>
-        /// <param name="soundFile">The sound file to load.</param>
+        /// <param name="sound">The loaded <c>SoundEffect</c> to use.</param>
         /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
         /// <param name="looping">Determines if the sound is played on a loop.</param>
-        public GenSoundInstance(string soundFile, float volume = 1, bool looping = false)
-            : base(soundFile)
+        public GenSoundInstance(SoundEffect sound, float volume = 1, bool looping = false)
         {
-            LoadSound(soundFile, volume, looping);
+            LoadSound(sound, volume, looping);
 
-            _follow = null;
-            DistanceFading = false;
+            Follow = null;
+            DistanceFading = true;
             DistanceFadingLength = 400f;
-            _volumeAdjust = 1f;
-            _fading = false;
-            _fadeDuration = 0f;
-            _fadeTimer = 0f;
-            _fadeStopSound = true;
-            _fadeCallback = null;
+            _fadeTimer = new GenTimer(0f, null, true);
         }
 
+        /// <summary>
+        /// Creates a playable sound instance handled by a <c>GenSound</c> object.
+        /// </summary>
+        /// <param name="sound">The <c>GenSound</c> object that this sound instance is handled by.</param>
+        public GenSoundInstance(GenSound sound)
+        {
+            _soundParent = sound;
+            _sound = _soundParent.Sound;
+
+            SoundInstance = _soundParent.Sound.CreateInstance();
+            SoundInstance.IsLooped = _soundParent.IsLooped;
+            SoundInstance.Volume = _soundParent.Volume;
+            SoundInstance.Pitch = _soundParent.Pitch;
+            SoundInstance.Pan = _soundParent.Pan;
+            SetFollow(_soundParent.Follow, _soundParent.DistanceFading);
+            DistanceFadingLength = _soundParent.DistanceFadingLength;
+            _fadeTimer = new GenTimer(0f, null, true);
+
+            // Call UpdateSound initially to correct any volume and pan values.
+            UpdateSound();
+        }
+
+        /// <summary>
+        /// Updates the sound instance and handles sound fading.
+        /// </summary>
         public override void Update()
         {
-            if (IsPlaying == true)
+            if (IsPlaying)
+                UpdateSound();
+
+            if (_fadeTimer.IsRunning)
             {
-                // Adjust the sound pan value according to the game object's position relative to the camera.
-                if (_follow != null)
-                {
-                    _position.X = _follow.X + (_follow.Width * 0.5f) - GenG.Camera.CameraView.X;
-                    _position.Y = _follow.Y + (_follow.Height * 0.5f) - GenG.Camera.CameraView.Y;
+                _fadeTimer.Update();
 
-                    Pan = (_position.X / GenG.Camera.CameraView.Width) * 2 - 1;
+                // Stop the sound if the fade timer has finished during its last update.
+                if (!_fadeTimer.IsRunning)
+                    Stop();
 
-                    // Calculate the distance fade values on both the x-axis and y-axis.
-                    if (_position.X < 0)
-                        _cameraDistance.X = _position.X * -1;
-                    else if (_position.X > GenG.Camera.CameraView.Width)
-                        _cameraDistance.X = _position.X - GenG.Camera.CameraView.Width;
-                    else
-                        _cameraDistance.X = 0;
-
-                    if (_position.Y < 0)
-                        _cameraDistance.Y = _position.Y * -1;
-                    else if (_position.Y > GenG.Camera.CameraView.Height)
-                        _cameraDistance.Y = _position.Y - GenG.Camera.CameraView.Height;
-                    else
-                        _cameraDistance.Y = 0;
-
-                    // Adjust the volume based on the distance of the sound from the camera edges.
-                    if ((_cameraDistance.X == 0) && (_cameraDistance.Y == 0))
-                        _volumeAdjust = 1;
-                    else
-                        _volumeAdjust = MathHelper.Clamp((DistanceFadingLength - _cameraDistance.Length()) / DistanceFadingLength, 0, 1);
-
-                    // Set the volume of the sound effect instance.
-                    if (_volumeAdjust < 1)
-                        _soundInstance.Volume = _volume * _volumeAdjust * GenG.Volume;
-                    else
-                        _soundInstance.Volume = _volume * GenG.Volume;
-                }
-                else
-                    _soundInstance.Volume = _volume * GenG.Volume;
-
-                if (_fading)
-                {
-                    if (_fadeTimer < _fadeDuration)
-                    {
-                        _soundInstance.Volume *= (_fadeDuration - _fadeTimer) / _fadeDuration;
-
-                        _fadeTimer += GenG.TimeStep;
-                    }
-                    else
-                    {
-                        _fading = false;
-
-                        if (_fadeStopSound)
-                            Stop(true);
-
-                        if (_fadeCallback != null)
-                            _fadeCallback.Invoke();
-                    }
-                }
+                SoundInstance.Volume *= _fadeTimer.Remaining / _fadeTimer.Duration;
             }
         }
 
         /// <summary>
-        /// Loads a sound file.
+        /// Updates the sound instance volume and pan values.
         /// </summary>
-        /// <param name="soundFile">The sound file to load.</param>
+        public void UpdateSound()
+        {
+            // Adjust the sound pan value according to the game object's position relative to the camera.
+            if (Follow != null)
+            {
+                _position.X = Follow.X + (Follow.Width * 0.5f) - GenG.State.Camera.CameraView.X;
+                _position.Y = Follow.Y + (Follow.Height * 0.5f) - GenG.State.Camera.CameraView.Y;
+
+                SoundInstance.Pan = MathHelper.Clamp((_position.X / GenG.State.Camera.CameraView.Width) * 2 - 1, -1, 1);
+
+                // Calculate the distance fade values on both the x-axis and y-axis.
+                if (_position.X < 0)
+                    _cameraDistance.X = _position.X * -1;
+                else if (_position.X > GenG.State.Camera.CameraView.Width)
+                    _cameraDistance.X = _position.X - GenG.State.Camera.CameraView.Width;
+                else
+                    _cameraDistance.X = 0;
+
+                if (_position.Y < 0)
+                    _cameraDistance.Y = _position.Y * -1;
+                else if (_position.Y > GenG.State.Camera.CameraView.Height)
+                    _cameraDistance.Y = _position.Y - GenG.State.Camera.CameraView.Height;
+                else
+                    _cameraDistance.Y = 0;
+
+                // Adjust the volume based on the distance of the sound from the camera edges.
+                if ((_cameraDistance.X == 0) && (_cameraDistance.Y == 0))
+                    _volumeDistance = 1;
+                else
+                    _volumeDistance = MathHelper.Clamp((DistanceFadingLength - _cameraDistance.Length()) / DistanceFadingLength, 0f, 1f);
+
+                // Set the volume of the sound effect instance.
+                if (_volumeDistance < 1)
+                {
+                    if (_soundParent == null)
+                        SoundInstance.Volume = _volume * _volumeDistance * GenG.Volume;
+                    else
+                        SoundInstance.Volume = _soundParent.Volume * _volumeDistance * GenG.Volume;
+                }
+                else
+                {
+                    if (_soundParent == null)
+                        SoundInstance.Volume = _volume * GenG.Volume;
+                    else
+                        SoundInstance.Volume = _soundParent.Volume * GenG.Volume;
+                }
+            }
+            else
+            {
+                if (_soundParent == null)
+                    SoundInstance.Volume = _volume * GenG.Volume;
+                else
+                    SoundInstance.Volume = _soundParent.Volume * GenG.Volume;
+            }
+        }
+
+        /// <summary>
+        /// Loads a sound effect.
+        /// </summary>
+        /// <param name="sound">The sound effect to load.</param>
         /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
         /// <param name="looping">Determines if the sound is played on a loop.</param>
-        public void LoadSound(string soundFile, float volume = 1, bool looping = false)
+        public void LoadSound(SoundEffect sound, float volume = 1, bool looping = false)
         {
-            //_sound = GenG.Content.Load<SoundEffect>(soundFile);
-            _soundInstance = _sound.CreateInstance();
+            _sound = sound;
             Volume = volume;
             IsLooped = looping;
         }
 
         /// <summary>
-        /// Plays the sound.
+        /// Plays the sound instance.
         /// </summary>
-        /// <param name="forceReset">A flag used to determine if the sound should be reset before playing.</param>
+        /// <param name="forceReset">A flag used to determine if the sound instance should be reset before playing.</param>
         public void Play(bool forceReset = true)
         {
             if (forceReset)
                 Stop();
 
-            _soundInstance.Play();
+            // Call UpdateSound on the sound instance once before playing it to refresh its volume and pan values.
+            UpdateSound();
+            SoundInstance.Play();
         }
 
         /// <summary>
-        /// Stops the currently playing sound.
+        /// Stops the currently playing sound instance.
         /// </summary>
-        /// <param name="immediate">Determines if the sound should stop immediately, or break out of the loop and play the rest of the sound.</param>
+        /// <param name="immediate">Determines if the sound instance should stop immediately, or break out of the loop and play the rest of the sound instance.</param>
         public void Stop(bool immediate = true)
         {
-            _soundInstance.Stop(immediate);
+            SoundInstance.Stop(immediate);
         }
 
         /// <summary>
-        /// Pauses the currently playing sound.
+        /// Pauses the currently playing sound instance.
         /// </summary>
         public void Pause()
         {
-            _soundInstance.Pause();
+            SoundInstance.Pause();
         }
 
         /// <summary>
-        /// Resumes playback of the sound from its paused location.
+        /// Resumes playback of the sound instance from the paused location.
         /// </summary>
         public void Resume()
         {
-            _soundInstance.Resume();
+            SoundInstance.Resume();
         }
 
         /// <summary>
-        /// Fades the sound out to a volume of 0 within the given duration.
+        /// Fades the sound instance out to a volume of 0 within the given duration.
         /// </summary>
         /// <param name="duration">The duration of the sound fade, in seconds.</param>
-        /// <param name="stopSound">A flag used to determine if the sound will stop playing after the sound fade has completed.</param>
-        /// <param name="callback">The callback function that will invoke after the sound fade has completed.</param>
-        public void FadeOut(float duration = 1f, bool stopSound = true, Action callback = null)
+        /// <param name="callback">The method that will invoke after the sound fade has completed.</param>
+        public void FadeOut(float duration = 1f, Action callback = null)
         {
-            _fadeDuration = duration;
-            _fadeCallback = callback;
-            _fadeStopSound = stopSound;
-            _fadeTimer = 0f;
-
-            _fading = true;
+            if (!_fadeTimer.IsRunning)
+            {
+                _fadeTimer.Duration = duration;
+                _fadeTimer.Callback = callback;
+                _fadeTimer.Start(true);
+            }
         }
 
         /// <summary>
-        /// Sets the sound to follow a game object.
-        /// The sound pan value will change according to the game object's position relative to the camera.
+        /// Sets the sound instance to follow a game object.
+        /// The sound instance pan value will change according to the game object's position relative to the camera.
         /// </summary>
-        /// <param name="follow">The game object the sound will follow.</param>
-        /// <param name="distanceFading">Determines if the sound should fade as the object moves out of the camera view.</param>
+        /// <param name="follow">The game object the sound instance will follow.</param>
+        /// <param name="distanceFading">Determines if the sound instance should fade as the object moves out of the camera view.</param>
         public void SetFollow(GenObject follow, bool distanceFading = false)
         {
-            _follow = follow;
-            DistanceFading = distanceFading;
+                Follow = follow;
+                DistanceFading = distanceFading;
         }
 
         /// <summary>
-        /// Reset the sound.
+        /// Reset the sound instance.
         /// </summary>
         public override void Reset()
         {

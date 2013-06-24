@@ -4,6 +4,11 @@ using Microsoft.Xna.Framework;
 
 namespace Genetic.Path
 {
+    /// <summary>
+    /// Manages a series of connected node points, creating a path for a game object to follow along.
+    /// 
+    /// Author: Tyler Gregory (GeneticSpartan)
+    /// </summary>
     public class GenPath : GenBasic
     {
         /// <summary>
@@ -53,14 +58,12 @@ namespace Genetic.Path
         /// </summary>
         public List<GenPathNode> Nodes;
 
+        /// <summary>
+        /// Initializes the path.
+        /// </summary>
         public GenPath()
         {
             Nodes = new List<GenPathNode>();
-        }
-
-        public override void Update()
-        {
-            
         }
 
         /// <summary>
@@ -69,7 +72,7 @@ namespace Genetic.Path
         public override void DrawDebug()
         {
             for (int i = 0; i < Nodes.Count - 1; i++)
-                GenG.DrawLine(Nodes[i].Position.X, Nodes[i].Position.Y, Nodes[i + 1].Position.X, Nodes[i + 1].Position.Y, Color.Lime * 0.5f, 1);
+                GenG.DrawLine(Nodes[i].Position, Nodes[i + 1].Position, Color.Lime * 0.5f, 1);
         }
 
         /// <summary>
@@ -92,14 +95,12 @@ namespace Genetic.Path
         /// <returns>The node that was added. Null if the index was outside of the bounds of the nodes list.</returns>
         public GenPathNode AddNodeAt(GenPathNode node, int index)
         {
-            if (index <= Nodes.Count)
-            {
-                Nodes.Insert(index, node);
+            if ((index < 0) || (index > Nodes.Count))
+                return null;
 
-                return node;
-            }
+            Nodes.Insert(index, node);
 
-            return null;
+            return node;
         }
 
         /// <summary>
@@ -109,12 +110,8 @@ namespace Genetic.Path
         /// <returns>The node that was removed. Null if no node was removed.</returns>
         public GenPathNode RemoveNode(GenPathNode node)
         {
-            if (Nodes.IndexOf(node) > -1)
-            {
-                Nodes.Remove(node);
-
+            if (Nodes.Remove(node))
                 return node;
-            }
 
             return null;
         }
@@ -126,15 +123,13 @@ namespace Genetic.Path
         /// <returns>The node that was removed. Null if no node was removed.</returns>
         public GenPathNode RemoveNodeAt(int index)
         {
-            if (index < Nodes.Count)
-            {
-                GenPathNode node = Nodes[index];
-                Nodes.RemoveAt(index);
+            if ((index < 0) || (index >= Nodes.Count))
+                return null;
 
-                return node;
-            }
+            GenPathNode node = Nodes[index];
+            Nodes.RemoveAt(index);
 
-            return null;
+            return node;
         }
 
         /// <summary>
@@ -144,10 +139,10 @@ namespace Genetic.Path
         /// <returns>The movement node at the specified index location in the nodes list. Null if the index was outside of the bounds of the nodes list.</returns>
         public GenPathNode GetAt(int index)
         {
-            if (index < Nodes.Count)
-                return Nodes[index];
-
-            return null;
+            if ((index < 0) || (index >= Nodes.Count))
+                return null;
+            
+            return Nodes[index];
         }
 
         /// <summary>
