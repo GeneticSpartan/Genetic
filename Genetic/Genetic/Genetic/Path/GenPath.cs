@@ -69,8 +69,12 @@ namespace Genetic.Path
         /// <summary>
         /// Draws a line between each node along the path.
         /// </summary>
-        public override void DrawDebug()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void DrawDebug(GenCamera camera)
         {
+            if ((camera != null) && !CanDraw(camera))
+                return;
+
             for (int i = 0; i < Nodes.Count - 1; i++)
                 GenG.DrawLine(Nodes[i].Position, Nodes[i + 1].Position, Color.Lime * 0.5f, 1);
         }

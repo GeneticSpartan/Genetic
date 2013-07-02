@@ -24,12 +24,24 @@ namespace Genetic
         /// <summary>
         /// The width of each tile in the tilemap.
         /// </summary>
-        public int TileWidth;
+        protected int _tileWidth;
 
         /// <summary>
         /// The height of each tile in the tilemap.
         /// </summary>
-        public int TileHeight;
+        protected int _tileHeight;
+
+        /// <summary>
+        /// The inverse of the width of each tile in the tilemap.
+        /// Useful for optimizing tile bounds calculations.
+        /// </summary>
+        protected float _inverseTileWidth;
+
+        /// <summary>
+        /// The inverse of the height of each tile in the tilemap.
+        /// Useful for optimizing tile bounds calculations.
+        /// </summary>
+        protected float _inverseTileHeight;
 
         /// <summary>
         /// A jagged array of tiles that construct the tilemap.
@@ -63,6 +75,34 @@ namespace Genetic
         protected int[] _tileBounds;
 
         /// <summary>
+        /// Gets or sets the width of each tile in the tilemap.
+        /// </summary>
+        public int TileWidth
+        {
+            get { return _tileWidth; }
+
+            set
+            {
+                _tileWidth = value;
+                _inverseTileWidth = 1f / _tileWidth;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the height of each tile in the tilemap.
+        /// </summary>
+        public int TileHeight
+        {
+            get { return _tileHeight; }
+
+            set
+            {
+                _tileHeight = value;
+                _inverseTileHeight = 1f / _tileHeight;
+            }
+        }
+
+        /// <summary>
         /// Initializes the manager for a grid of tilemap tiles.
         /// </summary>
         public GenTilemap()
@@ -75,35 +115,39 @@ namespace Genetic
         /// <summary>
         /// Calls Draw on each of the tiles in the tilemap which overlap the current camera's view area.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
+            if ((camera == null) || !CanDraw(camera))
+                return;
+
             // Prevent drawing tiles outside of the camera view to increase performance.
             // If the camera is rotated, extend the drawing bounds to prevent culling tiles rotated into the camera view.
             float extendBounds = 0f;
 
-            if (GenG.CurrentCamera.Rotation != 0)
+            if (camera.Rotation != 0)
             {
                 extendBounds =
-                    (float)Math.Sqrt((GenG.CurrentCamera.CameraView.HalfWidth * GenG.CurrentCamera.CameraView.HalfWidth) + (GenG.CurrentCamera.CameraView.HalfHeight * GenG.CurrentCamera.CameraView.HalfHeight)) -
-                    Math.Min(GenG.CurrentCamera.CameraView.HalfWidth, GenG.CurrentCamera.CameraView.HalfHeight);
+                    (float)Math.Sqrt((camera.CameraView.HalfWidth * camera.CameraView.HalfWidth) + (camera.CameraView.HalfHeight * camera.CameraView.HalfHeight)) -
+                    Math.Min(camera.CameraView.HalfWidth, camera.CameraView.HalfHeight);
             }
 
             GetTileBounds(
-                GenG.CurrentCamera.CameraView.Left - extendBounds,
-                GenG.CurrentCamera.CameraView.Right + extendBounds,
-                GenG.CurrentCamera.CameraView.Top - extendBounds,
-                GenG.CurrentCamera.CameraView.Bottom + extendBounds);
+                camera.CameraView.Left - extendBounds,
+                camera.CameraView.Right + extendBounds,
+                camera.CameraView.Top - extendBounds,
+                camera.CameraView.Bottom + extendBounds);
 
-            for (int y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
+            for (int y = _tileBounds[2]; y <= _tileBounds[3]; y++)
             {
-                for (int x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
+                for (int x = _tileBounds[0]; x <= _tileBounds[1]; x++)
                 {
                     if ((Tiles[y][x] != null) && Tiles[y][x].Exists && Tiles[y][x].Visible)
                     {
                         Tiles[y][x].Draw();
 
                         if (GenG.AllowDebug && GenG.IsDebug)
-                            Tiles[y][x].DrawDebug();
+                            Tiles[y][x].DrawDebug(null);
                     }
                 }
             }
@@ -163,7 +207,7 @@ namespace Genetic
                 {
                     if (row[x] != "0")
                     {
-                        Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+                        Tiles[y][x] = new GenTile(x * _tileWidth, y * _tileHeight, _tileWidth, _tileHeight);
 
                         if (tileSheet == null)
                             Tiles[y][x].LoadTexture(TileTypes[row[x]].Texture);
@@ -180,7 +224,7 @@ namespace Genetic
                         if ((y > 0) && (Tiles[y - 1][x] != null))
                         {
                             Tiles[y][x].OpenEdges &= ~GenObject.Direction.Up;
-                            Tiles[y][y - 1].OpenEdges &= ~GenObject.Direction.Down;
+                            Tiles[y - 1][x].OpenEdges &= ~GenObject.Direction.Down;
                         }
                     }
                     else
@@ -233,67 +277,67 @@ namespace Genetic
                     break;
 
                 case 0x0111: // Open edges: Left, Right, Up
-                    xOffset = TileWidth;
+                    xOffset = _tileWidth;
                     break;
 
                 case 0x1110: // Open edges: Right, Up, Down
-                    xOffset = TileWidth * 2;
+                    xOffset = _tileWidth * 2;
                     break;
 
                 case 0x1011: // Open edges: Left, Right, Down
-                    xOffset = TileWidth * 3;
+                    xOffset = _tileWidth * 3;
                     break;
 
                 case 0x1101: // Open edges: Left, Up, Down
-                    xOffset = TileWidth * 4;
+                    xOffset = _tileWidth * 4;
                     break;
 
                 case 0x1100: // Open edges: Up, Down
-                    xOffset = TileWidth * 5;
+                    xOffset = _tileWidth * 5;
                     break;
 
                 case 0x0011: // Open edges: Left, Right
-                    xOffset = TileWidth * 6;
+                    xOffset = _tileWidth * 6;
                     break;
 
                 case 0x0100: // Open edges: Up
-                    xOffset = TileWidth * 7;
+                    xOffset = _tileWidth * 7;
                     break;
 
                 case 0x0110: // Open edges: Right, Up
-                    xOffset = TileWidth * 8;
+                    xOffset = _tileWidth * 8;
                     break;
 
                 case 0x0010: // Open edges: Right
-                    xOffset = TileWidth * 9;
+                    xOffset = _tileWidth * 9;
                     break;
 
                 case 0x1010: // Open edges: Right, Down
-                    xOffset = TileWidth * 10;
+                    xOffset = _tileWidth * 10;
                     break;
 
                 case 0x1000: // Open edges: Down
-                    xOffset = TileWidth * 11;
+                    xOffset = _tileWidth * 11;
                     break;
 
                 case 0x1001: // Open edges: Left, Down
-                    xOffset = TileWidth * 12;
+                    xOffset = _tileWidth * 12;
                     break;
 
                 case 0x0001: // Open edges: Left
-                    xOffset = TileWidth * 13;
+                    xOffset = _tileWidth * 13;
                     break;
 
                 case 0x0101: // Open edges: Left, Up
-                    xOffset = TileWidth * 14;
+                    xOffset = _tileWidth * 14;
                     break;
 
                 case 0x0000: // Open edges: None
-                    xOffset = TileWidth * 15;
+                    xOffset = _tileWidth * 15;
                     break;
             }
 
-            Tiles[y][x].SetSourceRect(xOffset, 0, TileWidth, TileHeight, true);
+            Tiles[y][x].SetSourceRect(xOffset, 0, _tileWidth, _tileHeight, true);
         }
 
         /// <summary>
@@ -347,16 +391,16 @@ namespace Genetic
         public void GetTileBounds(float left, float right, float top, float bottom)
         {
             // Left bound.
-            _tileBounds[0] = (int)Math.Max(left / TileWidth, 0);
+            _tileBounds[0] = (int)Math.Max(left * _inverseTileWidth, 0);
 
             // Right bound.
-            _tileBounds[1] = (int)Math.Min(right / TileWidth, _columns - 1);
+            _tileBounds[1] = (int)Math.Min(right * _inverseTileWidth, _columns - 1);
 
             // Top bound.
-            _tileBounds[2] = (int)Math.Max(top / TileHeight, 0);
+            _tileBounds[2] = (int)Math.Max(top * _inverseTileHeight, 0);
 
             // Bottom bound.
-            _tileBounds[3] = (int)Math.Min(bottom / TileHeight, _rows - 1);
+            _tileBounds[3] = (int)Math.Min(bottom * _inverseTileHeight, _rows - 1);
         }
 
         /// <summary>
@@ -377,7 +421,7 @@ namespace Genetic
             if ((Tiles[y][x] != null) && !replace)
                 return null;
 
-            Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+            Tiles[y][x] = new GenTile(x * _tileWidth, y * _tileHeight, _tileWidth, _tileHeight);
 
             if (TileSheetTexture != null)
             {
@@ -455,7 +499,7 @@ namespace Genetic
         /// <param name="objectOrGroup">The object or group to check for collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public bool Collide(GenBasic objectOrGroup, CollideEvent callback = null)
+        public bool Collide(GenBasic objectOrGroup, CollideEvent callback)
         {            
             if (objectOrGroup is GenObject)
                 return CollideObject(objectOrGroup as GenObject, callback);
@@ -483,7 +527,7 @@ namespace Genetic
         /// <param name="gameObject">The object to check for collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <returns>True is a collision occurs, false if not.</returns>
-        public bool CollideObject(GenObject gameObject, CollideEvent callback = null)
+        public bool CollideObject(GenObject gameObject, CollideEvent callback)
         {
             GetTileBounds(
                 gameObject.MoveBounds.Left,
@@ -493,18 +537,15 @@ namespace Genetic
 
             bool collided = false;
 
-            for (int y = _tileBounds[2]; y <= _tileBounds[3]; ++y)
+            for (int y = _tileBounds[2]; y <= _tileBounds[3]; y++)
             {
-                for (int x = _tileBounds[0]; x <= _tileBounds[1]; ++x)
+                for (int x = _tileBounds[0]; x <= _tileBounds[1]; x++)
                 {
                     // If the tile is empty, do not check for a collision.
-                    if (Tiles[y][x] == null)
-                        continue;
-
-                    if (GenCollide.Collide(gameObject, Tiles[y][x], callback, Tiles[y][x].OpenEdges))
+                     if (Tiles[y][x] != null)
                     {
-                        RemoveTile(x, y);
-                        collided = true;
+                        if (GenCollide.Collide(gameObject, Tiles[y][x], callback, Tiles[y][x].OpenEdges))
+                            collided = true;
                     }
                 }
             }

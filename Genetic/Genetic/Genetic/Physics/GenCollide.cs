@@ -24,6 +24,8 @@ namespace Genetic.Physics
         /// </summary>
         private static Vector2 _collisionNormal;
 
+        protected static GenCollideEvent _collideEventArgs = new GenCollideEvent(null, null, GenObject.Direction.None, GenObject.Direction.None);
+
         /// <summary>
         /// Checks for overlap between the movements bounds of two objects.
         /// </summary>
@@ -31,7 +33,7 @@ namespace Genetic.Physics
         /// <param name="objectB">The second object to check for an overlap.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
-        public static bool Overlap(GenObject objectA, GenObject objectB, CollideEvent callback = null)
+        public static bool Overlap(GenObject objectA, GenObject objectB, CollideEvent callback)
         {
             // Check if both objects are alive to avoid unwanted overlap checks that may be called by a quadtree.
             if ((objectA.Exists && objectA.Active) && (objectB.Exists && objectB.Active))
@@ -39,7 +41,14 @@ namespace Genetic.Physics
                 if (objectA.MoveBounds.Intersects(objectB.MoveBounds))
                 {
                     if (callback != null)
-                        callback(new GenCollideEvent(objectA, objectB, GenObject.Direction.None, GenObject.Direction.None));
+                    {
+                        _collideEventArgs.ObjectA = objectA;
+                        _collideEventArgs.ObjectB = objectB;
+                        _collideEventArgs.TouchingA = GenObject.Direction.None;
+                        _collideEventArgs.TouchingB = GenObject.Direction.None;
+
+                        callback(_collideEventArgs);
+                    }
 
                     return true;
                 }
@@ -56,7 +65,7 @@ namespace Genetic.Physics
         /// <param name="callback">The delegate method that will be invoked if a collision occurs.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the second object are collidable.</param>
         /// <returns>True if a collision occurs, false if not.</returns>
-        public static bool Collide(GenObject objectA, GenObject objectB, CollideEvent callback = null, GenObject.Direction collidableEdges = GenObject.Direction.Any)
+        public static bool Collide(GenObject objectA, GenObject objectB, CollideEvent callback, GenObject.Direction collidableEdges = GenObject.Direction.Any)
         {
             // Do not check for collisions if the objects are the same.
             if (objectA == objectB)
@@ -67,7 +76,7 @@ namespace Genetic.Physics
                 return false;
 
             // If the movement bounding boxes of each object are overlapping, check for a collision.
-            if (Overlap(objectA, objectB, null))
+            if (Overlap(objectA, objectB, callback))
             {
                 // Get the normal direction of the collision from bounding box A to B along the least penetrating axis.
                 // Return no collision if the surface normal is projected towards a non-collidable edge of bounding box B.
@@ -79,8 +88,8 @@ namespace Genetic.Physics
                     if (objectA.Bounds.MidpointX > objectB.Bounds.MidpointX)
                     {
                         // The collision normal is pointing from the left edge of bounding box A.
-                        _collisionNormal.X = -1;
-                        _collisionNormal.Y = 0;
+                        _collisionNormal.X = -1f;
+                        _collisionNormal.Y = 0f;
 
                         if ((collidableEdges & GenObject.Direction.Right) == 0)
                             return false;
@@ -88,8 +97,8 @@ namespace Genetic.Physics
                     else
                     {
                         // The collision normal is pointing from the right edge of bounding box A.
-                        _collisionNormal.X = 1;
-                        _collisionNormal.Y = 0;
+                        _collisionNormal.X = 1f;
+                        _collisionNormal.Y = 0f;
 
                         if ((collidableEdges & GenObject.Direction.Left) == 0)
                             return false;
@@ -100,8 +109,8 @@ namespace Genetic.Physics
                     if (objectA.Bounds.MidpointY > objectB.Bounds.MidpointY)
                     {
                         // The collision normal is pointing from the top edge of bounding box A.
-                        _collisionNormal.X = 0;
-                        _collisionNormal.Y = -1;
+                        _collisionNormal.X = 0f;
+                        _collisionNormal.Y = -1f;
 
                         if ((collidableEdges & GenObject.Direction.Down) == 0)
                             return false;
@@ -109,8 +118,8 @@ namespace Genetic.Physics
                     else
                     {
                         // The collision normal is pointing from the bottom edge of bounding box A.
-                        _collisionNormal.X = 0;
-                        _collisionNormal.Y = 1;
+                        _collisionNormal.X = 0f;
+                        _collisionNormal.Y = 1f;
 
                         if ((collidableEdges & GenObject.Direction.Up) == 0)
                             return false;
@@ -124,7 +133,7 @@ namespace Genetic.Physics
                 if (objectB is GenTile)
                 {
                     // Get the amount of normal velocity to remove from the object so that it just touches along the collision surface of the tile.
-                    remove = Vector2.Dot(-objectA.Velocity, _collisionNormal) + Math.Max(distance, 0) * GenG.InverseTimeStep;
+                    remove = Vector2.Dot(-objectA.Velocity, _collisionNormal) + Math.Max(distance, 0f) * GenG.InverseTimeStep;
 
                     // If the amount of velocity to remove is positive, the object will separate itself from the tile.
                     if (remove >= 0)
@@ -133,12 +142,12 @@ namespace Genetic.Physics
                     if (_collisionNormal.X != 0)
                     {
                         objectA.X = (_collisionNormal.X == 1) ? objectB.X - objectA.Bounds.Width : objectB.Bounds.Right;
-                        objectA.Velocity.X = 0;
+                        objectA.Velocity.X = 0f;
                     }
                     else
                     {
                         objectA.Y = (_collisionNormal.Y == 1) ? objectB.Y - objectA.Bounds.Height : objectB.Bounds.Bottom;
-                        objectA.Velocity.Y = 0;
+                        objectA.Velocity.Y = 0f;
                     }
                 }
                 else
@@ -218,7 +227,14 @@ namespace Genetic.Physics
                 }
 
                 if (callback != null)
-                    callback(new GenCollideEvent(objectA, objectB, touchingA, touchingB));
+                {
+                    _collideEventArgs.ObjectA = objectA;
+                    _collideEventArgs.ObjectB = objectB;
+                    _collideEventArgs.TouchingA = touchingA;
+                    _collideEventArgs.TouchingB = touchingB;
+
+                    callback(_collideEventArgs);
+                }
 
                 return true;
             }

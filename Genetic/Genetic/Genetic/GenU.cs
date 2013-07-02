@@ -149,5 +149,16 @@ namespace Genetic
         {
             return start + (float)Math.Cos(GenG.ElapsedTime * rate) * intensity;
         }
+
+        /// <summary>
+        /// Creates a unit vector from the specified vector.
+        /// If the specified vector is a zero vector, the vector is just returned to avoid NaN values from Vector2.Normalize.
+        /// </summary>
+        /// <param name="vector">The vector to normalize.</param>
+        /// <returns>The normalized vector.</returns>
+        public static Vector2 NormalizeVector2(Vector2 vector)
+        {
+            return (vector == Vector2.Zero) ? vector : Vector2.Normalize(vector);
+        }
     }
 }

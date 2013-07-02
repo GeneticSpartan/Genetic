@@ -102,16 +102,16 @@ namespace Genetic
 
             foreach (GenObject activeObject in _activeObjects)
             {
-                if (activeObject.HasMoved)
-                {
-                    if (_objectLocations[activeObject]._objects.Remove(activeObject))
-                        CheckObjects(_objectLocations[activeObject]);
+                if (!activeObject.HasMoved)
+                    continue;
 
-                    // Check if the game object intersects the root node before inserting it into the quadtree.
-                    // Prevents objects that are outside of the quadtree bounds from being checked for overlaps or collisions, possibly causing slowdown.
-                    if (activeObject.MoveBounds.Intersects(_rootNode))
-                        _rootNode.Add(activeObject);
-                }
+                if (_objectLocations[activeObject]._objects.Remove(activeObject))
+                    CheckObjects(_objectLocations[activeObject]);
+
+                // Check if the game object intersects the root node before inserting it into the quadtree.
+                // Prevents objects that are outside of the quadtree bounds from being checked for overlaps or collisions, possibly causing slowdown.
+                if (activeObject.MoveBounds.Intersects(_rootNode))
+                    _rootNode.Add(activeObject);
             }
         }
 
@@ -161,12 +161,37 @@ namespace Genetic
         /// </summary>
         /// <param name="gameObject">The game object to check for overlaps or collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
+        /// <param name="separate">A flag used to determine if objects should collide with each other.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the quadtree objects are collidable.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
         public bool Overlap(GenObject gameObject, CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
         {
             return _rootNode.Overlap(gameObject, callback, separate, collidableEdges);
+        }
+
+        public bool OverlapSelf(CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
+        {
+            bool overlap = false;
+
+            foreach (GenObject gameObject in _activeObjects)
+            {
+                GenQuadtreeNode parentNode = _objectLocations[gameObject]._parentNode;
+
+                // Iterate up the parent nodes, and do overlap and collision checks against their objects.
+                while (parentNode != null)
+                {
+                    if (parentNode.OverlapObjects(gameObject, callback, separate, collidableEdges))
+                        overlap = true;
+
+                    parentNode = parentNode._parentNode;
+                }
+
+                // Do overlap and collision checks against objects within its containing node and any remaining leaf nodes.
+                if (_objectLocations[gameObject].Overlap(gameObject, callback, separate, collidableEdges))
+                    overlap = true;
+            }
+
+            return overlap;
         }
 
         /// <summary>
@@ -260,9 +285,9 @@ namespace Genetic
                     int nextLevel = _level + 1;
 
                     // Create the leaf nodes.
-                    _nodes[0] = new GenQuadtreeNode(Left, Top, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
-                    _nodes[1] = new GenQuadtreeNode(_midpointX, Top, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
-                    _nodes[2] = new GenQuadtreeNode(Left, _midpointY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[0] = new GenQuadtreeNode(_minX, _minY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[1] = new GenQuadtreeNode(_midpointX, _minY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
+                    _nodes[2] = new GenQuadtreeNode(_minX, _midpointY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
                     _nodes[3] = new GenQuadtreeNode(_midpointX, _midpointY, _halfWidth, _halfHeight, _quadtree, this, nextLevel);
 
                     // Iterate through the objects list in reverse, attempting to add each object into a leaf node.
@@ -315,7 +340,7 @@ namespace Genetic
         /// </summary>
         /// <param name="box">The bounding box used to search the leaf nodes.</param>
         /// <returns>The index of the leaf node that entirely contains the given bounding box. Otherwise, -1 is returned.</returns>
-        internal int GetIndex(GenAABBBasic box)
+        internal int GetIndex(GenAABB box)
         {
             if (Contains(box))
             {
@@ -345,7 +370,7 @@ namespace Genetic
         /// </summary>
         /// <param name="gameObject">The game object to check for overlaps or collisions.</param>
         /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
-        /// <param name="separate">Determines if objects should collide with each other.</param>
+        /// <param name="separate">A flag used to determine if objects should collide with each other.</param>
         /// <param name="collidableEdges">A bit field of flags determining which edges of the quadtree objects are collidable.</param>
         /// <returns>True if an overlap occurs, false if not.</returns>
         internal bool Overlap(GenObject gameObject, CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
@@ -390,6 +415,24 @@ namespace Genetic
             }
 
             // Check for overlaps and collisions against this node's objects.
+            if (OverlapObjects(gameObject, callback, separate, collidableEdges))
+                overlap = true;
+
+            return overlap;
+        }
+
+        /// <summary>
+        /// Checks for overlaps or collisions against each object within this node.
+        /// </summary>
+        /// <param name="gameObject">The game object to check for overlaps or collisions.</param>
+        /// <param name="callback">The delegate method that will be invoked if an overlap occurs.</param>
+        /// <param name="separate">A flag used to determine if objects should collide with each other.</param>
+        /// <param name="collidableEdges">A bit field of flags determining which edges of the quadtree objects are collidable.</param>
+        /// <returns>True if an overlap occurs, false if not.</returns>
+        public bool OverlapObjects(GenObject gameObject, CollideEvent callback, bool separate, GenObject.Direction collidableEdges)
+        {
+            bool overlap = false;
+
             foreach (GenObject nodeObject in _objects)
             {
                 if (separate)
@@ -447,20 +490,17 @@ namespace Genetic
             {
                 foreach (GenQuadtreeNode node in _nodes)
                 {
-                    Vector2 topRight = new Vector2(node._max.X, node._min.Y);
-                    Vector2 bottomLeft = new Vector2(node._min.X, node._max.Y);
-
                     // Draw the top bounding box line.
-                    GenG.DrawLine(node._min, topRight, Color.White);
+                    GenG.DrawLine(node._minX, node._minY, node._maxX, node._minY, Color.White);
 
                     // Draw the right bounding box line.
-                    GenG.DrawLine(topRight, node._max, Color.White);
+                    GenG.DrawLine(node._maxX, node._minY, node._maxX, node._maxY, Color.White);
 
                     // Draw the bottom bounding box line.
-                    GenG.DrawLine(bottomLeft, node._max, Color.White);
+                    GenG.DrawLine(node._minX, node._maxY, node._maxX, node._maxY, Color.White);
 
                     // Draw the left bounding box line.
-                    GenG.DrawLine(node._min, bottomLeft, Color.White);
+                    GenG.DrawLine(node._minX, node._minY, node._minX, node._maxY, Color.White);
 
                     // Draw the leaf nodes contained within this node.
                     node.DrawDebug();

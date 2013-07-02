@@ -13,7 +13,7 @@
     <TargetFrameworkProfile>Client</TargetFrameworkProfile>
     <XnaFrameworkVersion>v4.0</XnaFrameworkVersion>
     <XnaPlatform>Windows</XnaPlatform>
-    <XnaProfile>HiDef</XnaProfile>
+    <XnaProfile>Reach</XnaProfile>
     <XnaCrossPlatformGroupID>01cb289b-7fd8-45e6-8963-13c1ed971181</XnaCrossPlatformGroupID>
     <XnaOutputType>Game</XnaOutputType>
     <ApplicationIcon>Game.ico</ApplicationIcon>
@@ -128,7 +128,6 @@
     <Compile Include="Genetic\GenTimer.cs" />
     <Compile Include="Genetic\GenU.cs" />
     <Compile Include="Genetic\Geometry\GenAABB.cs" />
-    <Compile Include="Genetic\Geometry\GenAABBBasic.cs" />
     <Compile Include="Genetic\Gui\GenProgressBar.cs" />
     <Compile Include="Genetic\Input\GenGamePad.cs" />
     <Compile Include="Genetic\Input\GenKeyboard.cs" />

@@ -14,15 +14,18 @@ namespace Genetic.Sound
     class GenMusic
     {
         /// <summary>
-        /// A <c>Song</c> loaded from a song file.
+        /// A song loaded from a song file.
         /// </summary>
         protected Song _song;
 
         /// <summary>
-        /// The volume of the <c>MediaPlayer</c>, a value from 0.0 to 1.0.
+        /// The volume of the media player, a value from 0.0 to 1.0.
         /// </summary>
         protected static float _volume;
 
+        /// <summary>
+        /// A timer used to manage music fades.
+        /// </summary>
         protected static GenTimer _fadeTimer;
 
         /// <summary>
@@ -47,13 +50,17 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Gets or sets the volume of the <c>MediaPlayer</c>, a value from 0.0 to 1.0.
+        /// Gets or sets the volume of the media player, a value from 0.0 to 1.0.
         /// </summary>
         public static float Volume
         {
             get { return _volume; }
 
-            set { _volume = MathHelper.Clamp(value, 0f, 1f); }
+            set
+            {
+                _volume = MathHelper.Clamp(value, 0f, 1f);
+                UpdateVolume();
+            }
         }
 
         /// <summary>
@@ -81,7 +88,7 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Gets or sets if the <c>MediaPlayer</c> is set to muted.
+        /// Gets or sets if the media player is set to muted.
         /// </summary>
         public static bool IsMuted
         {
@@ -91,7 +98,7 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Gets or sets if the <c>MediaPlayer</c> is set to repeat.
+        /// Gets or sets if the media player is set to repeat.
         /// </summary>
         public static bool IsLooping
         {
@@ -109,6 +116,17 @@ namespace Genetic.Sound
         }
 
         /// <summary>
+        /// Gets or sets if visualization is enabled for the media player.
+        /// </summary>
+#if WINDOWS || XBOX
+        public static bool VisualDataEnabled
+        {
+            get { return MediaPlayer.IsVisualizationEnabled; }
+
+            set { MediaPlayer.IsVisualizationEnabled = value; }
+        }
+#endif
+        /// <summary>
         /// Gets if the game currently has control of song playback.
         /// Song playback is disabled if the gamer is currently playing custom background music.
         /// </summary>
@@ -120,7 +138,7 @@ namespace Genetic.Sound
         /// <summary>
         /// Creates a playable song.
         /// </summary>
-        /// <param name="song">The loaded <c>Song</c> to use.</param>
+        /// <param name="song">The loaded song to use.</param>
         public GenMusic(Song song)
         {
             _song = song;
@@ -132,13 +150,15 @@ namespace Genetic.Sound
         public static void Initialize()
         {
             _volume = 1f;
-            _fadeTimer = new GenTimer(0f, null, true);
+            _fadeTimer = new GenTimer(0f, null);
+#if WINDOWS || XBOX
             VisualData = new VisualizationData();
-            MediaPlayer.IsVisualizationEnabled = true;
+            VisualDataEnabled = false;
+#endif
         }
 
         /// <summary>
-        /// Updates the volume of <c>MediaPlayer</c>, handles song fading, and gets visualization data for the currently playing song.
+        /// Updates the volume of the media player, handles song fading, and gets visualization data for the currently playing song.
         /// </summary>
         public static void Update()
         {
@@ -148,19 +168,29 @@ namespace Genetic.Sound
 
                 // Stop the current song if the fade timer has finished during its last update.
                 if (!_fadeTimer.IsRunning)
+                {
                     Stop();
-
-                MediaPlayer.Volume = _volume * GenG.Volume * (_fadeTimer.Remaining / _fadeTimer.Duration);
+                    MediaPlayer.Volume = 0f;
+                }
+                else
+                    MediaPlayer.Volume = _volume * (_fadeTimer.Remaining / _fadeTimer.Duration);
             }
-            else if (IsPlaying)
-                MediaPlayer.Volume = _volume * GenG.Volume;
-
-            if (IsPlaying)
+#if WINDOWS || XBOX
+            if (VisualDataEnabled)
                 MediaPlayer.GetVisualizationData(GenMusic.VisualData);
+#endif
         }
 
         /// <summary>
-        /// Starts playing the song using <c>MediaPlayer</c>.
+        /// Sets the media player volume relative to the current global volume.
+        /// </summary>
+        public static void UpdateVolume()
+        {
+            MediaPlayer.Volume = _volume;
+        }
+
+        /// <summary>
+        /// Starts playing the song using the media player.
         /// </summary>
         public void Play()
         {
@@ -168,7 +198,7 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Pauses the currently playing song using <c>MediaPlayer</c>.
+        /// Pauses the currently playing song using the media player.
         /// </summary>
         public static void Pause()
         {
@@ -176,7 +206,7 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Resumes the currently paused or stopped song using <c>MediaPlayer</c>.
+        /// Resumes the currently paused or stopped song using the media player.
         /// </summary>
         public static void Resume()
         {
@@ -184,7 +214,7 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Stops the currently playing song using <c>MediaPlayer</c>.
+        /// Stops the currently playing song using the media player.
         /// </summary>
         public static void Stop()
         {

@@ -20,7 +20,7 @@ namespace Genetic
         protected Texture2D _texture;
 
         /// <summary>
-        /// The position to draw the sprite relative to the origin.
+        /// The camera-independent position used to draw the sprite.
         /// </summary>
         protected Vector2 _drawPosition;
 
@@ -133,14 +133,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Gets the position to draw the sprite relative to the origin.
-        /// </summary>
-        public Vector2 DrawPosition
-        {
-            get { return _drawPosition; }
-        }
-
-        /// <summary>
         /// Gets the bounding rectangle used to draw a portion of the sprite texture.
         /// </summary>
         public Rectangle SourceRect
@@ -242,14 +234,16 @@ namespace Genetic
         /// <param name="texture">The sprite texture.</param>
         /// <param name="width">The width of the object.</param>
         /// <param name="height">The height of the object.</param>
-        public GenSprite(float x = 0, float y = 0, Texture2D texture = null, int width = 1, int height = 1)
+        public GenSprite(float x, float y, Texture2D texture, int width, int height)
             : base(x, y, width, height)
         {
             _sourceRect = new Rectangle(0, 0, width, height);
             _texture = (texture != null) ? LoadTexture(texture, true) : null;
+            _drawPosition = Vector2.Zero;
             Color = Color.White;
             Alpha = 1f;
             _drawColor = _color * _alpha;
+            DrawOffset = Vector2.Zero;
             Scale = Vector2.One;
             DrawRotated = true;
             Animations = new Dictionary<string, GenAnimation>();
@@ -260,10 +254,10 @@ namespace Genetic
             _flickerColor = Color.White;
             _flickerPulsing = false;
             _flickerIntensity = 0f;
-            _flickerTimer = new GenTimer(0f, null, true);
+            _flickerTimer = new GenTimer(0f, null);
             _flickerColor = Color.White;
             _flickerPulsing = false;
-            _fadeTimer = new GenTimer(0f, null, true);
+            _fadeTimer = new GenTimer(0f, null);
             _fadeDirection = 1;
         }
 
@@ -326,22 +320,29 @@ namespace Genetic
         {
             base.PostUpdate();
 
+            // Update the camera-independent draw position of the sprite.
+            _drawPosition = _originPosition + DrawOffset;
+
             // Update the draw color using the current color and alpha values.
             _drawColor = _color * _alpha;
         }
 
         /// <summary>
-        /// Updates the draw position and rotation, and draws the sprite to the camera.
+        /// Draws the sprite to a specified camera.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
-            UpdateDrawPosition();
-
             if (_texture != null)
             {
+                if ((camera != null) && !CanDraw(camera))
+                    return;
+
+                Vector2 drawPosition = (camera == null) ? _drawPosition : GetDrawPosition(camera);
+
                 GenG.SpriteBatch.Draw(
                     _texture,
-                    _drawPosition,
+                    drawPosition,
                     (_currentAnimation == null) ? _sourceRect : Animations[_currentAnimation].FrameRect,
                     _drawColor,
                     (DrawRotated) ? _rotation : 0f,
@@ -353,20 +354,29 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Updates the x and y positions of where the top-left corner of a sprite will be drawn.
+        /// Gets the x and y positions of where the top-left corner of a sprite will be drawn within the given camera.
         /// Calculates the draw position from the position, origin, offset, camera scroll, and scroll factor values.
         /// </summary>
-        /// <returns></returns>
-        protected void UpdateDrawPosition()
+        /// <param name="camera">The camera to use when calculating the sprite's draw position.</param>
+        /// <returns>The sprite's draw position within the given camera.</returns>
+        protected Vector2 GetDrawPosition(GenCamera camera)
         {
-            _drawPosition.X = _originPosition.X + DrawOffset.X - GenG.CurrentCamera.ScrollX + (GenG.CurrentCamera.ScrollX * ScrollFactor.X);
-            _drawPosition.Y = _originPosition.Y + DrawOffset.Y - GenG.CurrentCamera.ScrollY + (GenG.CurrentCamera.ScrollY * ScrollFactor.Y);
+            Vector2 drawPosition = Vector2.Zero;
+
+            drawPosition.X = _drawPosition.X - camera.ScrollX + (camera.ScrollX * ScrollFactor.X);
+            drawPosition.Y = _drawPosition.Y - camera.ScrollY + (camera.ScrollY * ScrollFactor.Y);
+            
+            // TODO: Integrate motion of sprites to adjust for timescale.
+            //drawPosition.X = _drawPosition.X - camera.ScrollX + (camera.ScrollX * ScrollFactor.X) + _moveDistance.X * (GenG._updateTimer / GenG.TimeStep);
+            //drawPosition.Y = _drawPosition.Y - camera.ScrollY + (camera.ScrollY * ScrollFactor.Y) + _moveDistance.Y * (GenG._updateTimer / GenG.TimeStep);
 
             if (GenG.DrawMode == GenG.DrawType.Pixel)
             {
-                _drawPosition.X = (int)_drawPosition.X;
-                _drawPosition.Y = (int)_drawPosition.Y;
+                drawPosition.X = (int)drawPosition.X;
+                drawPosition.Y = (int)drawPosition.Y;
             }
+
+            return drawPosition;
         }
 
         /// <summary>

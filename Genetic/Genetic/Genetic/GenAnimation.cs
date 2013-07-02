@@ -5,7 +5,8 @@ using Microsoft.Xna.Framework;
 namespace Genetic
 {
     /// <summary>
-    /// Manages a single tilesheet frame-by-frame animation used by a <c>GenSprite</c> object.
+    /// Manages a single frame-by-frame tilesheet animation used by a <c>GenSprite</c> object.
+    /// The frames of a single animation must be aligned horizontally.
     /// 
     /// Author: Tyler Gregory (GeneticSpartan)
     /// </summary>
@@ -23,14 +24,20 @@ namespace Genetic
         protected int[] _frames;
 
         /// <summary>
-        /// The amount of space, in pixels, between each of the animation frames.
+        /// The amount of space, in pixels, surrounding each animation frame.
         /// </summary>
-        public int FrameBuffer;
+        protected int _frameSpacing;
 
         /// <summary>
         /// The currently displayed animation frame.
         /// </summary>
         protected int _currentFrame;
+
+        /// <summary>
+        /// The position of the top-left corner of the animation on a tilesheet texture, considering frame spacing.
+        /// Useful for textures that may contain other animations/assets.
+        /// </summary>
+        protected Vector2 _position;
 
         /// <summary>
         /// The source rectangle used to draw the current animation frame.
@@ -42,6 +49,9 @@ namespace Genetic
         /// </summary>
         protected int _frameCount;
 
+        /// <summary>
+        /// A timer used to manage animation frame updates.
+        /// </summary>
         protected GenTimer _frameTimer;
 
         /// <summary>
@@ -54,6 +64,9 @@ namespace Genetic
         /// </summary>
         public Action FrameCallback;
 
+        /// <summary>
+        /// Gets if the animation is currently playing.
+        /// </summary>
         public bool IsPlaying
         {
             get { return _frameTimer.IsRunning; }
@@ -87,6 +100,20 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Gets or sets the amount of space, in pixels, surrounding each animation frame.
+        /// </summary>
+        public int FrameSpacing
+        {
+            get { return _frameSpacing; }
+
+            set
+            {
+                _frameSpacing = value;
+                _frameRect.Y = _frameSpacing;
+            }
+        }
+
+        /// <summary>
         /// Gets the source rectangle used to draw the current animation frame.
         /// </summary>
         public Rectangle FrameRect
@@ -110,15 +137,16 @@ namespace Genetic
         /// <param name="frames">The sequence of frame numbers of the animation. A value of null will play all frames of the animation texture.</param>
         /// <param name="fps">The speed, in frames per second, of the animation.</param>
         /// <param name="isLooping">Determines whether the animation is looping or not.</param>
-        /// <param name="frameBuffer">The amount of space, in pixels, between each of the animation frames.</param>
-        public GenAnimation(GenSprite sprite, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, bool isLooping = true, int frameBuffer = 0)
+        /// <param name="frameSpacing">The amount of space, in pixels, between each of the animation frames.</param>
+        public GenAnimation(GenSprite sprite, int frameWidth, int frameHeight, int[] frames = null, int fps = 12, bool isLooping = true, int frameSpacing = 0)
         {
             _sprite = sprite;
-            _frameRect = new Rectangle(0, 0, frameWidth, frameHeight);
-            FrameBuffer = frameBuffer;
-            _currentFrame = 0;
             Frames = (frames == null) ? new int[0] : frames;
-            _frameTimer = new GenTimer(0f, UpdateFrame, true);
+            _frameSpacing = frameSpacing;
+            _currentFrame = 0;
+            _position = Vector2.Zero;
+            _frameRect = new Rectangle(0, 0, frameWidth, frameHeight);
+            _frameTimer = new GenTimer(0f, UpdateFrame);
             Fps = fps;
             IsLooping = isLooping;
             FrameCallback = null;
@@ -132,6 +160,9 @@ namespace Genetic
             _frameTimer.Update();
         }
 
+        /// <summary>
+        /// Updates the current animation with the appropriate frame.
+        /// </summary>
         public void UpdateFrame()
         {
             _currentFrame += (int)(_frameTimer.Elapsed / _frameTimer.Duration);
@@ -142,16 +173,20 @@ namespace Genetic
                     _currentFrame %= _frameCount;
                 else
                 {
+                    // Stop the animation on the last frame.
                     _currentFrame = _frameCount - 1;
                     _frameTimer.Stop();
                 }
             }
 
             if (_frames.Length != 0)
-                _frameRect.X = (_frameRect.Width + FrameBuffer) * _frames[_currentFrame] + FrameBuffer;
+                _frameRect.X = (_frameRect.Width + _frameSpacing) * _frames[_currentFrame] + _frameSpacing;
             else
-                _frameRect.X = (_frameRect.Width + FrameBuffer) * _currentFrame + FrameBuffer;
+                _frameRect.X = (_frameRect.Width + _frameSpacing) * _currentFrame + _frameSpacing;
 
+            _frameRect.Y = _frameSpacing;
+
+            // If the current animation frame is set as a callback frame, invoke the callback method.
             if (FrameCallback != null)
             {
                 if ((_currentFrame < _callbackFrames.Length) && _callbackFrames[_currentFrame])
@@ -165,17 +200,29 @@ namespace Genetic
         protected void RefreshFrameCount()
         {
             if (_frames.Length == 0)
-                _frameCount = _sprite.Texture.Width / ((_frameRect.Width + FrameBuffer) + FrameBuffer + FrameBuffer);
+                _frameCount = _sprite.Texture.Width / (_frameRect.Width + (_frameSpacing * 3));
             else
                 _frameCount = _frames.Length;
         }
 
         /// <summary>
-        /// Sets a callback method that will invoke when the given animation frames are displayed.
-        /// Useful for playing sounds at specific frames in an animation, like foot steps.
+        /// Sets the position of the top-left corner of the animation on a tilesheet texture, considering frame spacing.
+        /// Useful for textures that may contain other animations/assets.
+        /// </summary>
+        /// <param name="x">The x position of the top-left corner of the animation.</param>
+        /// <param name="y">The y position of the top-left corner of the animation.</param>
+        public void SetPosition(int x, int y)
+        {
+            _position.X = x;
+            _position.Y = y;
+        }
+
+        /// <summary>
+        /// Sets a callback method that will invoke when the specified animation frames are displayed.
+        /// An example would be to play sounds at specific frames in an animation, like foot steps.
         /// </summary>
         /// <param name="callbackFrames">An array of animation frame numbers used to invoke the callback method. All animations start from frame 0.</param>
-        /// <param name="callback">The function to invoke at each animation frame.</param>
+        /// <param name="callback">The method to invoke at each animation frame.</param>
         public void SetCallback(int[] callbackFrames, Action callback)
         {
             _callbackFrames = new bool[_frames.Length];

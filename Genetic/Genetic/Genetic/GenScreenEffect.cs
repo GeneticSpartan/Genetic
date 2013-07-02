@@ -28,6 +28,9 @@ namespace Genetic
         /// </summary>
         protected float _fxAlpha;
 
+        /// <summary>
+        /// A timer used to manage the flash effect.
+        /// </summary>
         protected GenTimer _flashTimer;
 
         /// <summary>
@@ -40,6 +43,9 @@ namespace Genetic
         /// </summary>
         protected Color _flashColor;
 
+        /// <summary>
+        /// A timer used to manage the fade effect.
+        /// </summary>
         protected GenTimer _fadeTimer;
 
         /// <summary>
@@ -56,9 +62,9 @@ namespace Genetic
             EffectRectangle = effectRectangle;
             _fxTexture = new Texture2D(GenG.GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             _fxTexture.SetData<Color>(new[] { Color.White });
-            _flashTimer = new GenTimer(0f, null, true);
+            _flashTimer = new GenTimer(0f, null);
             _flashIntensity = 0f;
-            _fadeTimer = new GenTimer(0f, null, true);
+            _fadeTimer = new GenTimer(0f, null);
         }
 
         /// <summary>

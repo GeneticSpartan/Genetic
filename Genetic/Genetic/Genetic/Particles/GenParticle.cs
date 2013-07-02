@@ -10,6 +10,9 @@ namespace Genetic.Particles
     /// </summary>
     public class GenParticle : GenSprite
     {
+        /// <summary>
+        /// A timer used to manage the lifetime of the particle.
+        /// </summary>
         public GenTimer LifeTimer;
 
         /// <summary>
@@ -25,7 +28,8 @@ namespace Genetic.Particles
         public GenParticle(float x = 0, float y = 0, Texture2D texture = null, int width = 1, int height = 1, float lifetime = 3f)
             : base(x, y, texture, width, height)
         {
-            LifeTimer = new GenTimer(lifetime, Kill, true);
+            // Set the life timer to kill the particle at the end of its life.
+            LifeTimer = new GenTimer(lifetime, Kill);
         }
 
         /// <summary>
@@ -46,8 +50,6 @@ namespace Genetic.Particles
             base.Reset();
 
             LifeTimer.Start(true);
-            _color = _baseColor;
-            _alpha = _baseAlpha;
         }
     }
 }

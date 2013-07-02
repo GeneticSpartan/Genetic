@@ -1,0 +1,113 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<XnaContent xmlns:Pipeline="Microsoft.Xna.Framework.Content.Pipeline">
+  <Asset Type="Pipeline:BuildItemCollection">
+    <Item>
+      <Source>auto_tiles.png</Source>
+      <Name>auto_tiles</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Parameters>
+        <Data Key="TextureFormat">DxtCompressed</Data>
+        <Data Key="ColorKeyEnabled">False</Data>
+      </Parameters>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\auto_tiles.xnb</Output>
+      <Time>2013-06-20T23:53:42.1980742-07:00</Time>
+    </Item>
+    <Item>
+      <Source>cellphone.bmp</Source>
+      <Name>cellphone</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>FontTextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\cellphone.xnb</Output>
+      <Time>2013-06-20T21:41:50.1995337-07:00</Time>
+    </Item>
+    <Item>
+      <Source>genetic_debug.bmp</Source>
+      <Name>genetic_debug</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>FontTextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\genetic_debug.xnb</Output>
+      <Time>2013-06-20T21:42:36.1421615-07:00</Time>
+    </Item>
+    <Item>
+      <Source>warthog.png</Source>
+      <Name>warthog</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\warthog.xnb</Output>
+      <Time>2013-06-20T21:42:55.802286-07:00</Time>
+    </Item>
+    <Item>
+      <Source>player.png</Source>
+      <Name>player</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\player.xnb</Output>
+      <Time>2013-06-28T01:21:24.5028257-07:00</Time>
+    </Item>
+    <Item>
+      <Source>beep.mp3</Source>
+      <Name>beep</Name>
+      <Importer>Mp3Importer</Importer>
+      <Processor>SoundEffectProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\beep.xnb</Output>
+      <Time>2013-06-20T21:41:50.1985337-07:00</Time>
+    </Item>
+    <Item>
+      <Source>grayscale.fx</Source>
+      <Name>grayscale</Name>
+      <Importer>EffectImporter</Importer>
+      <Processor>EffectProcessor</Processor>
+      <Options>None</Options>
+      <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\grayscale.xnb</Output>
+      <Time>2013-06-20T23:36:29.7310204-07:00</Time>
+    </Item>
+    <BuildSuccessful>true</BuildSuccessful>
+    <Settings>
+      <TargetPlatform>Xbox360</TargetPlatform>
+      <TargetProfile>Reach</TargetProfile>
+      <BuildConfiguration>Debug</BuildConfiguration>
+      <CompressContent>true</CompressContent>
+      <RootDirectory>D:\Games\Genetic\Genetic\Genetic\GeneticContent\</RootDirectory>
+      <LoggerRootDirectory>D:\Games\Genetic\Genetic\Genetic\Genetic\</LoggerRootDirectory>
+      <IntermediateDirectory>D:\Games\Genetic\Genetic\Genetic\GeneticContent\obj\Xbox 360\Debug\</IntermediateDirectory>
+      <OutputDirectory>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\</OutputDirectory>
+    </Settings>
+    <Assemblies>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.XImporter.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.VideoImporters.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.TextureImporter.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.FBXImporter.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.EffectImporter.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Program Files (x86)\Microsoft XNA\XNA Game Studio\v4.0\References\Windows\x86\Microsoft.Xna.Framework.Content.Pipeline.AudioImporters.dll</Key>
+        <Value>2010-08-23T12:41:18-07:00</Value>
+      </Assembly>
+      <Assembly>
+        <Key>C:\Windows\Microsoft.Net\assembly\GAC_32\Microsoft.Xna.Framework.Content.Pipeline\v4.0_4.0.0.0__842cf8be1de50553\Microsoft.Xna.Framework.Content.Pipeline.dll</Key>
+        <Value>2013-06-04T13:33:37.6803808-07:00</Value>
+      </Assembly>
+    </Assemblies>
+  </Asset>
+</XnaContent>

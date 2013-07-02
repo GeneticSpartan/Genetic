@@ -32,9 +32,9 @@ namespace Genetic
         }
 
         /// <summary>
-        /// Draws the tile using a simple draw method.
+        /// Draws the tile using a simplified draw method.
         /// </summary>
-        public override void Draw()
+        public void Draw()
         {
             if (_texture != null)
                 GenG.SpriteBatch.Draw(_texture, _position, _sourceRect, _color);

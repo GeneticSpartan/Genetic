@@ -105,6 +105,9 @@ namespace Genetic.Input
         /// </summary>
         public GenMouse()
         {
+            _mouseState = Mouse.GetState();
+            _oldMouseState = _mouseState;
+            _position = Vector2.Zero;
             _wheel = 0;
         }
 

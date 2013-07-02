@@ -73,6 +73,9 @@ namespace Genetic.Input
         /// </summary>
         protected bool _vibrateDecreasing;
 
+        /// <summary>
+        /// A timer that manages the game pad vibration.
+        /// </summary>
         protected GenTimer _vibrateTimer;
 
         /// <summary>
@@ -152,13 +155,15 @@ namespace Genetic.Input
         /// An object used to retrieve input from a game pad.
         /// </summary>
         /// <param name="playerIndex">The player index associated with the game pad.</param>
-        public GenGamePad(PlayerIndex playerIndex = PlayerIndex.One)
+        public GenGamePad(PlayerIndex playerIndex)
         {
             _playerIndex = playerIndex;
+            _gamePadState = GamePad.GetState(_playerIndex);
+            _oldGamePadState = _gamePadState;
             _leftMotorSpeed = 0f;
             _rightMotorSpeed = 0f;
             _vibrateDecreasing = false;
-            _vibrateTimer = new GenTimer(0f, null, true);
+            _vibrateTimer = new GenTimer(0f, null);
         }
 
         /// <summary>
@@ -187,6 +192,7 @@ namespace Genetic.Input
 
         public void StopVibrate()
         {
+            _vibrateTimer.Stop();
             GamePad.SetVibration(_playerIndex, 0f, 0f);
         }
 

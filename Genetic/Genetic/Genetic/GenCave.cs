@@ -99,7 +99,7 @@ namespace Genetic
                 {
                     if (_cells[x, y] != 0)
                     {
-                        Tiles[y][x] = new GenTile(x * TileWidth, y * TileHeight, TileWidth, TileHeight);
+                        Tiles[y][x] = new GenTile(x * _tileWidth, y * _tileHeight, _tileWidth, _tileHeight);
 
                         // Check for a tile to the left of the current tile, and flag internal edges as closed.
                         if ((x > 0) && (Tiles[y][x - 1] != null))

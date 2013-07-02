@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Genetic
 {
@@ -89,18 +88,18 @@ namespace Genetic
         /// </summary>
         public override void Update()
         {
-            if (Exists && Active)
+            if (!Exists || !Active)
+                return;
+            
+            foreach (GenBasic member in _activeMembers)
             {
-                foreach (GenBasic member in _activeMembers)
-                {
-                    if (member.Exists && member.Active)
-                        member.Update();
-                }
-
-                // Update the quadtree.
-                if (Quadtree != null)
-                    Quadtree.Update();
+                if (member.Exists && member.Active)
+                    member.Update();
             }
+
+            // Update the quadtree.
+            if (Quadtree != null)
+                Quadtree.Update();
         }
 
         /// <summary>
@@ -109,38 +108,39 @@ namespace Genetic
         /// </summary>
         public override void PostUpdate()
         {
-            if (Exists && Active)
+            if (!Exists || !Active)
+                return;
+            
+            foreach (GenBasic member in _activeMembers)
             {
-                foreach (GenBasic member in _activeMembers)
-                {
-                    if (member.Exists && member.Active)
-                        member.PostUpdate();
-                }
+                if (member.Exists && member.Active)
+                    member.PostUpdate();
             }
         }
 
         /// <summary>
         /// Calls Draw on each of the objects in the active members list.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
-            if (Exists && Visible)
+            if (!Exists || !Visible)
+                return;
+
+            foreach (GenBasic member in _activeMembers)
             {
-                foreach (GenBasic member in _activeMembers)
-                {
-                    if (member.Exists)
-                    {
-                        if (member.Visible)
-                            member.Draw();
+                if (!member.Exists)
+                    continue;
 
-                        if (GenG.AllowDebug && GenG.IsDebug)
-                            member.DrawDebug();
-                    }
-                }
+                if (member.Visible)
+                    member.Draw(camera);
 
-                if (GenG.AllowDebug && GenG.IsDebug && (Quadtree != null))
-                    Quadtree.DrawDebug();
+                if (GenG.AllowDebug && GenG.IsDebug)
+                    member.DrawDebug(camera);
             }
+
+            if (GenG.AllowDebug && GenG.IsDebug && (Quadtree != null))
+                Quadtree.DrawDebug();
         }
 
         /// <summary>
@@ -158,6 +158,11 @@ namespace Genetic
             Members.Add(basic);
             _updateMembers = true;
 
+            if (Quadtree != null)
+            {
+                Quadtree.Add(basic);
+            }
+
             return basic;
         }
 
@@ -173,6 +178,8 @@ namespace Genetic
             {
                 Members.Remove(basic);
                 _updateMembers = true;
+
+                // TODO: Remove from the quadtree.
 
                 return basic;
             }

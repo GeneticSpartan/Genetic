@@ -29,10 +29,11 @@ namespace Genetic.Input
         /// An object used to retrieve input from a keyboard.
         /// </summary>
         /// <param name="playerIndex">The player index associated with the keyboard.</param>
-        public GenKeyboard(PlayerIndex playerIndex = PlayerIndex.One)
+        public GenKeyboard(PlayerIndex playerIndex)
         {
-            _keyboardState = new KeyboardState();
-            _oldKeyboardState = new KeyboardState();
+            _playerIndex = playerIndex;
+            _keyboardState = Keyboard.GetState();
+            _oldKeyboardState = _keyboardState;
         }
 
         /// <summary>

@@ -45,18 +45,24 @@ namespace Genetic.Sound
 
         /// <summary>
         /// The game object that each sound instance is following.
+        /// Each sound instance will inherit the position and velocity of the follow object.
         /// </summary>
         protected GenObject _follow;
 
         /// <summary>
-        /// Determines if each sound instance should fade as they move out of the camera view.
+        /// The value that adjusts the effect of distance calculations on 2D positional sounds.
         /// </summary>
-        protected bool _distanceFading;
+        protected static float _distanceScale = 2000f;
 
         /// <summary>
-        /// The total distance, in pixels, that each sound instance must be from an edge of the camera to fade completely.
+        /// The inverse of the distance scale, used to reduce division calculations.
         /// </summary>
-        protected float _distanceFadingLength;
+        protected static float _inverseDistanceScale = 1f / _distanceScale;
+
+        /// <summary>
+        /// The scaling of the source and receiver velocities used to adjust the influence of a doppler pitch shift.
+        /// </summary>
+        public static float DopplerFactor = 0.1f;
 
         /// <summary>
         /// Gets the sound effect loaded from a sound effect file.
@@ -177,46 +183,6 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Gets the game object that each sound instance is following.
-        /// </summary>
-        public GenObject Follow
-        {
-            get { return _follow; }
-        }
-
-        /// <summary>
-        /// Gets or sets if each sound instance should fade as they move out of the camera view.
-        /// </summary>
-        public bool DistanceFading
-        {
-            get { return _distanceFading; }
-
-            set
-            {
-                _distanceFading = value;
-
-                foreach (GenSoundInstance soundInstance in _soundInstances)
-                    soundInstance.DistanceFading = _distanceFading;
-            }
-        }
-
-        /// <summary>
-        /// The total distance, in pixels, that the sound must be from an edge of the camera to fade completely.
-        /// </summary>
-        public float DistanceFadingLength
-        {
-            get { return _distanceFadingLength; }
-
-            set
-            {
-                _distanceFadingLength = value;
-
-                foreach (GenSoundInstance soundInstance in _soundInstances)
-                    soundInstance.DistanceFadingLength = _distanceFadingLength;
-            }
-        }
-
-        /// <summary>
         /// Gets the duration of the sound effect.
         /// </summary>
         public TimeSpan Duration
@@ -225,20 +191,55 @@ namespace Genetic.Sound
         }
 
         /// <summary>
+        /// Gets or sets the game object that each sound instance is following.
+        /// Each sound instance will inherit the position and velocity of the follow object.
+        /// </summary>
+        public GenObject Follow
+        {
+            get { return _follow; }
+
+            set
+            {
+                _follow = value;
+
+                foreach (GenSoundInstance soundInstance in _soundInstances)
+                    soundInstance.Follow = _follow;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the value that adjusts the effect of distance calculations on 2D positional sounds.
+        /// </summary>
+        public static float DistanceScale
+        {
+            get { return _distanceScale; }
+
+            set
+            {
+                _distanceScale = value;
+                _inverseDistanceScale = 1f / _distanceScale;
+            }
+        }
+
+        /// <summary>
+        /// Gets the inverse of the distance scale, used to reduce division calculations.
+        /// </summary>
+        public static float InverseDistanceScale
+        {
+            get { return _inverseDistanceScale; }
+        }
+
+        /// <summary>
         /// Creates a playable sound.
         /// </summary>
         /// <param name="sound">The loaded <c>SoundEffect</c> to use.</param>
         /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
-        /// <param name="looping">Determines if the sound is played on a loop.</param>
-        public GenSound(SoundEffect sound, float volume = 1, bool looping = false)
+        /// <param name="isLooping">A flag used to determine if the sound is played on a loop.</param>
+        public GenSound(SoundEffect sound, float volume = 1f, bool isLooping = false)
         {
             _soundInstances = new List<GenSoundInstance>();
 
-            LoadSound(sound, volume, looping);
-
-            _follow = null;
-            _distanceFading = true;
-            _distanceFadingLength = 400f;
+            LoadSound(sound, volume, isLooping);
         }
 
         /// <summary>
@@ -255,27 +256,26 @@ namespace Genetic.Sound
         /// </summary>
         /// <param name="sound">The sound effect to load.</param>
         /// <param name="volume">The volume of the sound, a value from 0.0 to 1.0.</param>
-        /// <param name="looping">Determines if the sound is played on a loop.</param>
-        public void LoadSound(SoundEffect sound, float volume = 1, bool looping = false)
+        /// <param name="isLooping">A flag used to determine if the sound is played on a loop.</param>
+        public void LoadSound(SoundEffect sound, float volume = 1f, bool isLooping = false)
         {
             _sound = sound;
             Volume = volume;
-            IsLooped = looping;
+            IsLooped = isLooping;
         }
 
         /// <summary>
         /// Plays a sound instance.
         /// </summary>
-        public void Play()
+        public virtual void Play()
         {
-            // Call Play on an existing sound instance if it is stopped.
-            // Otherwise, create a new sound instance.
+            // Attempt to call Play on an existing sound instance if it is stopped.
+            // Otherwise, create and add a new sound instance to play.
             foreach (GenSoundInstance soundInstance in _soundInstances)
             {
                 if (soundInstance.IsStopped)
                 {
                     soundInstance.Play(false);
-
                     return;
                 }
             }
@@ -288,7 +288,7 @@ namespace Genetic.Sound
         /// <summary>
         /// Stops each currently playing sound instance.
         /// </summary>
-        /// <param name="immediate">Determines if each sound instance should stop immediately, or break out of the loop and play the rest of each sound instance.</param>
+        /// <param name="immediate">A flag used to determine if each sound instance should stop immediately, or play through the remaining sound.</param>
         public void Stop(bool immediate = true)
         {
             foreach (GenSoundInstance soundInstance in _soundInstances)
@@ -326,21 +326,6 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Sets each sound instance to follow a game object.
-        /// Each sound instance pan value will change according to the game object's position relative to the camera.
-        /// </summary>
-        /// <param name="follow">The game object that each sound instance will follow.</param>
-        /// <param name="distanceFading">Determines if each sound instance should fade as the object moves out of the camera view.</param>
-        public void SetFollow(GenObject follow, bool distanceFading = true)
-        {
-            foreach (GenSoundInstance soundInstance in _soundInstances)
-            {
-                soundInstance.Follow = follow;
-                soundInstance.DistanceFading = distanceFading;
-            }
-        }
-
-        /// <summary>
         /// Reset each sound instance.
         /// </summary>
         public override void Reset()
@@ -349,12 +334,35 @@ namespace Genetic.Sound
         }
 
         /// <summary>
-        /// Clears the sound instances list off all existing sound instances.
+        /// Clears the sound instances list off all existing <c>GenSoundInstance</c> objects.
         /// Useful for cleaning up sound instance memory.
         /// </summary>
         public void Clear()
         {
             _soundInstances.Clear();
+        }
+
+        /// <summary>
+        /// Gets a doppler pitch shift using the relative velocities of a source and receiver of a sound.
+        /// The doppler pitch shift is used to adjust the pitch of a sound, a value between -1.0 and 1.0.
+        /// A source and receiver moving towards each other results in a higher pitch (positive), or a lower pitch (negative) as they move away.
+        /// </summary>
+        /// <param name="sourceVelocity">The velocity vector of the source of the sound.</param>
+        /// <param name="receiverVelocity">The velocity vector of the receiver of the sound.</param>
+        /// <param name="distance">A distance vector from the emitter to the receiver.</param>
+        /// <param name="dopplerFactor">The scaling of the source and receiver velocities used to adjust the influence of the doppler pitch shift.</param>
+        /// <returns>The sound pitch value resulting from the doppler shift.</returns>
+        public static float GetDopplerShift(Vector2 sourceVelocity, Vector2 receiverVelocity, Vector2 distance, float dopplerFactor = 1f)
+        {
+            float relativeSourceVelocity = Vector2.Dot(distance, sourceVelocity) / distance.Length();
+            float relativeReceiverVelocity = Vector2.Dot(distance, receiverVelocity) / distance.Length();
+
+            relativeSourceVelocity = Math.Min(relativeSourceVelocity, SoundEffect.SpeedOfSound / dopplerFactor);
+            relativeReceiverVelocity = Math.Min(relativeReceiverVelocity, SoundEffect.SpeedOfSound / dopplerFactor);
+
+            float dopplerShift = (SoundEffect.SpeedOfSound - dopplerFactor * relativeSourceVelocity) / (SoundEffect.SpeedOfSound - dopplerFactor * relativeReceiverVelocity);
+
+            return MathHelper.Clamp(dopplerShift - 1, -1f, 1f);
         }
     }
 }

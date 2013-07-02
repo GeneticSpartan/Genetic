@@ -16,9 +16,6 @@ using Genetic.Sound;
 
 namespace Genetic
 {
-    /// <summary>
-    /// <
-    /// </summary>
     public class PlayState : GenState
     {
         //public GenTilemap Map;
@@ -37,18 +34,21 @@ namespace Genetic
         //public GenCamera camera2;
 
         public GenSound Beep;
-        public GenText Text;
+        //public GenText Text;
 
         //public GenTimer Timer;
 
         public GenVerlet Chain;
-        public GenVerlet Cloth;
+        //public GenVerlet Cloth;
 
         public GenPath Path;
 
         public GenEmitter Emitter;
 
         public GenProgressBar ProgressBar;
+        Stopwatch watch = new Stopwatch();
+
+        public CollideEvent HitCaveCache;
 
         public override void Create()
         {
@@ -94,7 +94,7 @@ namespace Genetic
 
             BgColor = Color.CornflowerBlue;
 
-            //camera2 = GenG.AddCamera(new GenCamera(0, GenG.Game.Height / 2, GenG.Game.Width, GenG.Game.Height / 2, 2f));
+            //camera2 = AddCamera(new GenCamera(0, GenG.Game.Height / 2, GenG.Game.Width, GenG.Game.Height / 2, 2f));
             //camera2.BgColor = new Color(50, 50, 70);
 
             Camera.BgColor = new Color(40, 50, 70);
@@ -135,7 +135,7 @@ namespace Genetic
 
             ((GenObject)Chain.Members[0]).Immovable = true;
             ((GenObject)Chain.Members[0]).Acceleration.Y = 0f;
-            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Random, GenMove.Axis.Both, GenPath.Movement.Instant);
+            ((GenObject)Chain.Members[0]).SetPath(Path, 100, GenPath.Type.Yoyo, GenMove.Axis.Both, GenPath.Movement.Instant);
             Add(Chain);
             
             Boxes = new GenGroup();
@@ -143,7 +143,7 @@ namespace Genetic
 
             for (int i = 0; i < 10; i++)
             {
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < 15; j++)
                 {
                     Box = new GenSprite(i * 32 + 150, j * 16, GenG.Content.Load<Texture2D>("warthog"), 12, 13);
                     Box.CenterOrigin(false);
@@ -153,8 +153,8 @@ namespace Genetic
                     Box.DrawOffset.Y = -3;
                     Box.Mass = 0.5f;
                     Box.Deceleration.X = 400f;
-                    Box.Acceleration.Y = 70f;
-                    Box.MaxVelocity.Y = 100f;
+                    Box.Acceleration.Y = 400f;
+                    Box.MaxVelocity.Y = 400f;
                     Box.Color = GenU.RandomColor(100, 255);
                     Boxes.Add(Box);
                 }
@@ -163,12 +163,12 @@ namespace Genetic
             Emitter = new GenEmitter(100, 100);
             Emitter.Width = 16;
             Emitter.Height = 16;
-            Emitter.MakeParticles(GenG.Pixel, 1, 1, 400);
+            Emitter.MakeParticles(GenG.Pixel, 4, 4, 400);
             Emitter.EmitQuantity = 5;
             Emitter.EmitFrequency = .05f;
             Emitter.InheritVelocity = true;
-            //Emitter.SetXSpeed(-300, 300);
-            //Emitter.SetYSpeed(-300, 300);
+            Emitter.SetXSpeed(-300, 300);
+            Emitter.SetYSpeed(-50, 50);
             Emitter.SetRotationSpeed(-360, 360);
             Emitter.SetLifetime(2.9f);
             Emitter.Colors.Add(Color.Cyan);
@@ -176,7 +176,7 @@ namespace Genetic
             Emitter.Colors.Add(Color.Orange);
             Emitter.SetAlpha(2f, 0f);
             Emitter.SetScale(2f, 1f);
-            Emitter.SetGravity(0, 700);
+            //Emitter.SetGravity(0, 700);
             Emitter.SetDeceleration(100, 100);
             Add(Emitter);
 
@@ -237,22 +237,22 @@ namespace Genetic
             Warthog4.RotationSpeed = 180;
             Add(Warthog4);
 
-            Warthog5 = new GenSprite(500, 100, GenG.Content.Load<Texture2D>("warthog"), 78, 49);
+            Warthog5 = new GenSprite(2000, 300, GenG.Content.Load<Texture2D>("warthog"), 78, 49);
             //Warthog5.Acceleration.Y = 700;
             Warthog5.Parent = Warthog4;
             Warthog5.ParentOffset.X = 150;
+            Warthog5.Velocity.X = -1000;
             Add(Warthog5);
 
             //Chain.MakeLink(Warthog3, (GenObject)Chain.Members[14]);
             //Chain.SetRestingDistance(10f);
 
-            Beep = new GenSound(GenG.LoadContent<SoundEffect>("beep"));
-            //Beep.Play();
-            //Beep.SetFollow(Player);
-            //Beep.Volume = 1f;
+            Beep = new GenSound(GenG.LoadContent<SoundEffect>("beep"), 1f, true);
+            Beep.Follow = Warthog5;
+            Beep.Volume = 0.1f;
             Add(Beep);
 
-            Text = new GenText("Hello, World!\n------------", 200, 200, 100, 12);
+            /*Text = new GenText("Hello, World!\n------------", 200, 200, 100, 12);
             Text.Scale.X = 0.5f;
             Text.Scale.Y = 0.5f;
             Text.TextAlignment = GenText.TextAlign.Center;
@@ -261,16 +261,16 @@ namespace Genetic
             //Text.Velocity.X = 100;
             //Text.Velocity.Y = 50;
             Text.ScrollFactor.X = 0f;
-            Add(Text);
+            Add(Text);*/
 
             ProgressBar = new GenProgressBar(100, 100);
             ProgressBar.LoadTexture(GenG.Pixel);
             ProgressBar.SetSourceRect(0, 0, 100, 10);
-            //ProgressBar.Colors.Add(Color.Red);
-            //ProgressBar.Colors.Add(Color.Orange);
-            //ProgressBar.Colors.Add(Color.Green);
-            //ProgressBar.Colors.Add(Color.CornflowerBlue);
-            //ProgressBar.Colors.Add(Color.White);
+            ProgressBar.Colors.Add(Color.Red);
+            ProgressBar.Colors.Add(Color.Orange);
+            ProgressBar.Colors.Add(Color.Green);
+            ProgressBar.Colors.Add(Color.CornflowerBlue);
+            ProgressBar.Colors.Add(Color.White);
             //ProgressBar.BlendColors = true;
             //ProgressBar.MinCallback = Shake;
             ProgressBar.Rotation = -90;
@@ -302,18 +302,17 @@ namespace Genetic
 
             GenG.TimeScale = 1f;
 
-            Camera.Flash(1f, 1f, Color.Black);
             Camera.CameraFollowType = GenCamera.FollowType.LockOn;
             //Camera.FollowStrength = 0.05f;
             //Camera.MaxZoom = 10f;
             Camera.AddTarget(Player);
             //Camera.AddTarget(Warthog3);
             //Camera.SetCameraView(0, 0, GenG.Game.Width, GenG.Game.Height / 2);
+            //Camera.Rotation = 180f;
 
-            //camera2.Flash(1f, 1f, Color.Black);
-            //camera2.FollowStrength = 0.05f;
-            //camera2.AddTarget(Player);
-            //camera2.AddTarget(Warthog3);
+            /*camera2.CameraFollowType = GenCamera.FollowType.LockOn;
+            camera2.FollowStrength = 0.05f;
+            camera2.AddTarget(Warthog5);*/
 
             Player.Flicker(40f, 1f, Color.Red, true);
             Player.FadeOut(0.5f);
@@ -330,14 +329,34 @@ namespace Genetic
             //Warthog3.PathSpeed = 100;
         }
 
+        /// <summary>
+        /// Called once when the state starts running for the first time.
+        /// </summary>
+        public override void Start()
+        {
+            base.Start();
+
+            GenG.Flash(1f, 1f, Color.Black);
+
+            Beep.Play();
+        }
+
         public override void Update()
         {
             base.Update();
             
             // Do collision checking first.
             //GenG.Collide(Player, Text);
-            GenG.Collide(Cave, Player, HitCave);
+
+            // Cache the HitCave delegate to avoid creating garbage for each collision check.
+            if (HitCaveCache == null)
+            {
+                HitCaveCache = HitCave;
+            }
+
+            GenG.Collide(Cave, Player, HitCaveCache);
             GenG.Collide(Cave, Boxes);
+            
             //GenG.Collide(Chain, Player);
             //GenG.Collide(Warthog4, Warthog5);
             //GenG.Collide(Cave, Chain);
@@ -345,44 +364,61 @@ namespace Genetic
             //GenG.Collide(Player, Warthog3);
             //GenG.Collide(Player, Warthog4);
             GenG.Collide(Cave, Emitter);
+            //GenG.Collide(Emitter, Emitter);
+            GenG.Collide(Player, Boxes);
+            GenG.Collide(Boxes, Boxes);
+            //GenG.Collide(Boxes, Emitter);
 
-            /*for (int i = 0; i < 1; i++)
-            {
-                GenG.Collide(Player, Boxes);
-                GenG.Collide(Boxes, Boxes);
-            }*/
+            //Text.Y = GenU.SineWave(200, 2, 10);
+            //Text.Rotation = GenU.SineWave(0, 3, 10);
 
-            Text.Y = GenU.SineWave(200, 2, 10);
-            Text.Rotation = GenU.SineWave(0, 3, 10);
-
-            if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.X))
+            if (GenG.GamePads[(int)PlayerIndex.One].JustPressed(Buttons.X))
                 GenG.IsDebug = !GenG.IsDebug;
-
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.R) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Y))
+#if WINDOWS
+            if (GenG.Keyboards[(int)PlayerIndex.One].JustPressed(Keys.R))
                 GenG.ResetState(new LoadingState());
 
-            if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Z) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.LeftTrigger))
+            if (GenG.Keyboards[(int)PlayerIndex.One].IsPressed(Keys.Z))
                 GenG.TimeScale = 0.2f;
-            else if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.X) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.RightTrigger))
+            else if (GenG.Keyboards[(int)PlayerIndex.One].IsPressed(Keys.X))
                 GenG.TimeScale = 2f;
             else
                 GenG.TimeScale = 1f;
 
-            if (GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.LeftTrigger))
-                Camera.Flash(0.5f, 0.1f, Color.CornflowerBlue);
-
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.A) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Start))
+            if (GenG.Keyboards[(int)PlayerIndex.One].JustPressed(Keys.A))
                 GenG.Paused = !GenG.Paused;
 
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Escape) || GenG.GamePads[PlayerIndex.One].JustPressed(Buttons.Back))
+            if (GenG.Keyboards[(int)PlayerIndex.One].JustPressed(Keys.Escape))
+                GenG.Game.Exit();
+#endif
+            if (GenG.GamePads[(int)PlayerIndex.One].JustPressed(Buttons.Y))
+                GenG.ResetState(new LoadingState());
+
+            /*if (GenG.GamePads[(int)PlayerIndex.One].IsPressed(Buttons.LeftTrigger))
+                GenG.TimeScale = 0.2f;
+            else if (GenG.GamePads[(int)PlayerIndex.One].IsPressed(Buttons.RightTrigger))
+                GenG.TimeScale = 2f;
+            else
+                GenG.TimeScale = 1f;*/
+
+            if (GenG.GamePads[(int)PlayerIndex.One].JustPressed(Buttons.LeftTrigger))
+                Camera.Flash(0.5f, 0.1f, Color.CornflowerBlue);
+
+            if (GenG.GamePads[(int)PlayerIndex.One].JustPressed(Buttons.Start))
+                GenG.Paused = !GenG.Paused;
+
+            if (GenG.GamePads[(int)PlayerIndex.One].JustPressed(Buttons.Back))
                 GenG.Game.Exit();
 
             //((GenObject)Chain.Members[0]).X = Player.X;
             //((GenObject)Chain.Members[0]).Y = Player.Y;
 
-            //GenMove.AccelerateToPoint(Boxes, Player.CenterPosition, 200);
-            GenMove.AccelerateToPoint(Emitter, Player.CenterPosition, 500, 100);
-            GenMove.AccelerateToPoint(Cloth, Player.CenterPosition, Player.Velocity.Length() * 3, 70);
+            if (!GenG.Paused)
+            {
+                //GenMove.AccelerateToPoint(Boxes, Player.CenterPosition, 200);
+                GenMove.AccelerateToPoint(Emitter, Player.CenterPosition, 500, 100);
+                //GenMove.AccelerateToPoint(Cloth, Player.CenterPosition, Player.Velocity.Length() * 3, 70);
+            }
 
             Warthog4.Velocity.X = GenU.SineWave(0, 2, 200);
             //Warthog4.Color = new Color(1, GenU.SineWave(0.5f, 10, 0.5f), GenU.CosineWave(0.5f, 10, 0.5f));
@@ -412,8 +448,8 @@ namespace Genetic
                 Player.Scale.Y = GenU.SineWave(1, 8, 0.1f);
             }
 
-            ProgressBar.Scale.Y = GenU.SineWave(1, 8, 0.2f);
 
+            ProgressBar.Scale.Y = GenU.SineWave(1, 8, 0.2f);
             ProgressBar.Value = GenU.SineWave(50, 2, 51);
 
             //Cloth.LineColor = new Color(0.5f, (float)MathHelper.Lerp(0, 1, GenU.SineWave(0.5f, 10f, 0.5f)), 0.5f);
@@ -431,8 +467,13 @@ namespace Genetic
             else if (!Player.IsTouching(GenObject.Direction.Any))
                 Player.RotationSpeed = Player.Velocity.X * 4;*/
 
-            if (GenG.Keyboards[PlayerIndex.One].JustPressed(Keys.Space))
-                Cave.AddTile((int)(Player.OriginPosition.X / Cave.TileWidth), (int)(Player.OriginPosition.Y / Cave.TileHeight), false);
+            //if (GenG.Keyboards[(int)PlayerIndex.One].JustPressed(Keys.Space))
+            //    Cave.AddTile((int)(Player.OriginPosition.X / Cave.TileWidth), (int)(Player.OriginPosition.Y / Cave.TileHeight), false);
+
+            if (Warthog5.X < -2000)
+            {
+                Warthog5.X = 5000;
+            }
         }
 
         public void FadeOut(GenCollideEvent e)
@@ -440,7 +481,7 @@ namespace Genetic
             Camera.Fade(2, Color.Black, EndGame);
             //camera2.Fade(2, Color.White);
 
-            ((GenSprite)e.ObjectB).Flicker(40f, 2f, Color.OrangeRed, true);
+            (e.ObjectB as GenSprite).Flicker(40f, 2f, Color.OrangeRed, true);
         }
 
         public void EndGame()
@@ -451,25 +492,25 @@ namespace Genetic
         public void HitBox(GenCollideEvent e)
         {
             //e.Object1.Velocity.Y = -200;
-            ((GenSprite)e.ObjectB).Color = GenU.RandomColor();
+            (e.ObjectB as GenSprite).Color = GenU.RandomColor();
         }
 
         public void HitCave(GenCollideEvent e)
         {
-            ((GenSprite)e.ObjectB).Color = Color.Red;
+            (e.ObjectB as GenSprite).Color = Color.Red;
         }
 
         public void HitNode()
         {
-            ((GenObject)Chain.Members[0]).SetPath(null, 0);
-            ((GenObject)Chain.Members[0]).StopMoving();
+            (Chain.Members[0] as GenObject).SetPath(null, 0);
+            (Chain.Members[0] as GenObject).StopMoving();
             Camera.Flash(0.5f, 1f, Color.Red);
             Camera.Shake();
         }
 
         public void PlayerLand()
         {
-            GenG.GamePads[PlayerIndex.One].Vibrate(1f, 0.25f, 0.5f, true);
+            GenG.GamePads[(int)PlayerIndex.One].Vibrate(1f, 0.25f, 0.5f, true);
             Camera.Shake(5f, 0.5f, true, true, null, GenCamera.ShakeDirection.Vertical);
             Camera.Flash(0.15f, 0.2f, Color.Red);
         }
@@ -484,7 +525,7 @@ namespace Genetic
                 Emitter.InheritVelocity = true;
             }
 
-            Beep.Play();
+            //Beep.Play();
         }
     }
 }

@@ -69,6 +69,15 @@ namespace Genetic
         }
 
         /// <summary>
+        /// Called once when the state starts running.
+        /// Override this method to add additional start logic.
+        /// </summary>
+        public virtual void Start()
+        {
+
+        }
+
+        /// <summary>
         /// Calls <c>PreUpdate</c> on this state's group if the game is not paused.
         /// Override this method to add additional pre-update logic.
         /// </summary>
@@ -128,10 +137,8 @@ namespace Genetic
         /// <returns>The camera that was removed. Null if the camera does not exist in the cameras list.</returns>
         public GenCamera RemoveCamera(GenCamera camera)
         {
-            if (Cameras.Contains(camera))
+            if (Cameras.Remove(camera))
             {
-                Cameras.Remove(camera);
-
                 // If the camera being removed is the same as the initial camera, assign the initial camera to the first camera in the cameras list.
                 if (Camera == camera)
                     Camera = Cameras[0];

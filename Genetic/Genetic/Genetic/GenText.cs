@@ -111,9 +111,10 @@ namespace Genetic
         {
             // Set the font type of the text to the default font.
             Font = GenG.Font;
-
+            _textMeasure = Vector2.Zero;
             Text = (text == null) ? String.Empty : text;
             TextAlignment = TextAlign.Left;
+            _textOrigin = Vector2.Zero;
             HasShadow = false;
             ShadowColor = Color.Black;
             ShadowPosition = new Vector2(0f, 2f);
@@ -127,31 +128,43 @@ namespace Genetic
             base.Update();
 
             // Calculate the text origin relative to the game object origin to adjust for alignment settings.
-            if (TextAlignment == TextAlign.Right)
-                _textOrigin.X = (_origin.X - _bounds.Width) / Scale.X + _textMeasure.X;
-            else if (TextAlignment == TextAlign.Center)
-                _textOrigin.X = _origin.X - (_bounds.HalfWidth - (_textMeasure.X * 0.5f));
-            else
-                _textOrigin.X = _origin.X / Scale.X;
+            switch (TextAlignment)
+            {
+                case (TextAlign.Left):
+                    _textOrigin.X = _origin.X / Scale.X;
+                    break;
+                case (TextAlign.Right):
+                    _textOrigin.X = (_origin.X - _bounds.Width) / Scale.X + _textMeasure.X;
+                    break;
+                case (TextAlign.Center):
+                    _textOrigin.X = _origin.X - (_bounds.HalfWidth - (_textMeasure.X * 0.5f));
+                    break;
+            }
 
             _textOrigin.Y = _origin.Y / Scale.Y;
         }
 
         /// <summary>
-        /// Draws the text sprite to the camera.
+        /// Draws the text sprite.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
-            base.Draw();
+            base.Draw(camera);
+
+            if ((camera != null) && !CanDraw(camera))
+                return;
+
+            Vector2 drawPosition = (camera == null) ? _drawPosition : GetDrawPosition(camera);
 
             // Draw the text shadow.
             if (HasShadow)
             {
                 GenG.SpriteBatch.DrawString(
                     Font, 
-                    _text, 
-                    _drawPosition + ShadowPosition, 
-                    ShadowColor * _alpha, 
+                    _text,
+                    drawPosition + ShadowPosition, 
+                    ShadowColor * _alpha,
                     (DrawRotated) ? _rotation : 0f, 
                     _textOrigin, 
                     Scale,
@@ -162,9 +175,9 @@ namespace Genetic
             // Draw the text.
             GenG.SpriteBatch.DrawString(
                 Font, 
-                _text, 
-                _drawPosition, 
-                _color * _alpha, 
+                _text,
+                drawPosition, 
+                _drawColor,
                 (DrawRotated) ? _rotation : 0f, 
                 _textOrigin, 
                 Scale, 

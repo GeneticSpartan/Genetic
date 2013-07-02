@@ -1,0 +1,13 @@
+D:\Games\Genetic\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\ResolveAssemblyReference.cache
+D:\Games\Genetic\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\Microsoft.Xna.Framework.RuntimeProfile.txt
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\auto_tiles.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\cellphone.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\genetic_debug.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\warthog.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\player.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\beep.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Content\grayscale.xnb
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Genetic.exe
+D:\Games\Genetic\Genetic\Genetic\Genetic\bin\Xbox 360\Debug\Genetic.pdb
+D:\Games\Genetic\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\Genetic.exe
+D:\Games\Genetic\Genetic\Genetic\Genetic\obj\Xbox 360\Debug\Genetic.pdb

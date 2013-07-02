@@ -48,7 +48,7 @@
       <Processor>TextureProcessor</Processor>
       <Options>None</Options>
       <Output>D:\Games\Genetic\Genetic\Genetic\Genetic\bin\x86\Debug\Content\player.xnb</Output>
-      <Time>2013-06-20T21:43:24.9699543-07:00</Time>
+      <Time>2013-06-28T01:21:24.5028257-07:00</Time>
     </Item>
     <Item>
       <Source>beep.mp3</Source>
@@ -71,7 +71,7 @@
     <BuildSuccessful>true</BuildSuccessful>
     <Settings>
       <TargetPlatform>Windows</TargetPlatform>
-      <TargetProfile>HiDef</TargetProfile>
+      <TargetProfile>Reach</TargetProfile>
       <BuildConfiguration>Debug</BuildConfiguration>
       <CompressContent>false</CompressContent>
       <RootDirectory>D:\Games\Genetic\Genetic\Genetic\GeneticContent\</RootDirectory>

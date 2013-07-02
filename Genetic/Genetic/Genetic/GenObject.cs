@@ -50,7 +50,7 @@ namespace Genetic
             /// <summary>
             /// a bit field representing every direction.
             /// </summary>
-            Any = Direction.Left | Direction.Right | Direction.Up | Direction.Down
+            Any = Left | Right | Up | Down
         }
 
         /// <summary>
@@ -83,7 +83,7 @@ namespace Genetic
             /// The object will move and rotate around the origin point of a parent, relative to the parent's rotation.
             /// The object's rotation will change relative to the parent's rotation.
             /// </summary>
-            OriginRotation = ParentType.Rotation | ParentType.Origin
+            OriginRotation = Rotation | Origin
         }
 
         /// <summary>
@@ -105,11 +105,6 @@ namespace Genetic
         /// The x and y positions of the center point of the object.
         /// </summary>
         protected Vector2 _centerPosition;
-
-        /// <summary>
-        /// The x and y positions to draw debug objects.
-        /// </summary>
-        protected Vector2 _debugDrawPosition;
 
         /// <summary>
         /// The origin, relative to the position, used as an anchor point of the object.
@@ -159,7 +154,7 @@ namespace Genetic
         /// <summary>
         /// A basic bounding box containing the object at its current and predicted positions relative to its velocity.
         /// </summary>
-        protected GenAABBBasic _moveBounds;
+        protected GenAABB _moveBounds;
 
         /// <summary>
         /// A flag used to determine if the object is affected by collisions.
@@ -256,40 +251,40 @@ namespace Genetic
         /// <summary>
         /// A reference to the current path that the object is following.
         /// </summary>
-        public GenPath Path = null;
+        public GenPath Path;
 
         /// <summary>
         /// The index number of the current node in the path nodes list to move towards.
         /// </summary>
-        public int PathNodeIndex = 0;
+        public int PathNodeIndex;
 
         /// <summary>
         /// The direction that the object will move along the path.
         /// Used to change direction in a yoyo path type.
         /// A value of 1 will move clockwise, and a value of -1 will move counterclockwise.
         /// </summary>
-        public int PathDirection = 1;
+        public int PathDirection;
 
         /// <summary>
         /// The velocity or acceleration of the object as it moves along the path.
         /// </summary>
-        public float PathSpeed = 0;
+        public float PathSpeed;
 
         /// <summary>
         /// Determines the order to move along the path nodes.
         /// </summary>
-        public GenPath.Type PathType = GenPath.Type.Clockwise;
+        public GenPath.Type PathType;
 
         /// <summary>
         /// A bit field of flags used to determine the current movement axis of the object along a path.
         /// Used to constrain movement along a path horizontally, vertically, or both.
         /// </summary>
-        public GenMove.Axis PathAxis = GenMove.Axis.Both;
+        public GenMove.Axis PathAxis;
 
         /// <summary>
         /// Determines whether to set the object's velocity or acceleration to move along the path.
         /// </summary>
-        public GenPath.Movement PathMovement = GenPath.Movement.Instant;
+        public GenPath.Movement PathMovement;
         #endregion
 
         /// <summary>
@@ -429,7 +424,7 @@ namespace Genetic
         /// Gets the bounding box surrounding the object at its current and predicted positions relative to its velocity.
         /// Useful for checking if the object may collide with another object during the next update.
         /// </summary>
-        public GenAABBBasic MoveBounds
+        public GenAABB MoveBounds
         {
             get { return _moveBounds; }
         }
@@ -475,30 +470,50 @@ namespace Genetic
         /// <param name="y">The y position of the top-left corner of the object.</param>
         /// <param name="width">The width of the object.</param>
         /// <param name="height">The height of the object.</param>
-        public GenObject(float x = 0, float y = 0, float width = 1, float height = 1)
+        public GenObject(float x, float y, float width, float height)
         {
+            _position = new Vector2(x, y);
+            _oldPosition = _position;
+            _hasMoved = false;
             _bounds = new GenAABB(x, y, width, height);
             _centerPosition = new Vector2(x + _bounds.HalfWidth, y + _bounds.HalfHeight);
             _origin = new Vector2(_bounds.HalfWidth, _bounds.HalfHeight);
-
-            X = x;
-            Y = y;
-
+            _originPosition = new Vector2(x + _origin.X, y + _origin.Y);
             _boundingRect = new Rectangle(0, 0, (int)width, (int)height);
             _rotation = 0f;
             RotationSpeed = 0f;
-            _moveBounds = new GenAABBBasic(x, y, width, height);
+            _moveDistance = Vector2.Zero;
+            _moveBounds = new GenAABB(x, y, width, height);
+
             Immovable = false;
             Solid = true;
             Mass = 1f;
+
+            Velocity = Vector2.Zero;
+            OldVelocity = Velocity;
+            Acceleration = Vector2.Zero;
+            Deceleration = Vector2.Zero;
+            MaxVelocity = Vector2.Zero;
+
             _facing = Direction.None;
             OldTouching = Direction.None;
             Touching = Direction.None;
+
             Parent = null;
             ParentMode = ParentType.None;
+            ParentOffset = Vector2.Zero;
+
             IsPlatform = false;
             Platform = null;
             OldPlatform = null;
+
+            Path = null;
+            PathNodeIndex = 0;
+            PathDirection = 1;
+            PathSpeed = 0f;
+            PathType = GenPath.Type.Clockwise;
+            PathAxis = GenMove.Axis.Both;
+            PathMovement = GenPath.Movement.Instant;
         }
 
         /// <summary>
@@ -532,7 +547,7 @@ namespace Genetic
                         Velocity.X -= Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X < 0)
-                        Velocity.X = 0;
+                        Velocity.X = 0f;
                 }
                 else if (Velocity.X < 0)
                 {
@@ -541,7 +556,7 @@ namespace Genetic
                         Velocity.X += Deceleration.X * GenG.TimeStep;
 
                     if (Velocity.X > 0)
-                        Velocity.X = 0;
+                        Velocity.X = 0f;
                 }
             }
 
@@ -592,8 +607,8 @@ namespace Genetic
             {
                 _moveBounds.X = _bounds.Left;
                 _moveBounds.Y = _bounds.Top;
-                _moveBounds.Width = _bounds.Right;
-                _moveBounds.Height = _bounds.Bottom;
+                _moveBounds.Width = _bounds.Width;
+                _moveBounds.Height = _bounds.Height;
             }
 
             Rotation += RotationSpeed * GenG.TimeStep;
@@ -646,21 +661,17 @@ namespace Genetic
         /// <summary>
         /// Draws a box representing the collision area of the object.
         /// </summary>
-        public override void DrawDebug()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void DrawDebug(GenCamera camera)
         {
-            // If the bounding box does not intersect with the camera's view, do not draw the debug object.
-            if (!_bounds.Intersects(GenG.CurrentCamera.CameraView))
+            if ((camera != null) && !CanDraw(camera))
                 return;
 
-            _debugDrawPosition = _position;
-
-            if (GenG.DrawMode == GenG.DrawType.Pixel)
-            {
-                _debugDrawPosition.X = (int)_debugDrawPosition.X;
-                _debugDrawPosition.Y = (int)_debugDrawPosition.Y;
-            }
-
-            GenG.SpriteBatch.Draw(GenG.Pixel, _debugDrawPosition, _boundingRect, ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
+            GenG.SpriteBatch.Draw(
+                GenG.Pixel, 
+                _position, 
+                _boundingRect, 
+                ((Immovable) ? Color.Red : Color.Lime) * 0.5f);
         }
 
         /// <summary>
@@ -729,16 +740,16 @@ namespace Genetic
         /// <summary>
         /// Sets the velocity and acceleration of the object to 0.
         /// </summary>
-        /// <param name="stopAcceleration">A flag used to set the acceleration to 0.</param>
+        /// <param name="stopAcceleration">A flag used to determine if the acceleration will be set to 0.</param>
         public void StopMoving(bool stopAcceleration = true)
         {
-            Velocity.X = 0;
-            Velocity.Y = 0;
+            Velocity.X = 0f;
+            Velocity.Y = 0f;
 
             if (stopAcceleration)
             {
-                Acceleration.X = 0;
-                Acceleration.Y = 0;
+                Acceleration.X = 0f;
+                Acceleration.Y = 0f;
             }
         }
 
@@ -871,19 +882,6 @@ namespace Genetic
                     }
                 }
             }
-        }
-
-        public void RefreshMoveBounds()
-        {
-            // Get the x and y distances that the object will move relative to its velocity.
-            _moveDistance.X = Velocity.X * GenG.TimeStep;
-            _moveDistance.Y = Velocity.Y * GenG.TimeStep;
-
-            // Calculate the movement bounding box.
-            _moveBounds.X = Math.Min(_bounds.Left, _bounds.Left + _moveDistance.X);
-            _moveBounds.Y = Math.Min(_bounds.Top, _bounds.Top + _moveDistance.Y);
-            _moveBounds.Width = Math.Max(_bounds.Right, _bounds.Right + _moveDistance.X) - _moveBounds.X;
-            _moveBounds.Height = Math.Max(_bounds.Bottom, _bounds.Bottom + _moveDistance.Y) - _moveBounds.Y;
         }
     }
 }

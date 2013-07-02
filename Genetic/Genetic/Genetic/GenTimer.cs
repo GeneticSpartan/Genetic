@@ -15,12 +15,6 @@ namespace Genetic
         public bool IsRunning;
 
         /// <summary>
-        /// A flag to determine if the elapsed time should be affected by GenG.TimeScale.
-        /// Used for calculating the timer based on fast/slow motion.
-        /// </summary>
-        public bool UseTimeScale; // TODO: Find a reason for UseTimeScale in GenTimer, or remove it completely.
-
-        /// <summary>
         /// The total amount of time, in seconds, for the timer to reach.
         /// </summary>
         public float Duration;
@@ -30,6 +24,9 @@ namespace Genetic
         /// </summary>
         public float Elapsed;
 
+        /// <summary>
+        /// A flag used to determine if the timer will repeat after completing each duration.
+        /// </summary>
         public bool IsLooping;
 
         /// <summary>
@@ -50,11 +47,9 @@ namespace Genetic
         /// </summary>
         /// <param name="duration">The total amount of time, in seconds, for the timer to reach.</param>
         /// <param name="callback">The method to invoke when the timer has finished.</param>
-        /// <param name="useTimeScale">Determines if the elapsed time should be affected by <c>GenG.TimeScale</c>. Used for calculating the timer based on faster/slower update calls.</param>
-        public GenTimer(float duration, Action callback = null, bool useTimeScale = true)
+        public GenTimer(float duration, Action callback = null)
         {
             IsRunning = false;
-            UseTimeScale = useTimeScale;
             Duration = duration;
             Elapsed = 0f;
             IsLooping = false;

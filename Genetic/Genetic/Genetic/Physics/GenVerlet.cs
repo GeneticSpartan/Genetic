@@ -72,9 +72,10 @@ namespace Genetic.Physics
         /// Calls <c>Draw</c> on this verlet chain's group.
         /// Draws lines that represent each link constraint in the verlet chain.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
-            base.Draw();
+            base.Draw(camera);
 
             if (DrawLines)
             {

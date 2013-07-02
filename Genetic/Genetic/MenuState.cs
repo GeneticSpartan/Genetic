@@ -37,17 +37,20 @@ namespace Genetic
             //startGame.X = GenU.SineWave(Camera.CameraView.Width / 2, 4, Camera.CameraView.Width / 2 - 200);
             //startGame.Y = GenU.SineWave(Camera.CameraView.Height / 2 - 20, 2, Camera.CameraView.Height / 2 - 100);
 
-            StartGameText.X += GenG.GamePads[PlayerIndex.One].ThumbStickLeftX;
+            StartGameText.X += GenG.GamePads[(int)PlayerIndex.One].ThumbStickLeftX;
 
+            StartGameText.Scale.X = GenU.SineWave(2, 8, 0.2f);
+            StartGameText.Scale.Y = StartGameText.Scale.X;
+#if WINDOWS
             if (GenG.Mouse.Wheel != 0)
                 StartGameText.Acceleration.Y += GenG.Mouse.Wheel * 20;
             else
                 StartGameText.Acceleration.Y = 0;
 
-            StartGameText.Scale.X = GenU.SineWave(2, 8, 0.2f);
-            StartGameText.Scale.Y = StartGameText.Scale.X;
-
-            if (GenG.Keyboards[PlayerIndex.One].IsPressed(Keys.Space) || GenG.GamePads[PlayerIndex.One].IsPressed(Buttons.Start) || GenG.Mouse.JustPressed(GenMouse.Buttons.LeftButton))
+            if (GenG.Keyboards[(int)PlayerIndex.One].IsPressed(Keys.Space) || GenG.Mouse.JustPressed(GenMouse.Buttons.LeftButton))
+                Camera.Fade(1f, Color.Black, StartGame);
+#endif
+            if (GenG.GamePads[(int)PlayerIndex.One].IsPressed(Buttons.Start))
                 Camera.Fade(1f, Color.Black, StartGame);
         }
 

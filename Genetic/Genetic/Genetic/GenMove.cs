@@ -34,12 +34,6 @@ namespace Genetic
         }
 
         /// <summary>
-        /// A global container used to store vector calculation results.
-        /// Useful for reducing Vector2 allocations.
-        /// </summary>
-        private static Vector2 _vector;
-
-        /// <summary>
         /// Gets a normalized vector of the x and y distances from an object to a point.
         /// Useful for calculating the distribution between horizontal and vertical speeds needed to meet an overall speed.
         /// </summary>
@@ -49,12 +43,14 @@ namespace Genetic
         /// <returns>The normalized distance vector.</returns>
         public static Vector2 GetDistanceNormal(GenObject gameObject, Vector2 point, Axis axis = Axis.Both)
         {
+            Vector2 distance = Vector2.Zero;
+
             // Get the x and y distances between the object and the point.
-            _vector.X = ((axis & Axis.Horizontal) == Axis.Horizontal) ? (point.X - gameObject.Position.X) : 0;
-            _vector.Y = ((axis & Axis.Vertical) == Axis.Vertical) ? (point.Y - gameObject.Position.Y) : 0;
+            distance.X = ((axis & Axis.Horizontal) == Axis.Horizontal) ? (point.X - gameObject.Position.X) : 0f;
+            distance.Y = ((axis & Axis.Vertical) == Axis.Vertical) ? (point.Y - gameObject.Position.Y) : 0f;
 
             // Return the normalized distance vector.
-            return Vector2.Normalize(_vector);
+            return GenU.NormalizeVector2(distance);
         }
 
         /// <summary>
@@ -67,12 +63,14 @@ namespace Genetic
         /// <returns>The normalized distance vector.</returns>
         public static Vector2 GetDistanceNormal(Vector2 pointA, Vector2 pointB, Axis axis = Axis.Both)
         {
+            Vector2 distance = Vector2.Zero;
+
             // Get the x and y distances between the first point and the second point.
-            _vector.X = ((axis & Axis.Horizontal) == Axis.Horizontal) ? (pointB.X - pointA.X) : 0;
-            _vector.Y = ((axis & Axis.Vertical) == Axis.Vertical) ? (pointB.Y - pointA.Y) : 0;
+            distance.X = ((axis & Axis.Horizontal) == Axis.Horizontal) ? (pointB.X - pointA.X) : 0;
+            distance.Y = ((axis & Axis.Vertical) == Axis.Vertical) ? (pointB.Y - pointA.Y) : 0;
 
             // Return the normalized distance vector.
-            return Vector2.Normalize(_vector);
+            return GenU.NormalizeVector2(distance);
         }
 
         /// <summary>
@@ -82,12 +80,13 @@ namespace Genetic
         /// <returns>The normal vector calculated from the given angle.</returns>
         public static Vector2 AngleToVector(float angle)
         {
+            Vector2 angleVector = Vector2.Zero;
             angle = MathHelper.ToRadians(angle);
 
-            _vector.X = (float)Math.Sin(angle);
-            _vector.Y = -(float)Math.Cos(angle);
+            angleVector.X = (float)Math.Sin(angle);
+            angleVector.Y = -(float)Math.Cos(angle);
 
-            return _vector;
+            return angleVector;
         }
 
         /// <summary>
@@ -109,9 +108,9 @@ namespace Genetic
         /// <returns>The angle calculated from the vector.</returns>
         public static float VectortoAngle(Vector2 pointA, Vector2 pointB)
         {
-            _vector = pointB - pointA;
+            Vector2 distance = pointB - pointA;
 
-            return MathHelper.ToDegrees((float)Math.Atan2(_vector.X, -_vector.Y));
+            return MathHelper.ToDegrees((float)Math.Atan2(distance.X, -distance.Y));
         }
 
         /// <summary>
@@ -131,9 +130,9 @@ namespace Genetic
                     if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                        _vector = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
+                        Vector2 distanceNormal = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
 
-                        (objectOrGroup as GenObject).Velocity = _vector * speed;
+                        (objectOrGroup as GenObject).Velocity = distanceNormal * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
@@ -162,17 +161,17 @@ namespace Genetic
                     if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Get a normalized distance vector to calculate the horizontal and vertical speeds.
-                        _vector = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
+                        Vector2 distanceNormal = GetDistanceNormal(objectOrGroup as GenObject, point, axis);
 
                         if (radius <= 0)
-                            (objectOrGroup as GenObject).Velocity += _vector * speed * GenG.TimeStep;
+                            (objectOrGroup as GenObject).Velocity += distanceNormal * speed * GenG.TimeStep;
                         else
                         {
                             // If the object is within the radius from the point, accelerate the object towards the point.
                             // The closer the object is to the point, the higher its acceleration will be.
                             float accelerationFactor = MathHelper.Clamp(radius - Vector2.Distance((objectOrGroup as GenObject).CenterPosition, point), 0, 1);
 
-                            (objectOrGroup as GenObject).Velocity += _vector * speed * accelerationFactor * GenG.TimeStep;
+                            (objectOrGroup as GenObject).Velocity += distanceNormal * speed * accelerationFactor * GenG.TimeStep;
                         }
                     }
                 }
@@ -200,9 +199,9 @@ namespace Genetic
                     if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
-                        _vector = AngleToVector(angle);
+                        Vector2 angleVector = AngleToVector(angle);
 
-                        (objectOrGroup as GenObject).Velocity = _vector * speed;
+                        (objectOrGroup as GenObject).Velocity = angleVector * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
@@ -229,9 +228,9 @@ namespace Genetic
                     if (allowImmovable || !(objectOrGroup as GenObject).Immovable)
                     {
                         // Convert the angle to a normal vector to calculate the horizontal and vertical speeds.
-                        _vector = AngleToVector(angle);
+                        Vector2 angleVector = AngleToVector(angle);
 
-                        (objectOrGroup as GenObject).Acceleration = _vector * speed;
+                        (objectOrGroup as GenObject).Acceleration = angleVector * speed;
                     }
                 }
                 else if (objectOrGroup is GenGroup)
@@ -251,11 +250,13 @@ namespace Genetic
         /// <param name="radius">The distance from the point that the object will be placed.</param>
         public static void RotateAroundPoint(GenObject gameObject, Vector2 point, float angle, float radius)
         {
-            _vector = AngleToVector(angle);
-            _vector = point + _vector * radius;
+            Vector2 rotationPosition = Vector2.Zero;
 
-            gameObject.X = _vector.X;
-            gameObject.Y = _vector.Y;
+            rotationPosition = AngleToVector(angle);
+            rotationPosition = point + rotationPosition * radius;
+
+            gameObject.X = rotationPosition.X;
+            gameObject.Y = rotationPosition.Y;
         }
 
         /// <summary>
@@ -276,15 +277,17 @@ namespace Genetic
             float minDistanceY = ((axis & Axis.Vertical) == Axis.Vertical) ? (gameObject.Position.Y - point.Y) : 0;
             float minDistance = (float)Math.Sqrt(minDistanceX * minDistanceX + minDistanceY * minDistanceY);
 
+            Vector2 newPosition = Vector2.Zero;
+
             // Calculate the next position of the object using its current direction.
             // Use the current velocity of the object if speed is 0.
             if (speed == 0)
-                _vector = Vector2.Add(gameObject.Position, gameObject.Velocity * GenG.TimeStep);
+                newPosition = Vector2.Add(gameObject.Position, gameObject.Velocity * GenG.TimeStep);
             else
-                _vector = Vector2.Add(gameObject.Position, Vector2.Normalize(gameObject.Velocity) * speed * GenG.TimeStep);
+                newPosition = Vector2.Add(gameObject.Position, GenU.NormalizeVector2(gameObject.Velocity) * speed * GenG.TimeStep);
 
             // Calculate the distance that the object will move.
-            float moveDistance = Vector2.Distance(gameObject.Position, _vector);
+            float moveDistance = Vector2.Distance(gameObject.Position, newPosition);
 
             return (moveDistance + radius) >= minDistance ;
         }

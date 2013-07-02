@@ -146,12 +146,27 @@ namespace Genetic.Gui
         /// <summary>
         /// Draws the progress bar.
         /// </summary>
-        public override void Draw()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void Draw(GenCamera camera)
         {
-            UpdateDrawPosition();
-
             if (_texture != null)
-                GenG.SpriteBatch.Draw(_texture, _drawPosition, _progressRect, _color, _rotation, _origin, Scale, _spriteEffect, 0);
+            {
+                if ((camera != null) && !CanDraw(camera))
+                    return;
+
+                Vector2 drawPosition = (camera == null) ? _drawPosition : GetDrawPosition(camera);
+
+                GenG.SpriteBatch.Draw(
+                    _texture,
+                    drawPosition,
+                    _progressRect,
+                    _color,
+                    _rotation,
+                    _origin,
+                    Scale,
+                    _spriteEffect,
+                    0f);
+            }
         }
     }
 }

@@ -20,11 +20,6 @@ namespace Genetic.Particles
         protected Vector2 _position;
 
         /// <summary>
-        /// The x and y position to draw the bounding box of the emitter in debug mode.
-        /// </summary>
-        protected Vector2 _debugDrawPosition;
-
-        /// <summary>
         /// The bounding box within which particles will emit.
         /// </summary>
         protected GenAABB _bounds;
@@ -112,6 +107,9 @@ namespace Genetic.Particles
         /// </summary>
         public int EmitQuantity;
 
+        /// <summary>
+        /// A timer used to manage the emission of particles at a set frequency.
+        /// </summary>
         public GenTimer _emitTimer;
 
         /// <summary>
@@ -207,19 +205,29 @@ namespace Genetic.Particles
         }
 
         /// <summary>
+        /// Gets if the emitter is currently emitting particles.
+        /// </summary>
+        public bool IsRunning
+        {
+            get { return _emitTimer.IsRunning; }
+        }
+
+        /// <summary>
         /// A particle emitter that emits particles from a point, 
         /// </summary>
         /// <param name="x">The x position of the top-left corner of the emitter.</param>
         /// <param name="y">The y position of the top-left corner of the emitter.</param>
-        public GenEmitter(float x = 0, float y = 0)
+        public GenEmitter(float x, float y)
         {
             _position = new Vector2(x, y);
-            _bounds = new GenAABB(x, y, 0, 0);
+            _bounds = new GenAABB(x, y, 0f, 0f);
             _boundingRect = Rectangle.Empty;
             MinParticleSpeedX = -100;
             MaxParticleSpeedX = 100;
             MinParticleSpeedY = -100;
             MaxParticleSpeedY = 100;
+            MinRotation = 0;
+            MaxRotation = 0;
             MinRotationSpeed = 0;
             MaxRotationSpeed = 0;
             Colors = new List<Color>();
@@ -229,9 +237,11 @@ namespace Genetic.Particles
             EndScale = 1f;
             Explode = true;
             EmitQuantity = 10;
-            _emitTimer = new GenTimer(0.1f, EmitParticles, true) { IsLooping = true };
+            _emitTimer = new GenTimer(0.1f, EmitParticles);
+            _emitTimer.IsLooping = true;
             InheritVelocity = false;
             Parent = null;
+            ParentOffset = Vector2.Zero;
         }
 
         /// <summary>
@@ -288,17 +298,17 @@ namespace Genetic.Particles
         /// <summary>
         /// Draws a box that represents the bounding box of the emitter in debug mode.
         /// </summary>
-        public override void DrawDebug()
+        /// <param name="camera">The camera used to draw.</param>
+        public override void DrawDebug(GenCamera camera)
         {
-            _debugDrawPosition = _position;
+            if ((camera != null) && !CanDraw(camera))
+                return;
 
-            if (GenG.DrawMode == GenG.DrawType.Pixel)
-            {
-                _debugDrawPosition.X = (int)_debugDrawPosition.X;
-                _debugDrawPosition.Y = (int)_debugDrawPosition.Y;
-            }
-
-            GenG.SpriteBatch.Draw(GenG.Pixel, _debugDrawPosition, _boundingRect, Color.BlueViolet * 0.5f);
+            GenG.SpriteBatch.Draw(
+                GenG.Pixel, 
+                _position, 
+                _boundingRect, 
+                Color.BlueViolet * 0.5f);
         }
 
         /// <summary>
@@ -335,6 +345,9 @@ namespace Genetic.Particles
 
                 _currentParticle.Rotation = GenU.Random(MinRotation, MaxRotation + 1);
                 _currentParticle.RotationSpeed = GenU.Random(MinRotationSpeed, MaxRotationSpeed + 1);
+                _currentParticle.Color = (Colors.Count > 0) ? Colors[0] : Color.White;
+                _currentParticle.Alpha = StartAlpha;
+                _currentParticle.Scale.X = _currentParticle.Scale.Y = StartScale;
                 _currentParticle.Reset();
 
                 return true;
@@ -379,14 +392,14 @@ namespace Genetic.Particles
         /// <summary>
         /// Makes a number of particles using the given texture, and adds them to the emitter group.
         /// </summary>
-        /// <param name="texture"></param>
-        /// <param name="width"></param>
-        /// <param name="height"></param>
-        /// <param name="count"></param>
-        public void MakeParticles(Texture2D texture, int width, int height, int count = 1)
+        /// <param name="texture">The texture to assign to the particles.</param>
+        /// <param name="width">The width of the particles.</param>
+        /// <param name="height">The height of the particles.</param>
+        /// <param name="count">The amount of particles to make.</param>
+        public void MakeParticles(Texture2D texture, int width, int height, int count)
         {
             for (int i = 0; i < count; i++)
-                Add(new GenParticle(0, 0, texture, width, height));
+                Add(new GenParticle(0f, 0f, texture, width, height));
         }
 
         /// <summary>
